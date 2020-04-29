@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-form/mui",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.0",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,15 +18,15 @@
   },
   "homepage": "https://github.com/doolse/react-typed-form#readme",
   "devDependencies": {
-    "@types/react": "^16.9.34",
-    "lerna": "^3.20.2",
-    "typescript": "^3.8.3",
     "@date-io/date-fns": "^2.6.1",
     "@material-ui/core": "^4.9.12",
-    "@material-ui/pickers": "^3.2.10"
+    "@material-ui/pickers": "^3.2.10",
+    "@types/react": "^16.9.34",
+    "lerna": "^3.20.2",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@react-typed-form/core": "1.0.0"
+    "@react-typed-form/core": "^1.0.0-alpha.0"
   },
   "peerDependencies": {
     "@date-io/date-fns": "^2.6.1",
