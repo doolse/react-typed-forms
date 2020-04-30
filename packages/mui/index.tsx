@@ -23,7 +23,7 @@ export const muiFieldProps: FieldPropsRenderer<
   string,
   string | undefined,
   TextFieldProps
-> = ({ state, onBlur, onChange, controlData }) => {
+> = ({ state, onBlur, onChange, controlData, name }) => {
   const { touched, error, value = "" } = state;
   return {
     variant: "outlined",
