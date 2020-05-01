@@ -6,9 +6,20 @@ import {
   CheckboxProps,
 } from "@material-ui/core";
 import React from "react";
-import { FieldRenderer, FieldPropsRenderer } from "@react-typed-form/core";
-import { DatePickerProps, DatePicker } from "@material-ui/pickers";
+import {
+  FieldRenderer,
+  FieldPropsRenderer,
+  mkFieldRenderer,
+} from "@react-typed-form/core";
+import {
+  DatePickerProps,
+  DatePicker,
+  KeyboardDatePickerProps,
+  KeyboardDatePicker,
+} from "@material-ui/pickers";
 import { FormControlProps } from "@react-typed-form/core";
+import { ParsableDate } from "@material-ui/pickers/constants/prop-types";
+import { MaterialUiPickersDate } from "@material-ui/pickers/typings/date";
 
 export type MUIFormControl = {
   label: string;
@@ -48,10 +59,10 @@ export const muiFieldRenderer: FieldRenderer<
 export const muiDateProps: FieldPropsRenderer<
   MUIFormControl,
   string,
-  any | null,
+  MaterialUiPickersDate | null,
   {
-    value: any;
-    onChange: (d: any) => void;
+    value: MaterialUiPickersDate;
+    onChange: (d: MaterialUiPickersDate) => void;
   }
 > = ({ state, onBlur, onChange, controlData }) => {
   const { touched, error, value } = state;
@@ -67,9 +78,16 @@ export const muiDateProps: FieldPropsRenderer<
 export const muiDateFieldRenderer: FieldRenderer<
   MUIFormControl,
   string,
-  any | null,
+  MaterialUiPickersDate | null,
   DatePickerProps
 > = (cp) => (op) => <DatePicker {...muiDateProps(cp)} {...op} />;
+
+export const muiKeyboardDateField: FieldRenderer<
+  MUIFormControl,
+  string,
+  MaterialUiPickersDate | null,
+  Omit<KeyboardDatePickerProps, "value" | "onChange">
+> = (cp) => (op) => <KeyboardDatePicker {...muiDateProps(cp)} {...op} />;
 
 export const muiCheckProps: FieldPropsRenderer<
   MUIFormControl,

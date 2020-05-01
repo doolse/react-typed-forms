@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "yalc": "tsc && yalc publish --push"
   },
   "repository": {
     "type": "git",
@@ -17,19 +18,8 @@
     "url": "https://github.com/doolse/react-typed-form/issues"
   },
   "homepage": "https://github.com/doolse/react-typed-form#readme",
-  "devDependencies": {
-    "@types/react": "^16.9.34",
-    "lerna": "^3.20.2",
-    "typescript": "^3.8.3"
-  },
   "peerDependencies": {
-    "@types/react": "^16.8.6",
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
-  },
-  "peerDependenciesMeta": {
-    "@types/react": {
-      "optional": true
-    }
   }
 }
