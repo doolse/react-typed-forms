@@ -72,17 +72,33 @@ export function useFormGroup<T, DV, DP, O = {}, E = string>(
   renderer: FieldRenderer<O, E, DV, DP>,
   onStateChange?: (state: FormGroupState<T, E>) => void
 ): FormGroupProps<T, O, E, DV, DP> {
-  const initialState = useMemo<FormGroupState<T, E>>(
-    () => ({
+  const initialState = useMemo<FormGroupState<T, E>>(() => {
+    const children: {
+      [P in keyof T & string]?: FormControlState<T[P], E>;
+    } = {};
+    var allValid = true;
+    for (const name in definitions) {
+      const value = initialValue[name];
+      const error = definitions[name].validator?.(value, initialValue);
+      const valid = !Boolean(error);
+      children[name] = {
+        value,
+        touched: false,
+        dirty: false,
+        valid,
+        error,
+      };
+      allValid = allValid && valid;
+    }
+    return {
       touched: false,
       dirty: false,
-      valid: true,
+      valid: allValid,
       value: initialValue,
-      children: {},
+      children,
       initialValue,
-    }),
-    []
-  );
+    };
+  }, []);
   const state = useRef(initialState);
   const [, setReRender] = useState({});
 
@@ -208,12 +224,9 @@ export function useFormGroup<T, DV, DP, O = {}, E = string>(
     updateState(change, errors) {
       state.current = { ...state.current, ...change, children: {} };
       var valid = true;
-      if (errors) {
-        Object.keys(errors).forEach((k) => {
-          const kn = k as keyof T & string;
-          const cs = getChildState(kn, errors[kn]);
-          valid = valid && cs.valid;
-        });
+      for (const name in definitions) {
+        const cs = getChildState(name, errors && errors[name]);
+        valid = valid && cs.valid;
       }
       state.current.valid = valid;
       setReRender({});
