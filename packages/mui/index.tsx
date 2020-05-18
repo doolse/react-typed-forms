@@ -32,7 +32,7 @@ export type MUIFormControl = {
 export const muiFieldProps: FieldPropsRenderer<
   MUIFormControl,
   string,
-  string | undefined,
+  any,
   TextFieldProps
 > = ({ state, onBlur, onChange, controlData, name }) => {
   const { touched, error, value = "" } = state;
