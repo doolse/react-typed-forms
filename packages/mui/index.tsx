@@ -32,7 +32,17 @@ export const muiFieldProps: FieldPropsRenderer<
   MUIFormControl,
   string,
   string | number | undefined,
-  TextFieldProps
+  MUIFormControl &
+    Pick<
+      TextFieldProps,
+      | "variant"
+      | "name"
+      | "value"
+      | "error"
+      | "helperText"
+      | "onBlur"
+      | "onChange"
+    >
 > = ({ state, onBlur, onChange, controlData, name }) => {
   const { touched, error, value = "" } = state;
   return {
@@ -45,7 +55,7 @@ export const muiFieldProps: FieldPropsRenderer<
       onChange(e.currentTarget.value),
     error: touched && Boolean(error),
     helperText: touched && error,
-  } as TextFieldProps;
+  };
 };
 
 export const muiFieldRenderer: FieldRenderer<
