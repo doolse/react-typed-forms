@@ -18,7 +18,6 @@ import {
   KeyboardDatePicker,
 } from "@material-ui/pickers";
 import { FormControlProps } from "@react-typed-form/core";
-import { ParsableDate } from "@material-ui/pickers/constants/prop-types";
 import { MaterialUiPickersDate } from "@material-ui/pickers/typings/date";
 
 export type MUIFormControl = {
@@ -32,14 +31,14 @@ export type MUIFormControl = {
 export const muiFieldProps: FieldPropsRenderer<
   MUIFormControl,
   string,
-  any,
+  string | number | undefined,
   TextFieldProps
 > = ({ state, onBlur, onChange, controlData, name }) => {
   const { touched, error, value = "" } = state;
   return {
     variant: "outlined",
     name,
-    value,
+    value: value || "",
     ...controlData,
     onBlur: () => onBlur(),
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -52,7 +51,7 @@ export const muiFieldProps: FieldPropsRenderer<
 export const muiFieldRenderer: FieldRenderer<
   MUIFormControl,
   string,
-  string | undefined,
+  string | number | undefined,
   TextFieldProps
 > = (cp) => (op) => <TextField {...muiFieldProps(cp)} {...op} />;
 
