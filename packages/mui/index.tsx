@@ -48,7 +48,7 @@ export const muiFieldProps: FieldPropsRenderer<
   return {
     variant: "outlined",
     name,
-    value: value || "",
+    value: value !== undefined ? value : "",
     ...controlData,
     onBlur: () => onBlur(),
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
