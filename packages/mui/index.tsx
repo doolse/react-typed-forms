@@ -51,8 +51,9 @@ export const muiFieldProps: FieldPropsRenderer<
     value: value !== undefined ? value : "",
     ...controlData,
     onBlur: () => onBlur(),
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-      onChange(e.currentTarget.value),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+    },
     error: touched && Boolean(error),
     helperText: touched && error,
   };
@@ -88,7 +89,7 @@ export const muiDateFieldRenderer: FieldRenderer<
   MUIFormControl,
   string,
   MaterialUiPickersDate | null,
-  DatePickerProps
+  Omit<DatePickerProps, "value" | "onChange">
 > = (cp) => (op) => <DatePicker {...muiDateProps(cp)} {...op} />;
 
 export const muiKeyboardDateField: FieldRenderer<
