@@ -19,9 +19,9 @@
   },
   "homepage": "https://github.com/doolse/react-typed-form#readme",
   "dependencies": {
+    "@react-typed-form/core": "1.0.0-alpha.0"
   },
   "peerDependencies": {
-    "@react-typed-form/core": "^1.0.0-alpha.0",
     "@date-io/date-fns": "^1.3.13",
     "@material-ui/core": "^4.9.12",
     "@material-ui/pickers": "^3.2.10"

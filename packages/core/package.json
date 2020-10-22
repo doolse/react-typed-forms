@@ -21,5 +21,11 @@
   "peerDependencies": {
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
+  },
+  "dependencies": {    
+    "deep-equal": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/deep-equal": "^1.0.1"
   }
 }
