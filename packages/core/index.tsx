@@ -1,5 +1,12 @@
-import React, { ReactNode, useState, useEffect, useMemo } from "react";
-import deepEqual from "deep-equal";
+import React from "react";
+import { useMemo, useState, useEffect, ReactNode } from "react";
+
+type UndefinedProperties<T> = {
+  [P in keyof T]-?: undefined extends T[P] ? P : never;
+}[keyof T];
+
+type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
+  Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
 
 export enum NodeChange {
   Value = 1,
@@ -7,7 +14,15 @@ export enum NodeChange {
   Touched = 4,
   Disabled = 8,
   Error = 16,
-  ForceValue = 32,
+  All = Value | Valid | Touched | Disabled | Error,
+  Validate = 32,
+}
+
+export interface BaseState {
+  valid: boolean;
+  error: string | undefined;
+  touched: boolean;
+  disabled: boolean;
 }
 
 export type ArrayErrors<X> =
@@ -20,198 +35,300 @@ export type GroupErrors<V> =
 
 export type Errors<V> = V extends (infer X)[]
   ? ArrayErrors<X>
-  : V extends GroupType
+  : V extends Record<string, any>
   ? GroupErrors<V>
   : string | undefined;
 
-export type Validator<V> = (value: V) => Errors<V>;
+type ChangeListener<C extends BaseControl> = [
+  NodeChange,
+  (control: C, cb: NodeChange) => void
+];
 
-export type ChangeListener = (node: BaseNode<any>, change: NodeChange) => void;
-
-type GroupType = { [id: string]: any };
-
-export type FormDefinition<V> = V extends (infer X)[]
-  ? ArrayField<X>
-  : V extends GroupType
-  ? GroupField<V>
-  : PrimitiveField<V>;
-
-export type GroupDefinition<V> = { [K in keyof V]-?: FormDefinition<V[K]> };
-
-export type PrimitiveField<V> = null | Validator<V>;
-
-export type ArrayField<X> = {
-  child: FormDefinition<X>;
-  validator?: Validator<X[]>;
-};
-
-export type GroupField<V> = {
-  children: GroupDefinition<V> | undefined;
-  validator?: Validator<V>;
-};
-
-type ControlType = PrimitiveField<any> | ArrayField<any> | GroupField<any>;
-
-export interface BaseState<V> {
-  value: V;
-  valid: boolean;
-  error: string | undefined;
-  touched: boolean;
-  disabled: boolean;
-}
-
-export interface BaseNode<V> extends BaseState<V> {
+export interface BaseControl extends BaseState {
   type: string;
+  listeners: ChangeListener<any>[];
   freezeCount: number;
   frozenChanges: NodeChange;
-  parentData?: any;
-  changeListeners: ChangeListener[];
+  setValue(v: any): void;
 }
 
-export type AnyState = PrimitiveNode<any> | GroupNode<any> | ArrayNode<any>;
+type ControlValue<T> = T extends BaseNode<infer V>
+  ? V
+  : T extends ArrayControl<infer E>
+  ? ControlValue<E>[]
+  : T extends GroupControl<infer F>
+  ? ToOptional<{ [K in keyof F]: ControlValue<F[K]> }>
+  : never;
 
-export interface PrimitiveNode<V> extends BaseNode<V> {
+export interface BaseNode<V> extends BaseControl {
   type: "prim";
+  value: V;
+  setValue(v: V): void;
 }
 
-export type ControlState<V> = V extends (infer X)[]
-  ? ArrayNode<X>
-  : V extends GroupType
-  ? GroupNode<V>
-  : PrimitiveNode<V>;
-
-export interface GroupNode<V extends GroupType> extends BaseNode<V> {
-  type: "group";
-  definition: GroupDefinition<V>;
-  fields: { [K in keyof V]-?: ControlState<V[K]> };
-}
-
-export interface ArrayNode<X> extends BaseNode<X[]> {
+interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
   type: "array";
-  definition: FormDefinition<X>;
-  elems: ControlState<X>[];
+  elems: FIELD[];
+  setValue(v: ControlValue<FIELD>[]): void;
+  toArray(): ControlValue<FIELD>[];
+  childDefinition: any;
 }
 
-function controlForType(
-  c: ControlType,
-  value: any,
-  changeListeners: ChangeListener[],
-  parentData?: any
-): BaseNode<any> {
-  const base: BaseNode<any> = {
-    type: "prim",
-    changeListeners,
-    valid: true,
-    touched: false,
-    disabled: false,
-    error: undefined,
-    freezeCount: 0,
-    frozenChanges: 0,
-    parentData,
-    value,
-  };
-  if (!c) {
-    return base;
-  }
-  if (typeof c === "function") {
-    addValidator(base, c);
-    return base;
-  } else if ("child" in c) {
-    if (c.validator) {
-      addValidator(base, c.validator);
-    }
-    const childListener = childChanged(base);
-    const elems = (value as any[]).map((cv) =>
-      controlForType(c.child, cv, [childListener])
-    );
-    return Object.assign(base, {
-      type: "array",
-      elems,
-      definition: c.child,
-    }) as ArrayNode<any>;
-  }
-  if ("children" in c) {
-    if (c.validator) {
-      addValidator(base, c.validator);
-    }
-    const groupChildChanged = childChanged(base);
-    const fields: { [k: string]: ControlState<any> } = {};
-    const childDefs = c.children;
-    for (const k in childDefs) {
-      const formDef = childDefs[k] as ControlType;
-      const childNode = controlForType(
-        formDef,
-        value[k],
-        [groupChildChanged],
-        k
-      ) as ControlState<any>;
-      fields[k] = childNode;
-    }
-    return Object.assign(base, {
-      type: "group",
-      fields,
-      definition: c.children,
-    }) as GroupNode<any>;
-  }
-  throw new Error("Not a control");
+interface GroupControl<FIELDS> extends BaseControl {
+  type: "group";
+  fields: FIELDS;
+  setValue(
+    value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>
+  ): void;
+  toObject(): { [K in keyof FIELDS]: ControlValue<FIELDS[K]> };
+  childrenDefinition: { [K in keyof FIELDS]: any };
 }
 
-function runListeners(node: BaseNode<any>, changed: NodeChange) {
+type ControlType<T> = T extends ControlDef<infer V>
+  ? BaseNode<V>
+  : T extends ArrayDef<infer E>
+  ? ArrayControl<ControlType<E>>
+  : T extends GroupDef<infer F>
+  ? GroupControl<
+      {
+        [K in keyof F]: ControlType<F[K]>;
+      }
+    >
+  : never;
+
+interface ControlDef<V> {
+  createControl: (V: V) => BaseNode<V>;
+}
+
+interface ArrayDef<ELEM> {
+  createArray(): ArrayControl<ControlType<ELEM>>;
+}
+
+type GroupControls<DEF> = {
+  [K in keyof DEF]: ControlType<DEF[K]>;
+};
+
+type GroupValues<DEF> = {
+  [K in keyof DEF]: ControlValue<ControlType<DEF[K]>>;
+};
+
+interface GroupDef<FIELDS extends object> {
+  createGroup(
+    value: ToOptional<GroupValues<FIELDS>>
+  ): GroupControl<GroupControls<FIELDS>>;
+}
+
+function isControlDef(v: any): v is ControlDef<any> {
+  return Boolean(v.createControl);
+}
+
+function isArrayDef(v: any): v is ArrayDef<any> {
+  return Boolean(v.createArray);
+}
+
+function isGroupDef(v: any): v is GroupDef<any> {
+  return Boolean(v.createGroup);
+}
+
+function isControl(v: BaseControl): v is BaseNode<any> {
+  return v.type === "prim";
+}
+
+function isArrayControl(v: BaseControl): v is ArrayControl<any> {
+  return v.type === "array";
+}
+
+function isGroupControl(v: BaseControl): v is GroupControl<any> {
+  return v.type === "group";
+}
+
+function toValue(ctrl: BaseControl): any {
+  if (isControl(ctrl)) {
+    return ctrl.value;
+  }
+  if (isArrayControl(ctrl)) {
+    return ctrl.toArray();
+  }
+  if (isGroupControl(ctrl)) {
+    return ctrl.toObject();
+  }
+}
+
+type AllowedControlForType<V> =
+  | (V extends (infer X)[]
+      ? ArrayDef<AllowedControlForType<X>>
+      : V extends object
+      ? GroupDef<AllowedChildren<V>>
+      : never)
+  | ControlDef<V>;
+
+type AllowedChildren<V> = { [K in keyof V]-?: AllowedControlForType<V[K]> };
+
+const baseControl = {
+  disabled: false,
+  error: undefined,
+  touched: false,
+  valid: true,
+  listeners: [],
+  frozenChanges: 0,
+  freezeCount: 0,
+};
+
+function mkControl<V>(f: (c: BaseControl) => V): typeof baseControl & V {
+  const base = { ...baseControl };
+  return Object.assign(base, f(base as any));
+}
+
+function runListeners(node: BaseControl, changed: NodeChange) {
   node.frozenChanges = 0;
-  node.changeListeners.forEach((c) => c(node, changed));
+  node.listeners.forEach(([m, cb]) => {
+    if ((m & changed) !== 0) cb(node, changed);
+  });
 }
 
-function runChange(node: BaseNode<any>, changed: NodeChange) {
-  if (node.freezeCount === 0) {
-    runListeners(node, changed);
-  } else {
-    node.frozenChanges |= changed;
-  }
-}
-
-export function setValue<V>(node: BaseNode<V>, value: V) {
-  setAnyValue(node as AnyState, value);
-}
-
-function setAnyValue(node: AnyState, value: any) {
-  switch (node.type) {
-    case "group":
-      setNodeValue(node, value);
-      break;
-    case "array":
-      setArrayValue(node, value);
-      break;
-    case "prim":
-      updateNode(node, { value });
+function runChange(node: BaseControl, changed: NodeChange) {
+  if (changed) {
+    if (node.freezeCount === 0) {
+      runListeners(node, changed);
+    } else {
+      node.frozenChanges |= changed;
+    }
   }
 }
 
-function updateNode(node: BaseNode<any>, changes: Partial<BaseState<any>>) {
-  let changeFlags: NodeChange = 0;
-  if ("value" in changes && !deepEqual(node.value, changes.value)) {
-    node.value = changes.value;
-    changeFlags |= NodeChange.Value;
+function updateError(bs: BaseState, error: string | undefined): NodeChange {
+  if (bs.error !== error) {
+    bs.error = error;
+    return NodeChange.Error | updateValid(bs, !Boolean(error));
   }
-  if ("error" in changes && node.error !== changes.error) {
-    node.error = changes.error;
-    changeFlags |= NodeChange.Error;
-  }
-  if ("valid" in changes && node.valid !== changes.valid) {
-    node.valid = changes.valid!;
-    changeFlags |= NodeChange.Valid;
-  }
-  if ("touched" in changes && node.touched !== changes.touched) {
-    node.touched = changes.touched!;
-    changeFlags |= NodeChange.Touched;
-  }
-  if ("disabled" in changes && node.disabled !== changes.disabled) {
-    node.disabled = changes.disabled!;
-    changeFlags |= NodeChange.Disabled;
-  }
-  runChange(node, changeFlags);
+  return updateValid(bs, !Boolean(error));
 }
 
-function groupedChanges(node: BaseNode<any>, run: () => void) {
+function updateValid(bs: BaseState, valid: boolean): NodeChange {
+  if (bs.valid !== valid) {
+    bs.valid = valid;
+    return NodeChange.Valid;
+  }
+  return 0;
+}
+
+function updateDisabled(bs: BaseState, disabled: boolean): NodeChange {
+  if (bs.disabled !== disabled) {
+    bs.disabled = disabled;
+    return NodeChange.Disabled;
+  }
+  return 0;
+}
+
+function updateTouched(bs: BaseState, touched: boolean): NodeChange {
+  if (bs.touched !== touched) {
+    bs.touched = touched;
+    return NodeChange.Touched;
+  }
+  return 0;
+}
+
+function parentListener<C extends BaseControl>(parent: C): ChangeListener<C> {
+  return [
+    NodeChange.Value | NodeChange.Valid | NodeChange.Touched,
+    (child, change) => {
+      var flags: NodeChange = change & NodeChange.Value;
+      function doValidCheck() {
+        console.log("Checking children for valid");
+        return visitChildren(parent, (c) => c.valid);
+      }
+      if (change & NodeChange.Valid) {
+        const valid = child.valid && !parent.valid && doValidCheck();
+        flags |= updateValid(parent, valid);
+      }
+      if (change & NodeChange.Touched) {
+        flags |= updateTouched(parent, child.touched || parent.touched);
+      }
+      runChange(parent, flags);
+    },
+  ];
+}
+
+function visitChildren(
+  parent: BaseControl,
+  visit: (c: BaseControl) => boolean,
+  doSelf?: boolean,
+  recurse?: boolean
+): boolean {
+  if (doSelf && !visit(parent)) {
+    return false;
+  }
+  if (isArrayControl(parent)) {
+    if (!parent.elems.every(visit)) {
+      return false;
+    }
+    if (recurse) {
+      return parent.elems.every((c) => visitChildren(c, visit, false, true));
+    }
+    return true;
+  } else if (isGroupControl(parent)) {
+    const fields = parent.fields;
+    for (const k in fields) {
+      if (!visit(fields[k])) {
+        return false;
+      }
+      if (recurse) {
+        if (!visitChildren(fields[k], visit, false, true)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  return true;
+}
+
+export function ctrl<V>(
+  validator?: (v: V) => string | undefined
+): ControlDef<V> {
+  return {
+    createControl(value: V) {
+      const ctrl: BaseNode<V> = mkControl(() => ({
+        type: "prim",
+        value,
+        setValue: (value: V) => {
+          if (value !== ctrl.value) {
+            ctrl.value = value;
+            runChange(ctrl, NodeChange.Value);
+          }
+        },
+      }));
+      if (validator) {
+        addChangeListener(
+          ctrl,
+          (n, c) => {
+            const error = validator(ctrl.value);
+            runChange(n, updateError(ctrl, error));
+          },
+          NodeChange.Value | NodeChange.Validate
+        );
+      }
+      return ctrl;
+    },
+  };
+}
+
+export function formArray<V>(child: V): ArrayDef<V> {
+  return {
+    createArray() {
+      const ctrl: ArrayControl<ControlType<V>> = mkControl(() => ({
+        type: "array",
+        elems: [],
+        childDefinition: child,
+        toArray: () => ctrl.elems.map((e) => toValue(e)),
+        setValue: (v: any) => setArrayValue(ctrl, v),
+      }));
+      return ctrl;
+    },
+  };
+}
+
+function groupedChanges(node: BaseControl, run: () => void) {
   node.freezeCount++;
   run();
   node.freezeCount--;
@@ -220,173 +337,111 @@ function groupedChanges(node: BaseNode<any>, run: () => void) {
   }
 }
 
-function allChildrenValid(node: AnyState): boolean {
-  if (node.type == "array") {
-    return node.elems.every((bn) => bn.valid);
+function controlFromDef(
+  parent: BaseControl,
+  cdef: any,
+  value: any
+): BaseControl {
+  const l = parentListener(parent);
+  var child: BaseControl;
+  if (isControlDef(cdef)) {
+    child = cdef.createControl(value);
+  } else if (isArrayDef(cdef)) {
+    const array = cdef.createArray();
+    setArrayValue(array, value);
+    child = array;
+  } else if (isGroupDef(cdef)) {
+    child = cdef.createGroup(value);
+  } else {
+    throw "Something went wrong, broken definition";
   }
-  if (node.type == "group") {
-    for (const k in node.fields) {
-      if (!node.fields[k].valid) {
-        return false;
-      }
-    }
-  }
-  return true;
+  addChangeListener(child, l[1], l[0]);
+  return child;
 }
 
-function setNodeValue(node: GroupNode<any>, value: any) {
-  groupedChanges(node, () => {
-    const fields = node.fields;
-    for (const k in fields) {
-      setAnyValue(fields[k] as AnyState, value[k]);
-    }
-  });
-}
-
-function setArrayValue(node: ArrayNode<any>, value: any[]) {
-  let arrayElemChanged = childChanged(node);
-  groupedChanges(node, () => {
-    if (node.elems.length !== value.length) {
-      runChange(node, NodeChange.Value | NodeChange.ForceValue);
-    }
-    const childElems = node.elems as BaseNode<any>[];
-    value.map((v, i) => {
-      if (childElems.length <= i) {
-        const newControl = controlForType(
-          node.definition,
-          v,
-          [arrayElemChanged],
-          i
-        );
-        childElems.push(newControl);
-        node.value[i] = v;
-      }
-    });
-    const targetLength = value.length;
-    const actualLength = childElems.length;
-    if (targetLength !== actualLength) {
-      childElems.splice(targetLength, actualLength - targetLength);
-      node.value.splice(targetLength, actualLength - targetLength);
-    }
-    updateNode(node, { valid: allChildrenValid(node) });
-  });
-}
-
-function childChanged(base: BaseNode<any>): ChangeListener {
-  return (node, change) => {
-    if (change & NodeChange.Value) {
-      const groupChildValue = base.value[node.parentData];
-      if (
-        change & NodeChange.ForceValue ||
-        !deepEqual(groupChildValue, node.value)
-      ) {
-        base.value[node.parentData] = node.value;
-        runChange(base, NodeChange.Value | NodeChange.ForceValue);
-      }
-    }
-    if (change & NodeChange.Valid) {
-      if (node.valid !== base.valid) {
-        updateNode(base, {
-          valid: base.valid ? false : allChildrenValid(base as AnyState),
-        });
-      }
-    }
+export function group<V extends object>(children: V): GroupDef<V> {
+  return {
+    createGroup(v: GroupValues<V>) {
+      const ctrl: GroupControl<GroupControls<V>> = mkControl((c) => {
+        const fields: Record<string, BaseControl> = {};
+        const rec = v as Record<string, any>;
+        for (const k in children) {
+          const cdef = children[k];
+          const value = rec[k];
+          fields[k] = controlFromDef(c, cdef, value);
+        }
+        return {
+          type: "group",
+          childrenDefinition: children,
+          fields: fields as any,
+          setValue: (v: any) => setGroupValue(ctrl, v),
+          toObject: () => {
+            const rec: Record<string, any> = {};
+            for (const k in fields) {
+              const bctrl = fields[k];
+              rec[k] = toValue(bctrl);
+            }
+            return rec as any;
+          },
+        };
+      });
+      return ctrl;
+    },
   };
 }
 
-export function addValidator<V>(
-  state: BaseNode<V>,
-  validate: (value: V) => Errors<V>
+export function formGroup<R>(): <V extends AllowedChildren<R>>(
+  children: V
+) => GroupDef<V> {
+  return group;
+}
+
+export function useNodeChangeTracker(control: BaseControl) {
+  const [_, setCount] = useState(0);
+  const updater = useMemo(
+    () => () => {
+      setCount((c) => c + 1);
+    },
+    []
+  );
+  useEffect(() => {
+    addChangeListener(control, updater);
+  }, [control]);
+}
+
+export function addChangeListener<Node extends BaseControl>(
+  control: Node,
+  listener: (node: Node, change: NodeChange) => void,
+  mask?: NodeChange
 ) {
-  addChangeListener(state, (node, change) => {
-    if (change & NodeChange.Value) {
-      setErrors(node as ControlState<V>, validate(node.value));
-    }
-  });
+  control.listeners = [
+    ...control.listeners,
+    [mask ? mask : NodeChange.All, listener],
+  ];
 }
 
-export function addChangeListener(state: BaseNode<any>, f: ChangeListener) {
-  state.changeListeners = [...state.changeListeners, f];
-}
-
-export function removeChangeListener(state: BaseNode<any>, f: ChangeListener) {
-  state.changeListeners = state.changeListeners.filter((c) => c !== f);
-}
-
-function setArrayErrors(nodes: ControlState<any>[], errors: Errors<any>[]) {
-  nodes.forEach((n, i) => {
-    if (i < errors.length) {
-      setErrors<any>(n, errors[i]);
-    }
-  });
-}
-
-function setGroupErrors(
-  nodes: { [k: string]: ControlState<any> },
-  errors: { [k: string]: Errors<any> }
+export function removeChangeListener<Node extends BaseControl>(
+  control: Node,
+  listener: (node: Node, change: NodeChange) => void
 ) {
-  for (const k in nodes) {
-    const node = nodes[k];
-    setErrors(node, errors[k]);
-  }
+  control.listeners = control.listeners.filter((cl) => cl[1] !== listener);
 }
 
-function setSelfError(node: BaseNode<any>, error: string | undefined) {
-  updateNode(node, { error, valid: !Boolean(error) });
+export function useFormState<FIELDS extends object>(
+  group: GroupDef<FIELDS>,
+  value: ToOptional<GroupValues<FIELDS>>
+): GroupControl<GroupControls<FIELDS>> {
+  return useMemo(() => {
+    return group.createGroup(value);
+  }, [group]);
 }
 
-function deepUpdate(node: AnyState, update: Partial<BaseState<any>>) {
-  groupedChanges(node, () => {
-    updateNode(node, update);
-    switch (node.type) {
-      case "array":
-        node.elems.forEach((n) => deepUpdate(n, update));
-        break;
-      case "group":
-        const fields = node.fields;
-        for (const k in fields) {
-          deepUpdate(fields[k], update);
-        }
-    }
-  });
-}
-
-export function setDisabled(node: BaseNode<any>, disabled: boolean) {
-  deepUpdate(node as AnyState, { disabled });
-}
-
-export function setErrors<V>(node: ControlState<V>, errors: Errors<V>) {
-  if (node.type === "array") {
-    const arrState = node as ArrayNode<any>;
-    const arrErrs = errors as ArrayErrors<any>;
-    if (!Array.isArray(arrErrs)) {
-      setSelfError(node, arrErrs.self);
-      setArrayErrors(arrState.elems, arrErrs.children);
-    } else {
-      setSelfError(node, undefined);
-      setArrayErrors(arrState.elems, arrErrs);
-    }
-  } else if (node.type === "group") {
-    const grpState = node as GroupNode<any>;
-    const grpErrs = errors as GroupErrors<any>;
-    if (Array.isArray(grpErrs)) {
-      setSelfError(node, grpErrs[0]);
-      setGroupErrors(grpState.fields, grpErrs[1]);
-    } else {
-      setSelfError(node, undefined);
-      setGroupErrors(grpState.fields, grpErrs);
-    }
-  } else {
-    setSelfError(node, errors as string);
-  }
-}
-
-export function FormArray<V>({
+export function FormArray<V extends BaseControl>({
   state,
   children,
 }: {
-  state: ArrayNode<V>;
-  children: (state: ArrayNode<V>) => ReactNode;
+  state: ArrayControl<V>;
+  children: (state: ArrayControl<V>) => ReactNode;
 }) {
   const [_, setChildCount] = useState(state.elems.length);
   const updater = useMemo(
@@ -397,53 +452,123 @@ export function FormArray<V>({
   );
   useEffect(() => {
     addChangeListener(state, updater);
-    return () => {
-      removeChangeListener(state, updater);
-    };
+    return () => removeChangeListener(state, updater);
   }, [state]);
   return <>{children(state)}</>;
 }
 
-export function useFormState<V>(
-  group: GroupField<V>,
-  initialValue: V
-): GroupNode<V> {
-  return useMemo(() => {
-    const formState = controlForType(group, initialValue, []) as GroupNode<V>;
-    return formState;
-  }, [group]);
-}
-
-export function useNodeChangeTracker(node: BaseNode<any>) {
-  const [_, setCount] = useState(0);
-  const updater = useMemo(
-    () => () => {
-      setCount((c) => c + 1);
+function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
+  visitChildren(
+    node,
+    (c) => {
+      runChange(c, change(c));
+      return true;
     },
-    []
+    true,
+    true
   );
-  useEffect(() => {
-    addChangeListener(node, updater);
-    return () => {
-      removeChangeListener(node, updater);
-    };
-  }, [node]);
 }
 
-export function formGroup<V>(
-  children: GroupDefinition<V>,
-  validator?: Validator<V>
-): GroupField<V> {
-  return { children, validator };
+export function setDisabled(node: BaseControl, disabled: boolean) {
+  updateAll(node, (c) => updateDisabled(c, disabled));
 }
 
-export function customField<V>(validator?: Validator<V>): GroupField<V> {
-  return { validator, children: undefined };
+export function setTouched(node: BaseControl, touched: boolean) {
+  updateAll(node, (c) => updateTouched(c, touched));
 }
 
-export function formArray<X>(
-  child: FormDefinition<X>,
-  validator?: Validator<X[]>
-): ArrayField<X> {
-  return { child, validator };
+export function validate(node: BaseControl) {
+  updateAll(node, () => NodeChange.Validate);
+}
+
+function setArrayErrors(ctrl: ArrayControl<any>, errors: ArrayErrors<any>) {
+  var errArr: any[];
+  var error: string | undefined;
+  if (Array.isArray(errors)) {
+    errArr = errors;
+    error = undefined;
+  } else {
+    errArr = errors.children;
+    error = errors.self;
+  }
+  ctrl.elems.forEach((n, i) => {
+    if (i < errArr.length) {
+      setErrors(n, errArr[i]);
+    }
+  });
+  setSelfError(ctrl, error);
+}
+
+function setGroupErrors(ctrl: GroupControl<any>, errors: GroupErrors<any>) {
+  var errObj: Record<string, Errors<any>>;
+  var error: string | undefined;
+  if (Array.isArray(errors)) {
+    error = errors[0];
+    errObj = errors[1];
+  } else {
+    error = undefined;
+    errObj = errors;
+  }
+  const fields = ctrl.fields;
+  for (const k in fields) {
+    const field = fields[k];
+    setErrors(field, errObj[k] as any);
+  }
+  setSelfError(ctrl, error);
+}
+
+function setSelfError(ctrl: BaseControl, error: string | undefined) {
+  runChange(ctrl, updateError(ctrl, error));
+}
+
+export function setErrors<C extends BaseControl>(
+  ctrl: C,
+  errors: Errors<ControlValue<C>>
+) {
+  if (isControl(ctrl)) {
+    setSelfError(ctrl, errors);
+  } else if (isArrayControl(ctrl)) {
+    setArrayErrors(ctrl, errors as ArrayErrors<any>);
+  } else if (isGroupControl(ctrl)) {
+    setGroupErrors(ctrl, errors as GroupErrors<any>);
+  }
+}
+
+export function setArrayValue<C extends ArrayControl<any>>(
+  ctrl: C,
+  value: ControlValue<C>
+) {
+  groupedChanges(ctrl, () => {
+    var flags: NodeChange = 0;
+    const childElems = ctrl.elems;
+    if (childElems.length !== value.length) {
+      flags |= NodeChange.Value;
+    }
+    value.map((v, i) => {
+      if (childElems.length <= i) {
+        const newControl = controlFromDef(ctrl, ctrl.childDefinition, v);
+        childElems.push(newControl);
+      } else {
+        childElems[i].setValue(v);
+      }
+    });
+    const targetLength = value.length;
+    const actualLength = childElems.length;
+    if (targetLength !== actualLength) {
+      childElems.splice(targetLength, actualLength - targetLength);
+    }
+    runChange(ctrl, flags);
+  });
+}
+
+function setGroupValue<C extends GroupControl<any>>(
+  ctrl: C,
+  value: ControlValue<C>
+) {
+  groupedChanges(ctrl, () => {
+    const fields = ctrl.fields;
+    for (const k in fields) {
+      fields[k].setValue(value[k]);
+    }
+  });
 }

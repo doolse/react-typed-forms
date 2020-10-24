@@ -2,11 +2,9 @@ import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useMemo, useState } from "react";
 
 import {
-  addChangeListener,
   BaseNode,
-  removeChangeListener,
-  setValue,
   useNodeChangeTracker,
+  setTouched,
 } from "@react-typed-form/core";
 
 export function FTextField({
@@ -16,7 +14,7 @@ export function FTextField({
   state: BaseNode<string | number | undefined>;
 } & TextFieldProps): ReactElement {
   useNodeChangeTracker(state);
-  const showError = !state.valid && Boolean(state.error);
+  const showError = state.touched && !state.valid && Boolean(state.error);
   return (
     <TextField
       {...others}
@@ -24,7 +22,8 @@ export function FTextField({
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
-      onChange={(e) => setValue(state, e.currentTarget.value)}
+      onBlur={() => setTouched(state, true)}
+      onChange={(e) => state.setValue(e.currentTarget.value)}
     />
   );
 }
