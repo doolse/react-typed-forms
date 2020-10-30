@@ -96,12 +96,18 @@ type ControlType<T> = T extends ControlDef<infer V>
     >
   : never;
 
-interface ControlDef<V> {
-  createControl: (V: V) => BaseNode<V>;
+interface ControlCreator {
+  createControl: (value: any) => BaseControl;
 }
 
-interface ArrayDef<ELEM> {
-  createArray(): ArrayControl<ControlType<ELEM>>;
+interface ControlDef<V> extends ControlCreator {
+  createControl: (V: V) => BaseControl;
+}
+
+interface ArrayDef<ELEM> extends ControlCreator {
+  createControl: (
+    v: ControlValue<ControlType<ELEM>>
+  ) => ArrayControl<ControlType<ELEM>>;
 }
 
 type GroupControls<DEF> = {
@@ -112,22 +118,10 @@ type GroupValues<DEF> = {
   [K in keyof DEF]: ControlValue<ControlType<DEF[K]>>;
 };
 
-interface GroupDef<FIELDS extends object> {
-  createGroup(
+interface GroupDef<FIELDS extends object> extends ControlCreator {
+  createControl(
     value: ToOptional<GroupValues<FIELDS>>
   ): GroupControl<GroupControls<FIELDS>>;
-}
-
-function isControlDef(v: any): v is ControlDef<any> {
-  return Boolean(v.createControl);
-}
-
-function isArrayDef(v: any): v is ArrayDef<any> {
-  return Boolean(v.createArray);
-}
-
-function isGroupDef(v: any): v is GroupDef<any> {
-  return Boolean(v.createGroup);
 }
 
 function isControl(v: BaseControl): v is BaseNode<any> {
@@ -233,12 +227,9 @@ function parentListener<C extends BaseControl>(parent: C): ChangeListener<C> {
     NodeChange.Value | NodeChange.Valid | NodeChange.Touched,
     (child, change) => {
       var flags: NodeChange = change & NodeChange.Value;
-      function doValidCheck() {
-        console.log("Checking children for valid");
-        return visitChildren(parent, (c) => c.valid);
-      }
       if (change & NodeChange.Valid) {
-        const valid = child.valid && !parent.valid && doValidCheck();
+        const valid =
+          child.valid && !parent.valid && visitChildren(parent, (c) => c.valid);
         flags |= updateValid(parent, valid);
       }
       if (change & NodeChange.Touched) {
@@ -298,16 +289,14 @@ export function ctrl<V>(
           }
         },
       }));
-      if (validator) {
-        addChangeListener(
-          ctrl,
-          (n, c) => {
-            const error = validator(ctrl.value);
-            runChange(n, updateError(ctrl, error));
-          },
-          NodeChange.Value | NodeChange.Validate
-        );
-      }
+      addChangeListener(
+        ctrl,
+        (n, c) => {
+          const error = validator?.(ctrl.value);
+          runChange(n, updateError(ctrl, error));
+        },
+        NodeChange.Value | NodeChange.Validate
+      );
       return ctrl;
     },
   };
@@ -315,7 +304,7 @@ export function ctrl<V>(
 
 export function formArray<V>(child: V): ArrayDef<V> {
   return {
-    createArray() {
+    createControl(value: any) {
       const ctrl: ArrayControl<ControlType<V>> = mkControl(() => ({
         type: "array",
         elems: [],
@@ -323,6 +312,7 @@ export function formArray<V>(child: V): ArrayDef<V> {
         toArray: () => ctrl.elems.map((e) => toValue(e)),
         setValue: (v: any) => setArrayValue(ctrl, v),
       }));
+      setArrayValue(ctrl, value);
       return ctrl;
     },
   };
@@ -343,25 +333,14 @@ function controlFromDef(
   value: any
 ): BaseControl {
   const l = parentListener(parent);
-  var child: BaseControl;
-  if (isControlDef(cdef)) {
-    child = cdef.createControl(value);
-  } else if (isArrayDef(cdef)) {
-    const array = cdef.createArray();
-    setArrayValue(array, value);
-    child = array;
-  } else if (isGroupDef(cdef)) {
-    child = cdef.createGroup(value);
-  } else {
-    throw "Something went wrong, broken definition";
-  }
+  var child = (cdef as ControlCreator).createControl(value);
   addChangeListener(child, l[1], l[0]);
   return child;
 }
 
 export function group<V extends object>(children: V): GroupDef<V> {
   return {
-    createGroup(v: GroupValues<V>) {
+    createControl(v: GroupValues<V>) {
       const ctrl: GroupControl<GroupControls<V>> = mkControl((c) => {
         const fields: Record<string, BaseControl> = {};
         const rec = v as Record<string, any>;
@@ -432,7 +411,7 @@ export function useFormState<FIELDS extends object>(
   value: ToOptional<GroupValues<FIELDS>>
 ): GroupControl<GroupControls<FIELDS>> {
   return useMemo(() => {
-    return group.createGroup(value);
+    return group.createControl(value);
   }, [group]);
 }
 
@@ -467,18 +446,6 @@ function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
     true,
     true
   );
-}
-
-export function setDisabled(node: BaseControl, disabled: boolean) {
-  updateAll(node, (c) => updateDisabled(c, disabled));
-}
-
-export function setTouched(node: BaseControl, touched: boolean) {
-  updateAll(node, (c) => updateTouched(c, touched));
-}
-
-export function validate(node: BaseControl) {
-  updateAll(node, () => NodeChange.Validate);
 }
 
 function setArrayErrors(ctrl: ArrayControl<any>, errors: ArrayErrors<any>) {
@@ -521,20 +488,7 @@ function setSelfError(ctrl: BaseControl, error: string | undefined) {
   runChange(ctrl, updateError(ctrl, error));
 }
 
-export function setErrors<C extends BaseControl>(
-  ctrl: C,
-  errors: Errors<ControlValue<C>>
-) {
-  if (isControl(ctrl)) {
-    setSelfError(ctrl, errors);
-  } else if (isArrayControl(ctrl)) {
-    setArrayErrors(ctrl, errors as ArrayErrors<any>);
-  } else if (isGroupControl(ctrl)) {
-    setGroupErrors(ctrl, errors as GroupErrors<any>);
-  }
-}
-
-export function setArrayValue<C extends ArrayControl<any>>(
+function setArrayValue<C extends ArrayControl<any>>(
   ctrl: C,
   value: ControlValue<C>
 ) {
@@ -571,4 +525,29 @@ function setGroupValue<C extends GroupControl<any>>(
       fields[k].setValue(value[k]);
     }
   });
+}
+
+export function setDisabled(node: BaseControl, disabled: boolean) {
+  updateAll(node, (c) => updateDisabled(c, disabled));
+}
+
+export function setTouched(node: BaseControl, touched: boolean) {
+  updateAll(node, (c) => updateTouched(c, touched));
+}
+
+export function validate(node: BaseControl) {
+  updateAll(node, () => NodeChange.Validate);
+}
+
+export function setErrors<C extends BaseControl>(
+  ctrl: C,
+  errors: Errors<ControlValue<C>>
+) {
+  if (isControl(ctrl)) {
+    setSelfError(ctrl, errors);
+  } else if (isArrayControl(ctrl)) {
+    setArrayErrors(ctrl, errors as ArrayErrors<any>);
+  } else if (isGroupControl(ctrl)) {
+    setGroupErrors(ctrl, errors as GroupErrors<any>);
+  }
 }
