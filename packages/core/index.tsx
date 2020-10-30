@@ -96,15 +96,11 @@ type ControlType<T> = T extends ControlDef<infer V>
     >
   : never;
 
-interface ControlCreator {
-  createControl: (value: any) => BaseControl;
-}
-
-interface ControlDef<V> extends ControlCreator {
+interface ControlDef<V> {
   createControl: (V: V) => BaseControl;
 }
 
-interface ArrayDef<ELEM> extends ControlCreator {
+interface ArrayDef<ELEM> {
   createControl: (
     v: ControlValue<ControlType<ELEM>>
   ) => ArrayControl<ControlType<ELEM>>;
@@ -118,8 +114,8 @@ type GroupValues<DEF> = {
   [K in keyof DEF]: ControlValue<ControlType<DEF[K]>>;
 };
 
-interface GroupDef<FIELDS extends object> extends ControlCreator {
-  createControl(
+interface GroupDef<FIELDS extends object> {
+  createGroup(
     value: ToOptional<GroupValues<FIELDS>>
   ): GroupControl<GroupControls<FIELDS>>;
 }
@@ -333,14 +329,16 @@ function controlFromDef(
   value: any
 ): BaseControl {
   const l = parentListener(parent);
-  var child = (cdef as ControlCreator).createControl(value);
+  var child = cdef.createControl
+    ? cdef.createControl(value)
+    : cdef.createGroup(value);
   addChangeListener(child, l[1], l[0]);
   return child;
 }
 
 export function group<V extends object>(children: V): GroupDef<V> {
   return {
-    createControl(v: GroupValues<V>) {
+    createGroup(v: GroupValues<V>) {
       const ctrl: GroupControl<GroupControls<V>> = mkControl((c) => {
         const fields: Record<string, BaseControl> = {};
         const rec = v as Record<string, any>;
@@ -411,7 +409,7 @@ export function useFormState<FIELDS extends object>(
   value: ToOptional<GroupValues<FIELDS>>
 ): GroupControl<GroupControls<FIELDS>> {
   return useMemo(() => {
-    return group.createControl(value);
+    return group.createGroup(value);
   }, [group]);
 }
 
