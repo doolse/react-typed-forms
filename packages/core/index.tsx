@@ -66,7 +66,9 @@ export interface FormControl<V> extends BaseControl {
   setValue(v: V): void;
 }
 
-interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
+export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
+
+export interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
   type: "array";
   elems: FIELD[];
   setValue(v: ControlValue<FIELD>[]): void;
@@ -74,7 +76,7 @@ interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
   childDefinition: any;
 }
 
-interface GroupControl<FIELDS> extends BaseControl {
+export interface GroupControl<FIELDS> extends BaseControl {
   type: "group";
   fields: FIELDS;
   setValue(
@@ -97,11 +99,11 @@ type ControlType<T> = T extends ControlDef<infer V>
   : never;
 
 interface ControlDef<V> {
-  createControl: (V: V) => BaseControl;
+  createControl: (V: V) => FormControl<V>;
 }
 
 interface ArrayDef<ELEM> {
-  createControl: (
+  createArray: (
     v: ControlValue<ControlType<ELEM>>
   ) => ArrayControl<ControlType<ELEM>>;
 }
@@ -148,11 +150,9 @@ type AllowedControlForType<V> =
   | (V extends (infer X)[]
       ? ArrayDef<AllowedControlForType<X>>
       : V extends object
-      ? GroupDef<AllowedChildren<V>>
+      ? GroupDef<{ [K in keyof V]-?: AllowedControlForType<V[K]> }>
       : never)
   | ControlDef<V>;
-
-type AllowedChildren<V> = { [K in keyof V]-?: AllowedControlForType<V[K]> };
 
 const baseControl = {
   disabled: false,
@@ -300,7 +300,7 @@ export function ctrl<V>(
 
 export function formArray<V>(child: V): ArrayDef<V> {
   return {
-    createControl(value: any) {
+    createArray(value: any) {
       const ctrl: ArrayControl<ControlType<V>> = mkControl(() => ({
         type: "array",
         elems: [],
@@ -331,6 +331,8 @@ function controlFromDef(
   const l = parentListener(parent);
   var child = cdef.createControl
     ? cdef.createControl(value)
+    : cdef.createArray
+    ? cdef.createArray(value)
     : cdef.createGroup(value);
   addChangeListener(child, l[1], l[0]);
   return child;
@@ -367,7 +369,9 @@ export function group<V extends object>(children: V): GroupDef<V> {
   };
 }
 
-export function formGroup<R>(): <V extends AllowedChildren<R>>(
+export function formGroup<R>(): <
+  V extends { [K in keyof R]-?: AllowedControlForType<R[K]> }
+>(
   children: V
 ) => GroupDef<V> {
   return group;
@@ -548,4 +552,26 @@ export function setErrors<C extends BaseControl>(
   } else if (isGroupControl(ctrl)) {
     setGroupErrors(ctrl, errors as GroupErrors<any>);
   }
+}
+
+export function addFormElement<C extends BaseControl>(
+  arrayControl: ArrayControl<C>,
+  value: ControlValue<C>
+): C {
+  const newCtrl = controlFromDef(
+    arrayControl,
+    arrayControl.childDefinition,
+    value
+  ) as C;
+  arrayControl.elems = [...arrayControl.elems, newCtrl];
+  runChange(arrayControl, NodeChange.Value);
+  return newCtrl;
+}
+
+export function removeFormElement(
+  arrayControl: ArrayControl<any>,
+  index: number
+): void {
+  arrayControl.elems = arrayControl.elems.filter((e, i) => i !== index);
+  runChange(arrayControl, NodeChange.Value);
 }
