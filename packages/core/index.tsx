@@ -52,7 +52,7 @@ export interface BaseControl extends BaseState {
   setValue(v: any): void;
 }
 
-type ControlValue<T> = T extends BaseNode<infer V>
+type ControlValue<T> = T extends FormControl<infer V>
   ? V
   : T extends ArrayControl<infer E>
   ? ControlValue<E>[]
@@ -60,7 +60,7 @@ type ControlValue<T> = T extends BaseNode<infer V>
   ? ToOptional<{ [K in keyof F]: ControlValue<F[K]> }>
   : never;
 
-export interface BaseNode<V> extends BaseControl {
+export interface FormControl<V> extends BaseControl {
   type: "prim";
   value: V;
   setValue(v: V): void;
@@ -85,7 +85,7 @@ interface GroupControl<FIELDS> extends BaseControl {
 }
 
 type ControlType<T> = T extends ControlDef<infer V>
-  ? BaseNode<V>
+  ? FormControl<V>
   : T extends ArrayDef<infer E>
   ? ArrayControl<ControlType<E>>
   : T extends GroupDef<infer F>
@@ -120,7 +120,7 @@ interface GroupDef<FIELDS extends object> {
   ): GroupControl<GroupControls<FIELDS>>;
 }
 
-function isControl(v: BaseControl): v is BaseNode<any> {
+function isControl(v: BaseControl): v is FormControl<any> {
   return v.type === "prim";
 }
 
@@ -275,7 +275,7 @@ export function ctrl<V>(
 ): ControlDef<V> {
   return {
     createControl(value: V) {
-      const ctrl: BaseNode<V> = mkControl(() => ({
+      const ctrl: FormControl<V> = mkControl(() => ({
         type: "prim",
         value,
         setValue: (value: V) => {
@@ -456,12 +456,12 @@ function setArrayErrors(ctrl: ArrayControl<any>, errors: ArrayErrors<any>) {
     errArr = errors.children;
     error = errors.self;
   }
+  setSelfError(ctrl, error);
   ctrl.elems.forEach((n, i) => {
     if (i < errArr.length) {
       setErrors(n, errArr[i]);
     }
   });
-  setSelfError(ctrl, error);
 }
 
 function setGroupErrors(ctrl: GroupControl<any>, errors: GroupErrors<any>) {
@@ -474,12 +474,12 @@ function setGroupErrors(ctrl: GroupControl<any>, errors: GroupErrors<any>) {
     error = undefined;
     errObj = errors;
   }
+  setSelfError(ctrl, error);
   const fields = ctrl.fields;
   for (const k in fields) {
     const field = fields[k];
     setErrors(field, errObj[k] as any);
   }
-  setSelfError(ctrl, error);
 }
 
 function setSelfError(ctrl: BaseControl, error: string | undefined) {

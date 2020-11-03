@@ -2,17 +2,19 @@ import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useMemo, useState } from "react";
 
 import {
-  BaseNode,
+  FormControl,
   useNodeChangeTracker,
   setTouched,
 } from "@react-typed-form/core";
 
+export type FTextFieldProps = {
+  state: FormControl<string | number | undefined>;
+} & TextFieldProps;
+
 export function FTextField({
   state,
   ...others
-}: {
-  state: BaseNode<string | number | undefined>;
-} & TextFieldProps): ReactElement {
+}: FTextFieldProps): ReactElement {
   useNodeChangeTracker(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   return (
