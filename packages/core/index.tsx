@@ -146,11 +146,11 @@ function toValue(ctrl: BaseControl): any {
   }
 }
 
-type AllowedControlForType<V> =
+export type AllowedDef<V> =
   | (V extends (infer X)[]
-      ? ArrayDef<AllowedControlForType<X>>
+      ? ArrayDef<AllowedDef<X>>
       : V extends object
-      ? GroupDef<{ [K in keyof V]-?: AllowedControlForType<V[K]> }>
+      ? GroupDef<{ [K in keyof V]-?: AllowedDef<V[K]> }>
       : never)
   | ControlDef<V>;
 
@@ -370,7 +370,7 @@ export function group<V extends object>(children: V): GroupDef<V> {
 }
 
 export function formGroup<R>(): <
-  V extends { [K in keyof R]-?: AllowedControlForType<R[K]> }
+  V extends { [K in keyof R]-?: AllowedDef<R[K]> }
 >(
   children: V
 ) => GroupDef<V> {
@@ -422,7 +422,7 @@ export function FormArray<V extends BaseControl>({
   children,
 }: {
   state: ArrayControl<V>;
-  children: (state: ArrayControl<V>) => ReactNode;
+  children: (elems: V[]) => ReactNode;
 }) {
   const [_, setChildCount] = useState(state.elems.length);
   const updater = useMemo(
@@ -435,7 +435,7 @@ export function FormArray<V extends BaseControl>({
     addChangeListener(state, updater);
     return () => removeChangeListener(state, updater);
   }, [state]);
-  return <>{children(state)}</>;
+  return <>{children(state.elems)}</>;
 }
 
 function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
