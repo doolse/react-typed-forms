@@ -20,7 +20,7 @@ export function FTextField({
   return (
     <TextField
       {...others}
-      value={state.value === undefined ? "" : state.value}
+      value={state.value || ""}
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
