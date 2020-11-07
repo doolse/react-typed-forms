@@ -25,20 +25,6 @@ export interface BaseState {
   disabled: boolean;
 }
 
-export type ArrayErrors<X> =
-  | { self: string; children: Errors<X>[] }
-  | Errors<X>[];
-
-export type GroupErrors<V> =
-  | [string, { [K in keyof V]?: Errors<V[K]> }]
-  | { [K in keyof V]?: Errors<V[K]> };
-
-export type Errors<V> = V extends (infer X)[]
-  ? ArrayErrors<X>
-  : V extends Record<string, any>
-  ? GroupErrors<V>
-  : string | undefined;
-
 type ChangeListener<C extends BaseControl> = [
   NodeChange,
   (control: C, cb: NodeChange) => void
@@ -450,46 +436,6 @@ function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
   );
 }
 
-function setArrayErrors(ctrl: ArrayControl<any>, errors: ArrayErrors<any>) {
-  var errArr: any[];
-  var error: string | undefined;
-  if (Array.isArray(errors)) {
-    errArr = errors;
-    error = undefined;
-  } else {
-    errArr = errors.children;
-    error = errors.self;
-  }
-  setSelfError(ctrl, error);
-  ctrl.elems.forEach((n, i) => {
-    if (i < errArr.length) {
-      setErrors(n, errArr[i]);
-    }
-  });
-}
-
-function setGroupErrors(ctrl: GroupControl<any>, errors: GroupErrors<any>) {
-  var errObj: Record<string, Errors<any>>;
-  var error: string | undefined;
-  if (Array.isArray(errors)) {
-    error = errors[0];
-    errObj = errors[1];
-  } else {
-    error = undefined;
-    errObj = errors;
-  }
-  setSelfError(ctrl, error);
-  const fields = ctrl.fields;
-  for (const k in fields) {
-    const field = fields[k];
-    setErrors(field, errObj[k] as any);
-  }
-}
-
-function setSelfError(ctrl: BaseControl, error: string | undefined) {
-  runChange(ctrl, updateError(ctrl, error));
-}
-
 function setArrayValue<C extends ArrayControl<any>>(
   ctrl: C,
   value: ControlValue<C>
@@ -541,17 +487,12 @@ export function validate(node: BaseControl) {
   updateAll(node, () => NodeChange.Validate);
 }
 
-export function setErrors<C extends BaseControl>(
-  ctrl: C,
-  errors: Errors<ControlValue<C>>
-) {
-  if (isControl(ctrl)) {
-    setSelfError(ctrl, errors);
-  } else if (isArrayControl(ctrl)) {
-    setArrayErrors(ctrl, errors as ArrayErrors<any>);
-  } else if (isGroupControl(ctrl)) {
-    setGroupErrors(ctrl, errors as GroupErrors<any>);
-  }
+export function clearErrors(node: BaseControl) {
+  updateAll(node, (c) => updateError(c, undefined));
+}
+
+export function setError(node: BaseControl, error: string | undefined) {
+  runChange(node, updateError(node, error));
 }
 
 export function addFormElement<C extends BaseControl>(
@@ -574,4 +515,23 @@ export function removeFormElement(
 ): void {
   arrayControl.elems = arrayControl.elems.filter((e, i) => i !== index);
   runChange(arrayControl, NodeChange.Value);
+}
+
+export function lookupControl(
+  base: BaseControl,
+  path: (string | number)[]
+): BaseControl | null {
+  var index = 0;
+  while (index < path.length && base) {
+    const childId = path[index];
+    if (isGroupControl(base)) {
+      base = base.fields[childId];
+    } else if (isArrayControl(base) && typeof childId == "number") {
+      base = base.elems[childId];
+    } else {
+      return null;
+    }
+    index++;
+  }
+  return base;
 }
