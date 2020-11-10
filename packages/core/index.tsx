@@ -363,7 +363,7 @@ export function formGroup<R>(): <
   return group;
 }
 
-export function useNodeChangeTracker(control: BaseControl) {
+export function useNodeChangeTracker(control: BaseControl, mask?: NodeChange) {
   const [_, setCount] = useState(0);
   const updater = useMemo(
     () => () => {
@@ -372,7 +372,8 @@ export function useNodeChangeTracker(control: BaseControl) {
     []
   );
   useEffect(() => {
-    addChangeListener(control, updater);
+    addChangeListener(control, updater, mask);
+    return () => removeChangeListener(control, updater);
   }, [control]);
 }
 
