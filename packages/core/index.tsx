@@ -370,16 +370,7 @@ export function useNodeChangeTracker(
   mask?: NodeChange
 ): number {
   const [count, setCount] = useState(0);
-  const updater = useMemo(
-    () => () => {
-      setCount((c) => c + 1);
-    },
-    []
-  );
-  useEffect(() => {
-    addChangeListener(control, updater, mask);
-    return () => removeChangeListener(control, updater);
-  }, [control]);
+  useChangeListener(control, () => setCount((c) => c + 1), mask);
   return count;
 }
 
@@ -541,4 +532,16 @@ export function lookupControl(
     index++;
   }
   return base;
+}
+
+export function useChangeListener<Node extends BaseControl>(
+  control: Node,
+  listener: (node: Node, change: NodeChange) => void,
+  mask?: NodeChange
+) {
+  const updater = useMemo(() => listener, []);
+  useEffect(() => {
+    addChangeListener(control, updater, mask);
+    return () => removeChangeListener(control, updater);
+  }, [control]);
 }
