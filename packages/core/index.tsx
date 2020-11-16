@@ -54,6 +54,8 @@ export interface FormControl<V> extends BaseControl {
 
 export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
+export type GroupControlFields<R> = GroupControl<FormFields<R>>;
+
 export interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
   type: "array";
   elems: FIELD[];
@@ -363,8 +365,11 @@ export function formGroup<R>(): <
   return group;
 }
 
-export function useNodeChangeTracker(control: BaseControl, mask?: NodeChange) {
-  const [_, setCount] = useState(0);
+export function useNodeChangeTracker(
+  control: BaseControl,
+  mask?: NodeChange
+): number {
+  const [count, setCount] = useState(0);
   const updater = useMemo(
     () => () => {
       setCount((c) => c + 1);
@@ -375,6 +380,7 @@ export function useNodeChangeTracker(control: BaseControl, mask?: NodeChange) {
     addChangeListener(control, updater, mask);
     return () => removeChangeListener(control, updater);
   }, [control]);
+  return count;
 }
 
 export function addChangeListener<Node extends BaseControl>(

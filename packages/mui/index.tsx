@@ -33,19 +33,25 @@ export function FTextField({
 
 export type FNumberFieldProps = {
   state: FormControl<number | undefined>;
-  invalidError: string;
+  invalidError?: string | undefined;
+  blankError?: string | undefined;
+  invalidValue?: number;
 } & TextFieldProps;
 
 export function FNumberField({
   state,
   invalidError,
+  blankError,
+  invalidValue,
   ...others
 }: FNumberFieldProps): ReactElement {
   useNodeChangeTracker(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
-  const [text, setText] = useState(state.value ?? "");
+  const [text, setText] = useState(state.value?.toString() ?? "");
   useEffect(() => {
-    setText(state.value ?? "");
+    if (state.value || state.value === 0) {
+      setText(state.value.toString());
+    }
   }, [state.value]);
   return (
     <TextField
@@ -56,12 +62,14 @@ export function FNumberField({
       helperText={showError ? state.error : others.helperText}
       onBlur={() => setTouched(state, true)}
       onChange={(e) => {
-        setText(e.currentTarget.value);
-        const value = parseInt(e.currentTarget.value, 10);
+        const textVal = e.currentTarget.value;
+        setText(textVal);
+        const value = parseInt(textVal, 10);
         if (!isNaN(value)) {
           state.setValue(value);
         } else {
-          setError(state, invalidError);
+          state.setValue(invalidValue);
+          setError(state, textVal ? invalidError : blankError);
         }
       }}
     />
