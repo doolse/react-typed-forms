@@ -3,9 +3,10 @@ import React, { ReactElement, useEffect, useMemo, useState } from "react";
 
 import {
   FormControl,
-  useNodeChangeTracker,
+  useFormListener,
   setTouched,
   setError,
+  useFormChangeCount,
 } from "@react-typed-form/core";
 
 export type FTextFieldProps = {
@@ -16,7 +17,7 @@ export function FTextField({
   state,
   ...others
 }: FTextFieldProps): ReactElement {
-  useNodeChangeTracker(state);
+  useFormChangeCount(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   return (
     <TextField
@@ -45,7 +46,7 @@ export function FNumberField({
   invalidValue,
   ...others
 }: FNumberFieldProps): ReactElement {
-  useNodeChangeTracker(state);
+  useFormChangeCount(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   const [text, setText] = useState(state.value?.toString() ?? "");
   useEffect(() => {

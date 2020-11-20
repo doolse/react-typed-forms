@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactElement, FC } from "react";
 import { useMemo, useState, useEffect, ReactNode } from "react";
 
 type UndefinedProperties<T> = {
@@ -365,13 +365,25 @@ export function formGroup<R>(): <
   return group;
 }
 
-export function useNodeChangeTracker(
-  control: BaseControl,
+const CountChanges = (bc: BaseControl, count: number) => count + 1;
+
+export function useFormChangeCount(control: BaseControl, mask?: NodeChange) {
+  return useFormListener(control, 0, CountChanges, mask);
+}
+
+export function useFormListener<V extends BaseControl, S>(
+  control: V,
+  initialState: S,
+  nextState: (state: V, prevState: S) => S,
   mask?: NodeChange
-): number {
-  const [count, setCount] = useState(0);
-  useChangeListener(control, () => setCount((c) => c + 1), mask);
-  return count;
+): S {
+  const [state, setState] = useState(initialState);
+  useChangeListener(
+    control,
+    () => setState((c) => nextState(control, c)),
+    mask
+  );
+  return state;
 }
 
 export function addChangeListener<Node extends BaseControl>(
@@ -401,6 +413,38 @@ export function useFormState<FIELDS extends object>(
   }, [group]);
 }
 
+export function useFormListenerComponent<S, V extends BaseControl>(
+  control: V,
+  initialState: S,
+  nextState: (state: V, prev: S) => S,
+  mask?: NodeChange
+): FC<{ children: (formState: S) => ReactElement }> {
+  return useMemo(
+    () => ({ children }) => {
+      console.log(initialState);
+      const state = useFormListener(
+        control,
+        nextState(control, initialState),
+        nextState,
+        mask
+      );
+      return children(state);
+    },
+    []
+  );
+}
+
+export function useValidListenerComponent(
+  control: BaseControl
+): FC<{ children: (formState: boolean) => ReactElement }> {
+  return useFormListenerComponent(
+    control,
+    control.valid,
+    (c) => c.valid,
+    NodeChange.Valid
+  );
+}
+
 export function FormArray<V extends BaseControl>({
   state,
   children,
@@ -408,17 +452,12 @@ export function FormArray<V extends BaseControl>({
   state: ArrayControl<V>;
   children: (elems: V[]) => ReactNode;
 }) {
-  const [_, setChildCount] = useState(state.elems.length);
-  const updater = useMemo(
-    () => () => {
-      setChildCount(state.elems.length);
-    },
-    [state]
+  useFormListenerComponent(
+    state,
+    state.elems.length,
+    CountChanges,
+    NodeChange.Value
   );
-  useEffect(() => {
-    addChangeListener(state, updater);
-    return () => removeChangeListener(state, updater);
-  }, [state]);
   return <>{children(state.elems)}</>;
 }
 
