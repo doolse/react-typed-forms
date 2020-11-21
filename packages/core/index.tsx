@@ -14,8 +14,9 @@ export enum NodeChange {
   Touched = 4,
   Disabled = 8,
   Error = 16,
-  All = Value | Valid | Touched | Disabled | Error,
-  Validate = 32,
+  Dirty = 32,
+  All = Value | Valid | Touched | Disabled | Error | Dirty,
+  Validate = 64,
 }
 
 export interface BaseState {
@@ -23,6 +24,7 @@ export interface BaseState {
   error: string | undefined;
   touched: boolean;
   disabled: boolean;
+  dirty: boolean;
 }
 
 type ChangeListener<C extends BaseControl> = [
@@ -33,9 +35,10 @@ type ChangeListener<C extends BaseControl> = [
 export interface BaseControl extends BaseState {
   type: string;
   listeners: ChangeListener<any>[];
+  stateVersion: number;
   freezeCount: number;
   frozenChanges: NodeChange;
-  setValue(v: any): void;
+  setValue(v: any, intiial?: boolean): void;
 }
 
 type ControlValue<T> = T extends FormControl<infer V>
@@ -49,7 +52,8 @@ type ControlValue<T> = T extends FormControl<infer V>
 export interface FormControl<V> extends BaseControl {
   type: "prim";
   value: V;
-  setValue(v: V): void;
+  initialValue: V;
+  setValue(v: V, intiial?: boolean): void;
 }
 
 export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
@@ -59,7 +63,8 @@ export type GroupControlFields<R> = GroupControl<FormFields<R>>;
 export interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
   type: "array";
   elems: FIELD[];
-  setValue(v: ControlValue<FIELD>[]): void;
+  initialValueLength: number;
+  setValue(v: ControlValue<FIELD>[], initial?: boolean): void;
   toArray(): ControlValue<FIELD>[];
   childDefinition: any;
 }
@@ -68,7 +73,8 @@ export interface GroupControl<FIELDS> extends BaseControl {
   type: "group";
   fields: FIELDS;
   setValue(
-    value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>
+    value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>,
+    initial?: boolean
   ): void;
   toObject(): { [K in keyof FIELDS]: ControlValue<FIELDS[K]> };
   childrenDefinition: { [K in keyof FIELDS]: any };
@@ -147,9 +153,11 @@ const baseControl = {
   error: undefined,
   touched: false,
   valid: true,
+  dirty: false,
   listeners: [],
   frozenChanges: 0,
   freezeCount: 0,
+  stateVersion: 0,
 };
 
 function mkControl<V>(f: (c: BaseControl) => V): typeof baseControl & V {
@@ -159,6 +167,7 @@ function mkControl<V>(f: (c: BaseControl) => V): typeof baseControl & V {
 
 function runListeners(node: BaseControl, changed: NodeChange) {
   node.frozenChanges = 0;
+  node.stateVersion++;
   node.listeners.forEach(([m, cb]) => {
     if ((m & changed) !== 0) cb(node, changed);
   });
@@ -198,6 +207,14 @@ function updateDisabled(bs: BaseState, disabled: boolean): NodeChange {
   return 0;
 }
 
+function updateDirty(bs: BaseState, dirty: boolean): NodeChange {
+  if (bs.dirty !== dirty) {
+    bs.dirty = dirty;
+    return NodeChange.Dirty;
+  }
+  return 0;
+}
+
 function updateTouched(bs: BaseState, touched: boolean): NodeChange {
   if (bs.touched !== touched) {
     bs.touched = touched;
@@ -208,13 +225,19 @@ function updateTouched(bs: BaseState, touched: boolean): NodeChange {
 
 function parentListener<C extends BaseControl>(parent: C): ChangeListener<C> {
   return [
-    NodeChange.Value | NodeChange.Valid | NodeChange.Touched,
+    NodeChange.Value | NodeChange.Valid | NodeChange.Touched | NodeChange.Dirty,
     (child, change) => {
       var flags: NodeChange = change & NodeChange.Value;
       if (change & NodeChange.Valid) {
         const valid =
           child.valid && !parent.valid && visitChildren(parent, (c) => c.valid);
         flags |= updateValid(parent, valid);
+      }
+      if (change & NodeChange.Dirty) {
+        const dirty =
+          child.dirty ||
+          (parent.dirty && !visitChildren(parent, (c) => !c.dirty));
+        flags |= updateDirty(parent, dirty);
       }
       if (change & NodeChange.Touched) {
         flags |= updateTouched(parent, child.touched || parent.touched);
@@ -266,10 +289,20 @@ export function ctrl<V>(
       const ctrl: FormControl<V> = mkControl(() => ({
         type: "prim",
         value,
-        setValue: (value: V) => {
+        initialValue: value,
+        setValue: (value: V, initial?: boolean) => {
           if (value !== ctrl.value) {
             ctrl.value = value;
-            runChange(ctrl, NodeChange.Value);
+            if (initial) {
+              ctrl.initialValue = value;
+            }
+            runChange(
+              ctrl,
+              NodeChange.Value | updateDirty(ctrl, value !== ctrl.initialValue)
+            );
+          } else if (initial) {
+            ctrl.initialValue = value;
+            runChange(ctrl, updateDirty(ctrl, false));
           }
         },
       }));
@@ -293,8 +326,10 @@ export function formArray<V>(child: V): ArrayDef<V> {
         type: "array",
         elems: [],
         childDefinition: child,
+        initialValueLength: 0,
         toArray: () => ctrl.elems.map((e) => toValue(e)),
-        setValue: (v: any) => setArrayValue(ctrl, v),
+        setValue: (v: any, initial?: boolean) =>
+          setArrayValue(ctrl, v, initial),
       }));
       setArrayValue(ctrl, value);
       return ctrl;
@@ -341,7 +376,8 @@ export function group<V extends object>(children: V): GroupDef<V> {
           type: "group",
           childrenDefinition: children,
           fields: fields as any,
-          setValue: (v: any) => setGroupValue(ctrl, v),
+          setValue: (v: any, initial?: boolean) =>
+            setGroupValue(ctrl, v, initial),
           toObject: () => {
             const rec: Record<string, any> = {};
             for (const k in fields) {
@@ -365,24 +401,17 @@ export function formGroup<R>(): <
   return group;
 }
 
-const CountChanges = (bc: BaseControl, count: number) => count + 1;
-
-export function useFormChangeCount(control: BaseControl, mask?: NodeChange) {
-  return useFormListener(control, 0, CountChanges, mask);
+export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
+  return useFormListener(control, (c) => c.stateVersion, mask);
 }
 
 export function useFormListener<V extends BaseControl, S>(
   control: V,
-  initialState: S,
-  nextState: (state: V, prevState: S) => S,
+  toState: (state: V) => S,
   mask?: NodeChange
 ): S {
-  const [state, setState] = useState(initialState);
-  useChangeListener(
-    control,
-    () => setState((c) => nextState(control, c)),
-    mask
-  );
+  const [state, setState] = useState(toState(control));
+  useChangeListener(control, () => setState(toState(control)), mask);
   return state;
 }
 
@@ -415,33 +444,25 @@ export function useFormState<FIELDS extends object>(
 
 export function useFormListenerComponent<S, V extends BaseControl>(
   control: V,
-  initialState: S,
-  nextState: (state: V, prev: S) => S,
+  toState: (state: V) => S,
   mask?: NodeChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
     () => ({ children }) => {
-      console.log(initialState);
-      const state = useFormListener(
-        control,
-        nextState(control, initialState),
-        nextState,
-        mask
-      );
+      const state = useFormListener(control, toState, mask);
       return children(state);
     },
     []
   );
 }
 
-export function useValidListenerComponent(
+export function useValidChangeComponent(
   control: BaseControl
 ): FC<{ children: (formState: boolean) => ReactElement }> {
   return useFormListenerComponent(
     control,
-    control.valid,
-    (c) => c.valid,
-    NodeChange.Valid
+    (c) => c.valid && c.dirty,
+    NodeChange.Valid | NodeChange.Dirty
   );
 }
 
@@ -452,12 +473,7 @@ export function FormArray<V extends BaseControl>({
   state: ArrayControl<V>;
   children: (elems: V[]) => ReactNode;
 }) {
-  useFormListenerComponent(
-    state,
-    state.elems.length,
-    CountChanges,
-    NodeChange.Value
-  );
+  useFormListener(state, (c) => c.elems.length, NodeChange.Value);
   return <>{children(state.elems)}</>;
 }
 
@@ -475,7 +491,8 @@ function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
 
 function setArrayValue<C extends ArrayControl<any>>(
   ctrl: C,
-  value: ControlValue<C>
+  value: ControlValue<C>,
+  initial?: boolean
 ) {
   groupedChanges(ctrl, () => {
     var flags: NodeChange = 0;
@@ -483,12 +500,18 @@ function setArrayValue<C extends ArrayControl<any>>(
     if (childElems.length !== value.length) {
       flags |= NodeChange.Value;
     }
+    if (initial) {
+      ctrl.initialValueLength = value.length;
+      flags |= updateDirty(ctrl, false);
+    } else {
+      flags |= updateDirty(ctrl, value.length !== ctrl.initialValueLength);
+    }
     value.map((v, i) => {
       if (childElems.length <= i) {
         const newControl = controlFromDef(ctrl, ctrl.childDefinition, v);
         childElems.push(newControl);
       } else {
-        childElems[i].setValue(v);
+        childElems[i].setValue(v, initial);
       }
     });
     const targetLength = value.length;
@@ -502,12 +525,13 @@ function setArrayValue<C extends ArrayControl<any>>(
 
 function setGroupValue<C extends GroupControl<any>>(
   ctrl: C,
-  value: ControlValue<C>
+  value: ControlValue<C>,
+  initial?: boolean
 ) {
   groupedChanges(ctrl, () => {
     const fields = ctrl.fields;
     for (const k in fields) {
-      fields[k].setValue(value[k]);
+      fields[k].setValue(value[k], initial);
     }
   });
 }
@@ -576,11 +600,12 @@ export function lookupControl(
 export function useChangeListener<Node extends BaseControl>(
   control: Node,
   listener: (node: Node, change: NodeChange) => void,
-  mask?: NodeChange
+  mask?: NodeChange,
+  deps?: any[]
 ) {
-  const updater = useMemo(() => listener, []);
+  const updater = useMemo(() => listener, deps ?? []);
   useEffect(() => {
     addChangeListener(control, updater, mask);
     return () => removeChangeListener(control, updater);
-  }, [control]);
+  }, [updater]);
 }
