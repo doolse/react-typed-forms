@@ -230,7 +230,8 @@ function parentListener<C extends BaseControl>(parent: C): ChangeListener<C> {
       var flags: NodeChange = change & NodeChange.Value;
       if (change & NodeChange.Valid) {
         const valid =
-          child.valid && !parent.valid && visitChildren(parent, (c) => c.valid);
+          child.valid &&
+          (parent.valid || visitChildren(parent, (c) => c.valid));
         flags |= updateValid(parent, valid);
       }
       if (change & NodeChange.Dirty) {
