@@ -1,13 +1,7 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
-import React, { ReactElement, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 
-import {
-  FormControl,
-  useFormListener,
-  setTouched,
-  setError,
-  useFormStateVersion,
-} from "@react-typed-form/core";
+import { FormControl, useFormStateVersion } from "@react-typed-form/core";
 
 export type FTextFieldProps = {
   state: FormControl<string | undefined>;
@@ -26,7 +20,7 @@ export function FTextField({
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
-      onBlur={() => setTouched(state, true)}
+      onBlur={() => state.setTouched(true)}
       onChange={(e) => state.setValue(e.currentTarget.value)}
     />
   );
@@ -57,13 +51,13 @@ export function FNumberField({
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
-      onBlur={() => setTouched(state, true)}
+      onBlur={() => state.setTouched(true)}
       onChange={(e) => {
         const textVal = e.currentTarget.value;
         setText(textVal);
         if (!textVal) {
           if (blankError) {
-            setError(state, blankError);
+            state.setError(blankError);
           } else {
             state.setValue(null);
           }
@@ -72,7 +66,7 @@ export function FNumberField({
           if (!isNaN(value)) {
             state.setValue(value);
           } else {
-            setError(state, invalidError);
+            state.setError(invalidError);
           }
         }
       }}

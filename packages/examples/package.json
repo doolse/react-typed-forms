@@ -1,0 +1,33 @@
+{
+  "name": "@react-typed-form/example",
+  "private": true,
+  "version": "1.0.0-alpha.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "yalc": "tsc && yalc publish --push",
+    "run": "parcel index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doolse/react-typed-form.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/doolse/react-typed-form/issues"
+  },
+  "homepage": "https://github.com/doolse/react-typed-form#readme",
+  "dependencies": {
+    "@react-typed-form/core": "1.0.0-alpha.0",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "parcel": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

@@ -1,4 +1,4 @@
-import React, { ReactElement, FC } from "react";
+import React, { ReactElement, FC, useRef } from "react";
 import { useMemo, useState, useEffect, ReactNode } from "react";
 
 type UndefinedProperties<T> = {
@@ -19,26 +19,206 @@ export enum NodeChange {
   Validate = 64,
 }
 
-export interface BaseState {
-  valid: boolean;
-  error: string | undefined;
-  touched: boolean;
-  disabled: boolean;
-  dirty: boolean;
-}
-
 type ChangeListener<C extends BaseControl> = [
   NodeChange,
   (control: C, cb: NodeChange) => void
 ];
 
-export interface BaseControl extends BaseState {
-  type: string;
-  listeners: ChangeListener<any>[];
-  stateVersion: number;
-  freezeCount: number;
-  frozenChanges: NodeChange;
-  setValue(v: any, intiial?: boolean): void;
+export abstract class BaseControl {
+  valid: boolean = true;
+  error: string | undefined;
+  touched: boolean = false;
+  disabled: boolean = false;
+  dirty: boolean = false;
+  listeners: ChangeListener<any>[] = [];
+  stateVersion: number = 0;
+  freezeCount: number = 0;
+  frozenChanges: NodeChange = 0;
+  abstract visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean;
+
+  protected updateError(error: string | undefined): NodeChange {
+    if (this.error !== error) {
+      this.error = error;
+      return NodeChange.Error | this.updateValid(!Boolean(error));
+    }
+    return this.updateValid(!Boolean(error));
+  }
+
+  protected updateValid(valid: boolean): NodeChange {
+    if (this.valid !== valid) {
+      this.valid = valid;
+      return NodeChange.Valid;
+    }
+    return 0;
+  }
+
+  protected updateDisabled(disabled: boolean): NodeChange {
+    if (this.disabled !== disabled) {
+      this.disabled = disabled;
+      return NodeChange.Disabled;
+    }
+    return 0;
+  }
+
+  protected updateDirty(dirty: boolean): NodeChange {
+    if (this.dirty !== dirty) {
+      this.dirty = dirty;
+      return NodeChange.Dirty;
+    }
+    return 0;
+  }
+
+  protected updateTouched(touched: boolean): NodeChange {
+    if (this.touched !== touched) {
+      this.touched = touched;
+      return NodeChange.Touched;
+    }
+    return 0;
+  }
+
+  private runListeners(changed: NodeChange) {
+    this.frozenChanges = 0;
+    this.stateVersion++;
+    this.listeners.forEach(([m, cb]) => {
+      if ((m & changed) !== 0) cb(this, changed);
+    });
+  }
+
+  protected runChange(changed: NodeChange) {
+    if (changed) {
+      if (this.freezeCount === 0) {
+        this.runListeners(changed);
+      } else {
+        this.frozenChanges |= changed;
+      }
+    }
+  }
+
+  protected groupedChanges(run: () => void) {
+    this.freezeCount++;
+    run();
+    this.freezeCount--;
+    if (this.freezeCount === 0) {
+      this.runListeners(this.frozenChanges);
+    }
+  }
+
+  protected parentListener(): ChangeListener<BaseControl> {
+    return [
+      NodeChange.Value |
+        NodeChange.Valid |
+        NodeChange.Touched |
+        NodeChange.Dirty,
+      (child, change) => {
+        var flags: NodeChange = change & NodeChange.Value;
+        if (change & NodeChange.Valid) {
+          const valid =
+            child.valid && (this.valid || this.visitChildren((c) => c.valid));
+          flags |= this.updateValid(valid);
+        }
+        if (change & NodeChange.Dirty) {
+          const dirty =
+            child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
+          flags |= this.updateDirty(dirty);
+        }
+        if (change & NodeChange.Touched) {
+          flags |= this.updateTouched(child.touched || this.touched);
+        }
+        this.runChange(flags);
+      },
+    ];
+  }
+
+  protected controlFromDef(cdef: any, value: any): BaseControl {
+    const l = this.parentListener();
+    var child = cdef.createControl
+      ? cdef.createControl(value)
+      : cdef.createArray
+      ? cdef.createArray(value)
+      : cdef.createGroup(value);
+    child.addChangeListener(l[1], l[0]);
+    return child;
+  }
+
+  addChangeListener(
+    listener: (node: this, change: NodeChange) => void,
+    mask?: NodeChange
+  ) {
+    this.listeners = [
+      ...this.listeners,
+      [mask ? mask : NodeChange.All, listener],
+    ];
+  }
+
+  removeChangeListener(listener: (node: this, change: NodeChange) => void) {
+    this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
+  }
+
+  protected updateAll(change: (c: BaseControl) => NodeChange) {
+    this.visitChildren(
+      (c) => {
+        c.runChange(change(c));
+        return true;
+      },
+      true,
+      true
+    );
+  }
+
+  setDisabled(disabled: boolean) {
+    this.updateAll((c) => c.updateDisabled(disabled));
+  }
+
+  setTouched(touched: boolean) {
+    this.updateAll((c) => c.updateTouched(touched));
+  }
+
+  validate() {
+    this.updateAll(() => NodeChange.Validate);
+  }
+
+  clearErrors() {
+    this.updateAll((c) => c.updateError(undefined));
+  }
+
+  setError(error: string | undefined) {
+    this.runChange(this.updateError(error));
+  }
+
+  lookupControl(path: (string | number)[]): BaseControl | null {
+    var base = this;
+    var index = 0;
+    while (index < path.length && base) {
+      const childId = path[index];
+      if (base instanceof GroupControl) {
+        base = base.fields[childId];
+      } else if (base instanceof ArrayControl && typeof childId == "number") {
+        base = base.elems[childId];
+      } else {
+        return null;
+      }
+      index++;
+    }
+    return base;
+  }
+}
+
+function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
+  (ctrl as any).setValue(v, initial);
+}
+
+function toValueUnsafe(ctrl: BaseControl): any {
+  return ctrl instanceof FormControl
+    ? ctrl.value
+    : ctrl instanceof ArrayControl
+    ? ctrl.toArray()
+    : ctrl instanceof GroupControl
+    ? ctrl.toObject()
+    : undefined;
 }
 
 type ControlValue<T> = T extends FormControl<infer V>
@@ -49,35 +229,178 @@ type ControlValue<T> = T extends FormControl<infer V>
   ? ToOptional<{ [K in keyof F]: ControlValue<F[K]> }>
   : never;
 
-export interface FormControl<V> extends BaseControl {
-  type: "prim";
-  value: V;
+export class FormControl<V> extends BaseControl {
+  lookupControl(path: (string | number)[]): BaseControl | null {
+    return null;
+  }
   initialValue: V;
-  setValue(v: V, intiial?: boolean): void;
+
+  constructor(public value: V, validator?: (v: V) => string | undefined) {
+    super();
+    this.initialValue = value;
+    this.addChangeListener(() => {
+      const error = validator?.(this.value);
+      this.runChange(this.updateError(error));
+    }, NodeChange.Value | NodeChange.Validate);
+  }
+
+  setValue(v: V, initial?: boolean): void {
+    if (v !== this.value) {
+      this.value = v;
+      if (initial) {
+        this.initialValue = v;
+      }
+      this.runChange(
+        NodeChange.Value | this.updateDirty(v !== this.initialValue)
+      );
+    } else if (initial) {
+      this.initialValue = v;
+      this.runChange(this.updateDirty(false));
+    }
+  }
+
+  visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean {
+    return !doSelf || visit(this);
+  }
 }
 
 export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
 export type GroupControlFields<R> = GroupControl<FormFields<R>>;
 
-export interface ArrayControl<FIELD extends BaseControl> extends BaseControl {
-  type: "array";
-  elems: FIELD[];
-  initialValueLength: number;
-  setValue(v: ControlValue<FIELD>[], initial?: boolean): void;
-  toArray(): ControlValue<FIELD>[];
-  childDefinition: any;
+export class ArrayControl<FIELD extends BaseControl> extends BaseControl {
+  elems: FIELD[] = [];
+  initialValueLength: number = 0;
+
+  constructor(private childDefinition: any) {
+    super();
+  }
+
+  setValue(value: ControlValue<FIELD>[], initial?: boolean): void {
+    this.groupedChanges(() => {
+      var flags: NodeChange = 0;
+      const childElems = this.elems;
+      if (childElems.length !== value.length) {
+        flags |= NodeChange.Value;
+      }
+      if (initial) {
+        this.initialValueLength = value.length;
+        flags |= this.updateDirty(false);
+      } else {
+        flags |= this.updateDirty(value.length !== this.initialValueLength);
+      }
+      value.map((v, i) => {
+        if (childElems.length <= i) {
+          const newControl = this.controlFromDef(this.childDefinition, v);
+          childElems.push(newControl as FIELD);
+        } else {
+          setValueUnsafe(childElems[i], v, initial);
+        }
+      });
+      const targetLength = value.length;
+      const actualLength = childElems.length;
+      if (targetLength !== actualLength) {
+        childElems.splice(targetLength, actualLength - targetLength);
+      }
+      this.runChange(flags);
+    });
+  }
+
+  toArray(): ControlValue<FIELD>[] {
+    return this.elems.map((e) => toValueUnsafe(e));
+  }
+
+  visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean {
+    if (doSelf && !visit(this)) {
+      return false;
+    }
+    if (!this.elems.every(visit)) {
+      return false;
+    }
+    if (recurse) {
+      return this.elems.every((c) => c.visitChildren(visit, false, true));
+    }
+    return true;
+  }
+
+  addFormElement(value: ControlValue<FIELD>): FIELD {
+    const newCtrl = this.controlFromDef(this.childDefinition, value) as FIELD;
+    this.elems = [...this.elems, newCtrl];
+    this.runChange(NodeChange.Value);
+    return newCtrl;
+  }
+
+  removeFormElement(index: number): void {
+    this.elems = this.elems.filter((e, i) => i !== index);
+    this.runChange(NodeChange.Value);
+  }
 }
 
-export interface GroupControl<FIELDS> extends BaseControl {
-  type: "group";
+export class GroupControl<
+  FIELDS extends { [k: string]: BaseControl }
+> extends BaseControl {
   fields: FIELDS;
+
+  constructor(children: FIELDS, v: GroupValues<FIELDS>) {
+    super();
+    const fields: Record<string, BaseControl> = {};
+    const rec = v as Record<string, any>;
+    for (const k in children) {
+      const cdef = children[k];
+      const value = rec[k];
+      fields[k] = this.controlFromDef(cdef, value);
+    }
+    this.fields = (fields as unknown) as FIELDS;
+  }
+
+  visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean {
+    if (doSelf && !visit(this)) {
+      return false;
+    }
+    const fields = this.fields;
+    for (const k in fields) {
+      if (!visit(fields[k])) {
+        return false;
+      }
+      if (recurse && !fields[k].visitChildren(visit, false, true)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   setValue(
     value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>,
     initial?: boolean
-  ): void;
-  toObject(): { [K in keyof FIELDS]: ControlValue<FIELDS[K]> };
-  childrenDefinition: { [K in keyof FIELDS]: any };
+  ): void {
+    this.groupedChanges(() => {
+      const fields = this.fields;
+      for (const k in fields) {
+        setValueUnsafe(fields[k], (value as any)[k], initial);
+      }
+    });
+  }
+
+  toObject(): { [K in keyof FIELDS]: ControlValue<FIELDS[K]> } {
+    const rec: Record<string, any> = {};
+    for (const k in this.fields) {
+      const bctrl = this.fields[k];
+      rec[k] = toValueUnsafe(bctrl);
+    }
+    return rec as any;
+  }
 }
 
 type ControlType<T> = T extends ControlDef<infer V>
@@ -116,30 +439,6 @@ interface GroupDef<FIELDS extends object> {
   ): GroupControl<GroupControls<FIELDS>>;
 }
 
-function isControl(v: BaseControl): v is FormControl<any> {
-  return v.type === "prim";
-}
-
-function isArrayControl(v: BaseControl): v is ArrayControl<any> {
-  return v.type === "array";
-}
-
-function isGroupControl(v: BaseControl): v is GroupControl<any> {
-  return v.type === "group";
-}
-
-function toValue(ctrl: BaseControl): any {
-  if (isControl(ctrl)) {
-    return ctrl.value;
-  }
-  if (isArrayControl(ctrl)) {
-    return ctrl.toArray();
-  }
-  if (isGroupControl(ctrl)) {
-    return ctrl.toObject();
-  }
-}
-
 export type AllowedDef<V> =
   | (V extends (infer X)[]
       ? ArrayDef<AllowedDef<X>>
@@ -148,249 +447,27 @@ export type AllowedDef<V> =
       : never)
   | ControlDef<V>;
 
-const baseControl = {
-  disabled: false,
-  error: undefined,
-  touched: false,
-  valid: true,
-  dirty: false,
-  listeners: [],
-  frozenChanges: 0,
-  freezeCount: 0,
-  stateVersion: 0,
-};
-
-function mkControl<V>(f: (c: BaseControl) => V): typeof baseControl & V {
-  const base = { ...baseControl };
-  return Object.assign(base, f(base as any));
-}
-
-function runListeners(node: BaseControl, changed: NodeChange) {
-  node.frozenChanges = 0;
-  node.stateVersion++;
-  node.listeners.forEach(([m, cb]) => {
-    if ((m & changed) !== 0) cb(node, changed);
-  });
-}
-
-function runChange(node: BaseControl, changed: NodeChange) {
-  if (changed) {
-    if (node.freezeCount === 0) {
-      runListeners(node, changed);
-    } else {
-      node.frozenChanges |= changed;
-    }
-  }
-}
-
-function updateError(bs: BaseState, error: string | undefined): NodeChange {
-  if (bs.error !== error) {
-    bs.error = error;
-    return NodeChange.Error | updateValid(bs, !Boolean(error));
-  }
-  return updateValid(bs, !Boolean(error));
-}
-
-function updateValid(bs: BaseState, valid: boolean): NodeChange {
-  if (bs.valid !== valid) {
-    bs.valid = valid;
-    return NodeChange.Valid;
-  }
-  return 0;
-}
-
-function updateDisabled(bs: BaseState, disabled: boolean): NodeChange {
-  if (bs.disabled !== disabled) {
-    bs.disabled = disabled;
-    return NodeChange.Disabled;
-  }
-  return 0;
-}
-
-function updateDirty(bs: BaseState, dirty: boolean): NodeChange {
-  if (bs.dirty !== dirty) {
-    bs.dirty = dirty;
-    return NodeChange.Dirty;
-  }
-  return 0;
-}
-
-function updateTouched(bs: BaseState, touched: boolean): NodeChange {
-  if (bs.touched !== touched) {
-    bs.touched = touched;
-    return NodeChange.Touched;
-  }
-  return 0;
-}
-
-function parentListener<C extends BaseControl>(parent: C): ChangeListener<C> {
-  return [
-    NodeChange.Value | NodeChange.Valid | NodeChange.Touched | NodeChange.Dirty,
-    (child, change) => {
-      var flags: NodeChange = change & NodeChange.Value;
-      if (change & NodeChange.Valid) {
-        const valid =
-          child.valid &&
-          (parent.valid || visitChildren(parent, (c) => c.valid));
-        flags |= updateValid(parent, valid);
-      }
-      if (change & NodeChange.Dirty) {
-        const dirty =
-          child.dirty ||
-          (parent.dirty && !visitChildren(parent, (c) => !c.dirty));
-        flags |= updateDirty(parent, dirty);
-      }
-      if (change & NodeChange.Touched) {
-        flags |= updateTouched(parent, child.touched || parent.touched);
-      }
-      runChange(parent, flags);
-    },
-  ];
-}
-
-function visitChildren(
-  parent: BaseControl,
-  visit: (c: BaseControl) => boolean,
-  doSelf?: boolean,
-  recurse?: boolean
-): boolean {
-  if (doSelf && !visit(parent)) {
-    return false;
-  }
-  if (isArrayControl(parent)) {
-    if (!parent.elems.every(visit)) {
-      return false;
-    }
-    if (recurse) {
-      return parent.elems.every((c) => visitChildren(c, visit, false, true));
-    }
-    return true;
-  } else if (isGroupControl(parent)) {
-    const fields = parent.fields;
-    for (const k in fields) {
-      if (!visit(fields[k])) {
-        return false;
-      }
-      if (recurse) {
-        if (!visitChildren(fields[k], visit, false, true)) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-  return true;
-}
-
 export function ctrl<V>(
   validator?: (v: V) => string | undefined
 ): ControlDef<V> {
   return {
-    createControl(value: V) {
-      const ctrl: FormControl<V> = mkControl(() => ({
-        type: "prim",
-        value,
-        initialValue: value,
-        setValue: (value: V, initial?: boolean) => {
-          if (value !== ctrl.value) {
-            ctrl.value = value;
-            if (initial) {
-              ctrl.initialValue = value;
-            }
-            runChange(
-              ctrl,
-              NodeChange.Value | updateDirty(ctrl, value !== ctrl.initialValue)
-            );
-          } else if (initial) {
-            ctrl.initialValue = value;
-            runChange(ctrl, updateDirty(ctrl, false));
-          }
-        },
-      }));
-      addChangeListener(
-        ctrl,
-        (n, c) => {
-          const error = validator?.(ctrl.value);
-          runChange(n, updateError(ctrl, error));
-        },
-        NodeChange.Value | NodeChange.Validate
-      );
-      return ctrl;
-    },
+    createControl: (value: V) => new FormControl<V>(value, validator),
   };
 }
 
-export function formArray<V>(child: V): ArrayDef<V> {
+export function formArray<CHILD>(child: CHILD): ArrayDef<CHILD> {
   return {
-    createArray(value: any) {
-      const ctrl: ArrayControl<ControlType<V>> = mkControl(() => ({
-        type: "array",
-        elems: [],
-        childDefinition: child,
-        initialValueLength: 0,
-        toArray: () => ctrl.elems.map((e) => toValue(e)),
-        setValue: (v: any, initial?: boolean) =>
-          setArrayValue(ctrl, v, initial),
-      }));
-      setArrayValue(ctrl, value);
-      return ctrl;
+    createArray: (value: any) => {
+      const arrayCtrl = new ArrayControl<any>(child);
+      arrayCtrl.setValue(value);
+      return arrayCtrl;
     },
   };
-}
-
-function groupedChanges(node: BaseControl, run: () => void) {
-  node.freezeCount++;
-  run();
-  node.freezeCount--;
-  if (node.freezeCount === 0) {
-    runListeners(node, node.frozenChanges);
-  }
-}
-
-function controlFromDef(
-  parent: BaseControl,
-  cdef: any,
-  value: any
-): BaseControl {
-  const l = parentListener(parent);
-  var child = cdef.createControl
-    ? cdef.createControl(value)
-    : cdef.createArray
-    ? cdef.createArray(value)
-    : cdef.createGroup(value);
-  addChangeListener(child, l[1], l[0]);
-  return child;
 }
 
 export function group<V extends object>(children: V): GroupDef<V> {
   return {
-    createGroup(v: GroupValues<V>) {
-      const ctrl: GroupControl<GroupControls<V>> = mkControl((c) => {
-        const fields: Record<string, BaseControl> = {};
-        const rec = v as Record<string, any>;
-        for (const k in children) {
-          const cdef = children[k];
-          const value = rec[k];
-          fields[k] = controlFromDef(c, cdef, value);
-        }
-        return {
-          type: "group",
-          childrenDefinition: children,
-          fields: fields as any,
-          setValue: (v: any, initial?: boolean) =>
-            setGroupValue(ctrl, v, initial),
-          toObject: () => {
-            const rec: Record<string, any> = {};
-            for (const k in fields) {
-              const bctrl = fields[k];
-              rec[k] = toValue(bctrl);
-            }
-            return rec as any;
-          },
-        };
-      });
-      return ctrl;
-    },
+    createGroup: (v: GroupValues<V>) => new GroupControl<any>(children, v),
   };
 }
 
@@ -414,24 +491,6 @@ export function useFormListener<V extends BaseControl, S>(
   const [state, setState] = useState(toState(control));
   useChangeListener(control, () => setState(toState(control)), mask);
   return state;
-}
-
-export function addChangeListener<Node extends BaseControl>(
-  control: Node,
-  listener: (node: Node, change: NodeChange) => void,
-  mask?: NodeChange
-) {
-  control.listeners = [
-    ...control.listeners,
-    [mask ? mask : NodeChange.All, listener],
-  ];
-}
-
-export function removeChangeListener<Node extends BaseControl>(
-  control: Node,
-  listener: (node: Node, change: NodeChange) => void
-) {
-  control.listeners = control.listeners.filter((cl) => cl[1] !== listener);
 }
 
 export function useFormState<FIELDS extends object>(
@@ -478,126 +537,6 @@ export function FormArray<V extends BaseControl>({
   return <>{children(state.elems)}</>;
 }
 
-function updateAll(node: BaseControl, change: (c: BaseControl) => NodeChange) {
-  visitChildren(
-    node,
-    (c) => {
-      runChange(c, change(c));
-      return true;
-    },
-    true,
-    true
-  );
-}
-
-function setArrayValue<C extends ArrayControl<any>>(
-  ctrl: C,
-  value: ControlValue<C>,
-  initial?: boolean
-) {
-  groupedChanges(ctrl, () => {
-    var flags: NodeChange = 0;
-    const childElems = ctrl.elems;
-    if (childElems.length !== value.length) {
-      flags |= NodeChange.Value;
-    }
-    if (initial) {
-      ctrl.initialValueLength = value.length;
-      flags |= updateDirty(ctrl, false);
-    } else {
-      flags |= updateDirty(ctrl, value.length !== ctrl.initialValueLength);
-    }
-    value.map((v, i) => {
-      if (childElems.length <= i) {
-        const newControl = controlFromDef(ctrl, ctrl.childDefinition, v);
-        childElems.push(newControl);
-      } else {
-        childElems[i].setValue(v, initial);
-      }
-    });
-    const targetLength = value.length;
-    const actualLength = childElems.length;
-    if (targetLength !== actualLength) {
-      childElems.splice(targetLength, actualLength - targetLength);
-    }
-    runChange(ctrl, flags);
-  });
-}
-
-function setGroupValue<C extends GroupControl<any>>(
-  ctrl: C,
-  value: ControlValue<C>,
-  initial?: boolean
-) {
-  groupedChanges(ctrl, () => {
-    const fields = ctrl.fields;
-    for (const k in fields) {
-      fields[k].setValue(value[k], initial);
-    }
-  });
-}
-
-export function setDisabled(node: BaseControl, disabled: boolean) {
-  updateAll(node, (c) => updateDisabled(c, disabled));
-}
-
-export function setTouched(node: BaseControl, touched: boolean) {
-  updateAll(node, (c) => updateTouched(c, touched));
-}
-
-export function validate(node: BaseControl) {
-  updateAll(node, () => NodeChange.Validate);
-}
-
-export function clearErrors(node: BaseControl) {
-  updateAll(node, (c) => updateError(c, undefined));
-}
-
-export function setError(node: BaseControl, error: string | undefined) {
-  runChange(node, updateError(node, error));
-}
-
-export function addFormElement<C extends BaseControl>(
-  arrayControl: ArrayControl<C>,
-  value: ControlValue<C>
-): C {
-  const newCtrl = controlFromDef(
-    arrayControl,
-    arrayControl.childDefinition,
-    value
-  ) as C;
-  arrayControl.elems = [...arrayControl.elems, newCtrl];
-  runChange(arrayControl, NodeChange.Value);
-  return newCtrl;
-}
-
-export function removeFormElement(
-  arrayControl: ArrayControl<any>,
-  index: number
-): void {
-  arrayControl.elems = arrayControl.elems.filter((e, i) => i !== index);
-  runChange(arrayControl, NodeChange.Value);
-}
-
-export function lookupControl(
-  base: BaseControl,
-  path: (string | number)[]
-): BaseControl | null {
-  var index = 0;
-  while (index < path.length && base) {
-    const childId = path[index];
-    if (isGroupControl(base)) {
-      base = base.fields[childId];
-    } else if (isArrayControl(base) && typeof childId == "number") {
-      base = base.elems[childId];
-    } else {
-      return null;
-    }
-    index++;
-  }
-  return base;
-}
-
 export function useChangeListener<Node extends BaseControl>(
   control: Node,
   listener: (node: Node, change: NodeChange) => void,
@@ -606,7 +545,37 @@ export function useChangeListener<Node extends BaseControl>(
 ) {
   const updater = useMemo(() => listener, deps ?? []);
   useEffect(() => {
-    addChangeListener(control, updater, mask);
-    return () => removeChangeListener(control, updater);
+    control.addChangeListener(updater, mask);
+    return () => control.removeChangeListener(updater);
   }, [updater]);
+}
+
+export function Finput({
+  state,
+  ...others
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  state: FormControl<string | number>;
+}) {
+  useFormStateVersion(state);
+  const [domRef, setDomRef] = useState<HTMLInputElement>();
+  function updateError(elem: HTMLInputElement) {
+    const isShowError = state.touched && !state.valid && Boolean(state.error);
+    elem.setCustomValidity(isShowError ? state.error! : "");
+    elem.reportValidity();
+  }
+  useEffect(() => {
+    if (domRef) {
+      updateError(domRef);
+    }
+  }, [domRef, state.error, state.touched, state.valid]);
+  return (
+    <input
+      ref={(d) => setDomRef(d!)}
+      value={state.value}
+      disabled={state.disabled}
+      onChange={(e) => state.setValue(e.currentTarget.value)}
+      onBlur={() => state.setTouched(true)}
+      {...others}
+    />
+  );
 }
