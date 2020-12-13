@@ -13,13 +13,16 @@ const FormDef = formGroup<SimpleForm>()({
   username: ctrl((v) => (!v ? "Please fill this in" : undefined)),
 });
 
+let renders = 0;
+
 export function BasicFormExample() {
+  renders++;
   const formState = useFormState(FormDef, { username: "", password: "" });
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (
     <div className="container">
-      <h2>Basic Form Example</h2>
+      <h2>Basic Form Example - {renders} render(s)</h2>
       <div className="form-group">
         <label>Username:</label>
         <Finput type="text" className="form-control" state={fields.username} />
@@ -35,12 +38,6 @@ export function BasicFormExample() {
       <div>
         <button
           className="btn btn-secondary"
-          onClick={() => formState.setTouched(true)}
-        >
-          Mark as touched
-        </button>{" "}
-        <button
-          className="btn btn-secondary"
           onClick={() => formState.setDisabled(!formState.disabled)}
         >
           Toggle disabled
@@ -52,7 +49,9 @@ export function BasicFormExample() {
           toObject()
         </button>
       </div>
-      {formData && <pre>{JSON.stringify(formData)}</pre>}
+      {formData && (
+        <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>
+      )}
     </div>
   );
 }

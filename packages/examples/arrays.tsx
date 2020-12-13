@@ -28,7 +28,7 @@ export function ArraysExample() {
   const [formData, setFormData] = useState<MainForm>();
   return (
     <div className="container">
-      <h2>Arrays Example - {renders} renders</h2>
+      <h2>Arrays Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Strings</h5>
         <FormArray state={fields.strings}>
@@ -89,19 +89,15 @@ export function ArraysExample() {
         <div>
           <button
             className="btn"
-            onClick={() => fields.structured.addFormElement({id:"", name:"")}
+            onClick={() =>
+              fields.structured.addFormElement({ id: "", name: "" })
+            }
           >
             Add
           </button>
         </div>
       </div>
       <div>
-        <button
-          className="btn btn-secondary"
-          onClick={() => formState.setTouched(true)}
-        >
-          Mark as touched
-        </button>{" "}
         <button
           className="btn btn-secondary"
           onClick={() => formState.setDisabled(!formState.disabled)}
@@ -115,7 +111,9 @@ export function ArraysExample() {
           toObject()
         </button>
       </div>
-      {formData && <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>}
+      {formData && (
+        <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>
+      )}
     </div>
   );
 }

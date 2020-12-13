@@ -8,7 +8,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "docs": "typedoc --out docs"
+    "docs": "typedoc --stripInternal --out docs"
   },
   "repository": {
     "type": "git",

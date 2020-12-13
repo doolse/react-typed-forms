@@ -27,17 +27,34 @@ export abstract class BaseControl {
   touched: boolean = false;
   disabled: boolean = false;
   dirty: boolean = false;
+
+  /**
+   * @internal 
+   */
   listeners: ChangeListener<any>[] = [];
   stateVersion: number = 0;
+  /**
+   * @internal
+   */
   freezeCount: number = 0;
+  /**
+   * @internal 
+   */
   frozenChanges: NodeChange = 0;
+
+  /**
+   * @internal 
+   */
   abstract visitChildren(
     visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean;
 
-  protected updateError(error: string | undefined): NodeChange {
+  /**
+   * @internal
+   */
+  updateError(error: string | undefined): NodeChange {
     if (this.error !== error) {
       this.error = error;
       return NodeChange.Error | this.updateValid(!Boolean(error));
@@ -45,7 +62,10 @@ export abstract class BaseControl {
     return this.updateValid(!Boolean(error));
   }
 
-  protected updateValid(valid: boolean): NodeChange {
+  /**
+   * @internal
+   */
+  updateValid(valid: boolean): NodeChange {
     if (this.valid !== valid) {
       this.valid = valid;
       return NodeChange.Valid;
@@ -53,7 +73,10 @@ export abstract class BaseControl {
     return 0;
   }
 
-  protected updateDisabled(disabled: boolean): NodeChange {
+  /**
+   * @internal
+   */
+  updateDisabled(disabled: boolean): NodeChange {
     if (this.disabled !== disabled) {
       this.disabled = disabled;
       return NodeChange.Disabled;
@@ -61,7 +84,10 @@ export abstract class BaseControl {
     return 0;
   }
 
-  protected updateDirty(dirty: boolean): NodeChange {
+  /**
+   * @internal
+   */
+  updateDirty(dirty: boolean): NodeChange {
     if (this.dirty !== dirty) {
       this.dirty = dirty;
       return NodeChange.Dirty;
@@ -69,7 +95,10 @@ export abstract class BaseControl {
     return 0;
   }
 
-  protected updateTouched(touched: boolean): NodeChange {
+  /**
+   * @internal
+   */
+  updateTouched(touched: boolean): NodeChange {
     if (this.touched !== touched) {
       this.touched = touched;
       return NodeChange.Touched;
@@ -77,6 +106,9 @@ export abstract class BaseControl {
     return 0;
   }
 
+  /**
+   * @internal 
+   */
   private runListeners(changed: NodeChange) {
     this.frozenChanges = 0;
     this.stateVersion++;
@@ -85,7 +117,10 @@ export abstract class BaseControl {
     });
   }
 
-  protected runChange(changed: NodeChange) {
+  /**
+   * @internal
+   */
+  runChange(changed: NodeChange) {
     if (changed) {
       if (this.freezeCount === 0) {
         this.runListeners(changed);
@@ -95,50 +130,16 @@ export abstract class BaseControl {
     }
   }
 
+  /**
+   * @internal 
+   */
   protected groupedChanges(run: () => void) {
     this.freezeCount++;
     run();
     this.freezeCount--;
-    if (this.freezeCount === 0) {
+    if (this.freezeCount === 0 && this.frozenChanges) {
       this.runListeners(this.frozenChanges);
     }
-  }
-
-  protected parentListener(): ChangeListener<BaseControl> {
-    return [
-      NodeChange.Value |
-        NodeChange.Valid |
-        NodeChange.Touched |
-        NodeChange.Dirty,
-      (child, change) => {
-        var flags: NodeChange = change & NodeChange.Value;
-        if (change & NodeChange.Valid) {
-          const valid =
-            child.valid && (this.valid || this.visitChildren((c) => c.valid));
-          flags |= this.updateValid(valid);
-        }
-        if (change & NodeChange.Dirty) {
-          const dirty =
-            child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
-          flags |= this.updateDirty(dirty);
-        }
-        if (change & NodeChange.Touched) {
-          flags |= this.updateTouched(child.touched || this.touched);
-        }
-        this.runChange(flags);
-      },
-    ];
-  }
-
-  protected controlFromDef(cdef: any, value: any): BaseControl {
-    const l = this.parentListener();
-    var child = cdef.createControl
-      ? cdef.createControl(value)
-      : cdef.createArray
-      ? cdef.createArray(value)
-      : cdef.createGroup(value);
-    child.addChangeListener(l[1], l[0]);
-    return child;
   }
 
   addChangeListener(
@@ -155,53 +156,11 @@ export abstract class BaseControl {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
-  protected updateAll(change: (c: BaseControl) => NodeChange) {
-    this.visitChildren(
-      (c) => {
-        c.runChange(change(c));
-        return true;
-      },
-      true,
-      true
-    );
-  }
-
-  setDisabled(disabled: boolean) {
-    this.updateAll((c) => c.updateDisabled(disabled));
-  }
-
-  setTouched(touched: boolean) {
-    this.updateAll((c) => c.updateTouched(touched));
-  }
-
-  validate() {
-    this.updateAll(() => NodeChange.Validate);
-  }
-
-  clearErrors() {
-    this.updateAll((c) => c.updateError(undefined));
-  }
 
   setError(error: string | undefined) {
     this.runChange(this.updateError(error));
   }
 
-  lookupControl(path: (string | number)[]): BaseControl | null {
-    var base = this;
-    var index = 0;
-    while (index < path.length && base) {
-      const childId = path[index];
-      if (base instanceof GroupControl) {
-        base = base.fields[childId];
-      } else if (base instanceof ArrayControl && typeof childId == "number") {
-        base = base.elems[childId];
-      } else {
-        return null;
-      }
-      index++;
-    }
-    return base;
-  }
 }
 
 function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
@@ -227,9 +186,6 @@ export type ControlValue<T> = T extends FormControl<infer V>
   : never;
 
 export class FormControl<V> extends BaseControl {
-  lookupControl(path: (string | number)[]): BaseControl | null {
-    return null;
-  }
   initialValue: V;
 
   constructor(public value: V, validator?: (v: V) => string | undefined) {
@@ -263,13 +219,151 @@ export class FormControl<V> extends BaseControl {
   ): boolean {
     return !doSelf || visit(this);
   }
+
+  /**
+   * Set the disabled flag.
+   * @param disabled 
+   */
+  setDisabled(disabled: boolean) {
+    this.runChange(this.updateDisabled(disabled))
+  }
+
+  /**
+   * Set the touched flag.
+   * @param touched 
+   */
+  setTouched(touched: boolean) {
+    this.runChange(this.updateTouched(touched));
+  }
+
+  /**
+   * Run validation listeners.
+   */
+  validate() {
+    this.runChange(NodeChange.Validate);
+  }
+
+}
+
+export abstract class ParentControl extends BaseControl {
+
+  /**
+   * @internal 
+   */
+  protected updateAll(change: (c: BaseControl) => NodeChange) {
+    this.visitChildren(
+      (c) => {
+        c.runChange(change(c));
+        return true;
+      },
+      true,
+      true
+    );
+  }
+
+  /**
+   * @internal 
+   */
+  protected parentListener(): ChangeListener<BaseControl> {
+    return [
+      NodeChange.Value |
+        NodeChange.Valid |
+        NodeChange.Touched |
+        NodeChange.Dirty,
+      (child, change) => {
+        var flags: NodeChange = change & NodeChange.Value;
+        if (change & NodeChange.Valid) {
+          const valid =
+            child.valid && (this.valid || this.visitChildren((c) => c.valid));
+          flags |= this.updateValid(valid);
+        }
+        if (change & NodeChange.Dirty) {
+          const dirty =
+            child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
+          flags |= this.updateDirty(dirty);
+        }
+        if (change & NodeChange.Touched) {
+          flags |= this.updateTouched(child.touched || this.touched);
+        }
+        this.runChange(flags);
+      },
+    ];
+  }
+
+  /**
+   * @internal 
+   */
+  protected controlFromDef(cdef: any, value: any): BaseControl {
+    const l = this.parentListener();
+    var child = cdef.createControl
+      ? cdef.createControl(value)
+      : cdef.createArray
+      ? cdef.createArray(value)
+      : cdef.createGroup(value);
+    child.addChangeListener(l[1], l[0]);
+    return child;
+  }
+
+  /**
+   * Set the disabled flag on this and all children.
+   * @param disabled 
+   */
+  setDisabled(disabled: boolean) {
+    this.updateAll((c) => c.updateDisabled(disabled));
+  }
+
+  /**
+   * Set the touched flag on this and any children.
+   * @param touched 
+   */
+  setTouched(touched: boolean) {
+    this.updateAll((c) => c.updateTouched(touched));
+  }
+
+  /**
+   * Run validation listeners for this and any children.
+   */
+  validate() {
+    this.updateAll(() => NodeChange.Validate);
+  }
+
+  /**
+   * Clear all error messages and mark controls as valid.
+   */
+  clearErrors() {
+    this.updateAll((c) => c.updateError(undefined));
+  }
+
+  /**
+   * Lookup a child control give an array of control path elements.
+   * A path element is either a string property name for GroupControl
+   * or an index number for ArrayControl.
+   * @param path 
+   */
+  lookupControl(path: (string | number)[]): BaseControl | null {
+    var base = this;
+    var index = 0;
+    while (index < path.length && base) {
+      const childId = path[index];
+      if (base instanceof GroupControl) {
+        base = base.fields[childId];
+      } else if (base instanceof ArrayControl && typeof childId == "number") {
+        base = base.elems[childId];
+      } else {
+        return null;
+      }
+      index++;
+    }
+    return base;
+  }
+
 }
 
 export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
 export type GroupControlFields<R> = GroupControl<FormFields<R>>;
 
-export class ArrayControl<FIELD extends BaseControl> extends BaseControl {
+export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   elems: FIELD[] = [];
   initialValueLength: number = 0;
 
@@ -343,7 +437,7 @@ export class ArrayControl<FIELD extends BaseControl> extends BaseControl {
 
 export class GroupControl<
   FIELDS extends { [k: string]: BaseControl }
-> extends BaseControl {
+> extends ParentControl {
   fields: FIELDS;
 
   constructor(children: FIELDS, v: GroupValues<FIELDS>) {

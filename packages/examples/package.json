@@ -22,12 +22,14 @@
   "homepage": "https://github.com/doolse/react-typed-form#readme",
   "dependencies": {
     "@react-typed-form/core": "1.0.0-alpha.0",
+    "@types/react-router-dom": "^5.1.6",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-router-dom": "^5.2.0"
   },
   "devDependencies": {
-    "parcel": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react-dom": "latest",
+    "parcel": "latest"
   }
 }
