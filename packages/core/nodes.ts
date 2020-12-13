@@ -1,11 +1,8 @@
-import React, { ReactElement, FC, useRef } from "react";
-import { useMemo, useState, useEffect, ReactNode } from "react";
-
 type UndefinedProperties<T> = {
   [P in keyof T]-?: undefined extends T[P] ? P : never;
 }[keyof T];
 
-type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
+export type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
   Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
 
 export enum NodeChange {
@@ -19,7 +16,7 @@ export enum NodeChange {
   Validate = 64,
 }
 
-type ChangeListener<C extends BaseControl> = [
+export type ChangeListener<C extends BaseControl> = [
   NodeChange,
   (control: C, cb: NodeChange) => void
 ];
@@ -221,7 +218,7 @@ function toValueUnsafe(ctrl: BaseControl): any {
     : undefined;
 }
 
-type ControlValue<T> = T extends FormControl<infer V>
+export type ControlValue<T> = T extends FormControl<infer V>
   ? V
   : T extends ArrayControl<infer E>
   ? ControlValue<E>[]
@@ -415,25 +412,25 @@ type ControlType<T> = T extends ControlDef<infer V>
     >
   : never;
 
-interface ControlDef<V> {
+export interface ControlDef<V> {
   createControl: (V: V) => FormControl<V>;
 }
 
-interface ArrayDef<ELEM> {
+export interface ArrayDef<ELEM> {
   createArray: (
     v: ControlValue<ControlType<ELEM>>
   ) => ArrayControl<ControlType<ELEM>>;
 }
 
-type GroupControls<DEF> = {
+export type GroupControls<DEF> = {
   [K in keyof DEF]: ControlType<DEF[K]>;
 };
 
-type GroupValues<DEF> = {
+export type GroupValues<DEF> = {
   [K in keyof DEF]: ControlValue<ControlType<DEF[K]>>;
 };
 
-interface GroupDef<FIELDS extends object> {
+export interface GroupDef<FIELDS extends object> {
   createGroup(
     value: ToOptional<GroupValues<FIELDS>>
   ): GroupControl<GroupControls<FIELDS>>;
@@ -477,105 +474,4 @@ export function formGroup<R>(): <
   children: V
 ) => GroupDef<V> {
   return group;
-}
-
-export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
-  return useFormListener(control, (c) => c.stateVersion, mask);
-}
-
-export function useFormListener<V extends BaseControl, S>(
-  control: V,
-  toState: (state: V) => S,
-  mask?: NodeChange
-): S {
-  const [state, setState] = useState(toState(control));
-  useChangeListener(control, () => setState(toState(control)), mask);
-  return state;
-}
-
-export function useFormState<FIELDS extends object>(
-  group: GroupDef<FIELDS>,
-  value: ToOptional<GroupValues<FIELDS>>
-): GroupControl<GroupControls<FIELDS>> {
-  return useMemo(() => {
-    return group.createGroup(value);
-  }, [group]);
-}
-
-export function useFormListenerComponent<S, V extends BaseControl>(
-  control: V,
-  toState: (state: V) => S,
-  mask?: NodeChange
-): FC<{ children: (formState: S) => ReactElement }> {
-  return useMemo(
-    () => ({ children }) => {
-      const state = useFormListener(control, toState, mask);
-      return children(state);
-    },
-    []
-  );
-}
-
-export function useValidChangeComponent(
-  control: BaseControl
-): FC<{ children: (formState: boolean) => ReactElement }> {
-  return useFormListenerComponent(
-    control,
-    (c) => c.valid && c.dirty,
-    NodeChange.Valid | NodeChange.Dirty
-  );
-}
-
-export function FormArray<V extends BaseControl>({
-  state,
-  children,
-}: {
-  state: ArrayControl<V>;
-  children: (elems: V[]) => ReactNode;
-}) {
-  useFormListener(state, (c) => c.elems.length, NodeChange.Value);
-  return <>{children(state.elems)}</>;
-}
-
-export function useChangeListener<Node extends BaseControl>(
-  control: Node,
-  listener: (node: Node, change: NodeChange) => void,
-  mask?: NodeChange,
-  deps?: any[]
-) {
-  const updater = useMemo(() => listener, deps ?? []);
-  useEffect(() => {
-    control.addChangeListener(updater, mask);
-    return () => control.removeChangeListener(updater);
-  }, [updater]);
-}
-
-export function Finput({
-  state,
-  ...others
-}: React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
-}) {
-  useFormStateVersion(state);
-  const [domRef, setDomRef] = useState<HTMLInputElement>();
-  function updateError(elem: HTMLInputElement) {
-    const isShowError = state.touched && !state.valid && Boolean(state.error);
-    elem.setCustomValidity(isShowError ? state.error! : "");
-    elem.reportValidity();
-  }
-  useEffect(() => {
-    if (domRef) {
-      updateError(domRef);
-    }
-  }, [domRef, state.error, state.touched, state.valid]);
-  return (
-    <input
-      ref={(d) => setDomRef(d!)}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
-      {...others}
-    />
-  );
 }

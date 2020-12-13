@@ -1,5 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
 import { BasicFormExample } from "./basic";
+import { ArraysExample } from "./arrays";
 
-render(<BasicFormExample />, document.getElementById("main"));
+render(<ArraysExample />, document.getElementById("main"));
