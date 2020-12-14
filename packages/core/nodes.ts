@@ -8,11 +8,11 @@ export type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
 export enum NodeChange {
   Value = 1,
   Valid = 2,
-  Touched = 4,
+  ShowValidation = 4,
   Disabled = 8,
   Error = 16,
   Dirty = 32,
-  All = Value | Valid | Touched | Disabled | Error | Dirty,
+  All = Value | Valid | ShowValidation | Disabled | Error | Dirty,
   Validate = 64,
 }
 
@@ -24,12 +24,12 @@ export type ChangeListener<C extends BaseControl> = [
 export abstract class BaseControl {
   valid: boolean = true;
   error: string | undefined;
-  touched: boolean = false;
+  showValidation: boolean = false;
   disabled: boolean = false;
   dirty: boolean = false;
 
   /**
-   * @internal 
+   * @internal
    */
   listeners: ChangeListener<any>[] = [];
   stateVersion: number = 0;
@@ -38,18 +38,20 @@ export abstract class BaseControl {
    */
   freezeCount: number = 0;
   /**
-   * @internal 
+   * @internal
    */
   frozenChanges: NodeChange = 0;
 
   /**
-   * @internal 
+   * @internal
    */
   abstract visitChildren(
     visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean;
+
+  abstract setShowValidation(showValidation: boolean): void;
 
   /**
    * @internal
@@ -98,16 +100,16 @@ export abstract class BaseControl {
   /**
    * @internal
    */
-  updateTouched(touched: boolean): NodeChange {
-    if (this.touched !== touched) {
-      this.touched = touched;
-      return NodeChange.Touched;
+  updateShowValidation(showValidation: boolean): NodeChange {
+    if (this.showValidation !== showValidation) {
+      this.showValidation = showValidation;
+      return NodeChange.ShowValidation;
     }
     return 0;
   }
 
   /**
-   * @internal 
+   * @internal
    */
   private runListeners(changed: NodeChange) {
     this.frozenChanges = 0;
@@ -131,7 +133,7 @@ export abstract class BaseControl {
   }
 
   /**
-   * @internal 
+   * @internal
    */
   protected groupedChanges(run: () => void) {
     this.freezeCount++;
@@ -156,11 +158,9 @@ export abstract class BaseControl {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
-
   setError(error: string | undefined) {
     this.runChange(this.updateError(error));
   }
-
 }
 
 function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
@@ -188,13 +188,18 @@ export type ControlValue<T> = T extends FormControl<infer V>
 export class FormControl<V> extends BaseControl {
   initialValue: V;
 
-  constructor(public value: V, validator?: (v: V) => string | undefined) {
+  constructor(
+    public value: V,
+    validator?: ((v: V) => string | undefined) | null
+  ) {
     super();
     this.initialValue = value;
-    this.addChangeListener(() => {
-      const error = validator?.(this.value);
-      this.runChange(this.updateError(error));
-    }, NodeChange.Value | NodeChange.Validate);
+    if (validator !== null) {
+      this.addChangeListener(() => {
+        const error = validator?.(this.value);
+        this.runChange(this.updateError(error));
+      }, NodeChange.Value | NodeChange.Validate);
+    }
   }
 
   setValue(v: V, initial?: boolean): void {
@@ -222,18 +227,18 @@ export class FormControl<V> extends BaseControl {
 
   /**
    * Set the disabled flag.
-   * @param disabled 
+   * @param disabled
    */
   setDisabled(disabled: boolean) {
-    this.runChange(this.updateDisabled(disabled))
+    this.runChange(this.updateDisabled(disabled));
   }
 
   /**
-   * Set the touched flag.
-   * @param touched 
+   * Set the showValidation flag.
+   * @param showValidation
    */
-  setTouched(touched: boolean) {
-    this.runChange(this.updateTouched(touched));
+  setShowValidation(showValidation: boolean) {
+    this.runChange(this.updateShowValidation(showValidation));
   }
 
   /**
@@ -242,13 +247,11 @@ export class FormControl<V> extends BaseControl {
   validate() {
     this.runChange(NodeChange.Validate);
   }
-
 }
 
 export abstract class ParentControl extends BaseControl {
-
   /**
-   * @internal 
+   * @internal
    */
   protected updateAll(change: (c: BaseControl) => NodeChange) {
     this.visitChildren(
@@ -262,13 +265,13 @@ export abstract class ParentControl extends BaseControl {
   }
 
   /**
-   * @internal 
+   * @internal
    */
   protected parentListener(): ChangeListener<BaseControl> {
     return [
       NodeChange.Value |
         NodeChange.Valid |
-        NodeChange.Touched |
+        NodeChange.ShowValidation |
         NodeChange.Dirty,
       (child, change) => {
         var flags: NodeChange = change & NodeChange.Value;
@@ -282,8 +285,10 @@ export abstract class ParentControl extends BaseControl {
             child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
           flags |= this.updateDirty(dirty);
         }
-        if (change & NodeChange.Touched) {
-          flags |= this.updateTouched(child.touched || this.touched);
+        if (change & NodeChange.ShowValidation) {
+          flags |= this.updateShowValidation(
+            child.showValidation || this.showValidation
+          );
         }
         this.runChange(flags);
       },
@@ -291,7 +296,7 @@ export abstract class ParentControl extends BaseControl {
   }
 
   /**
-   * @internal 
+   * @internal
    */
   protected controlFromDef(cdef: any, value: any): BaseControl {
     const l = this.parentListener();
@@ -306,18 +311,18 @@ export abstract class ParentControl extends BaseControl {
 
   /**
    * Set the disabled flag on this and all children.
-   * @param disabled 
+   * @param disabled
    */
   setDisabled(disabled: boolean) {
     this.updateAll((c) => c.updateDisabled(disabled));
   }
 
   /**
-   * Set the touched flag on this and any children.
-   * @param touched 
+   * Set the showValidation flag on this and any children.
+   * @param showValidation
    */
-  setTouched(touched: boolean) {
-    this.updateAll((c) => c.updateTouched(touched));
+  setShowValidation(showValidation: boolean) {
+    this.updateAll((c) => c.updateShowValidation(showValidation));
   }
 
   /**
@@ -338,7 +343,7 @@ export abstract class ParentControl extends BaseControl {
    * Lookup a child control give an array of control path elements.
    * A path element is either a string property name for GroupControl
    * or an index number for ArrayControl.
-   * @param path 
+   * @param path
    */
   lookupControl(path: (string | number)[]): BaseControl | null {
     var base = this;
@@ -356,7 +361,6 @@ export abstract class ParentControl extends BaseControl {
     }
     return base;
   }
-
 }
 
 export type FormFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
@@ -539,7 +543,7 @@ export type AllowedDef<V> =
   | ControlDef<V>;
 
 export function ctrl<V>(
-  validator?: (v: V) => string | undefined
+  validator?: ((v: V) => string | undefined) | null
 ): ControlDef<V> {
   return {
     createControl: (value: V) => new FormControl<V>(value, validator),
@@ -550,7 +554,7 @@ export function formArray<CHILD>(child: CHILD): ArrayDef<CHILD> {
   return {
     createArray: (value: any) => {
       const arrayCtrl = new ArrayControl<any>(child);
-      arrayCtrl.setValue(value);
+      arrayCtrl.setValue(value, true);
       return arrayCtrl;
     },
   };

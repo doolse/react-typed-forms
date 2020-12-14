@@ -34,7 +34,7 @@ export function ArraysExample() {
         <FormArray state={fields.strings}>
           {(elems) =>
             elems.map((c, idx) => (
-              <div className="form-inline">
+              <div key={idx} className="form-inline">
                 <div className="form-group mb-2">
                   <label className="mx-2">Value:</label>
                   <Finput type="text" className="form-control" state={c} />
@@ -65,7 +65,7 @@ export function ArraysExample() {
         <FormArray state={fields.structured}>
           {(elems) =>
             elems.map(({ fields: c }, idx) => (
-              <div className="form-inline">
+              <div key={idx} className="form-inline">
                 <div className="form-group mb-2">
                   <label className="mx-2">Id:</label>
                   <Finput type="text" className="form-control" state={c.id} />

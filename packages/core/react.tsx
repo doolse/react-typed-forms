@@ -1,4 +1,4 @@
-import React, { ReactElement, FC, useRef } from "react";
+import React, { ReactElement, FC, useRef, useCallback } from "react";
 import { useMemo, useState, useEffect, ReactNode } from "react";
 import {
   BaseControl,
@@ -24,10 +24,15 @@ export function useFormListener<V extends BaseControl, S>(
 
 export function useFormState<FIELDS extends object>(
   group: GroupDef<FIELDS>,
-  value: ToOptional<GroupValues<FIELDS>>
+  value: ToOptional<GroupValues<FIELDS>>,
+  dontValidate?: boolean
 ): GroupControl<GroupControls<FIELDS>> {
   return useMemo(() => {
-    return group.createGroup(value);
+    const groupState = group.createGroup(value);
+    if (!dontValidate) {
+      groupState.validate();
+    }
+    return groupState;
   }, [group]);
 }
 
@@ -86,24 +91,22 @@ export function Finput({
   state: FormControl<string | number>;
 }) {
   useFormStateVersion(state);
-  const [domRef, setDomRef] = useState<HTMLInputElement>();
-  function updateError(elem: HTMLInputElement) {
-    const isShowError = state.touched && !state.valid && Boolean(state.error);
-    elem.setCustomValidity(isShowError ? state.error! : "");
-    elem.reportValidity();
-  }
-  useEffect(() => {
-    if (domRef) {
-      updateError(domRef);
-    }
-  }, [domRef, state.error, state.touched, state.valid]);
+  const domRef = useRef<HTMLInputElement | null>(null);
+  useChangeListener(
+    state,
+    () => domRef.current?.setCustomValidity(state.error ?? ""),
+    NodeChange.Error
+  );
   return (
     <input
-      ref={(d) => setDomRef(d!)}
+      ref={(r) => {
+        domRef.current = r;
+        if (r) r.setCustomValidity(state.error ?? "");
+      }}
       value={state.value}
       disabled={state.disabled}
       onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
+      onBlur={() => state.setShowValidation(true)}
       {...others}
     />
   );
@@ -111,4 +114,44 @@ export function Finput({
 
 export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
   return useFormListener(control, (c) => c.stateVersion, mask);
+}
+
+export function useAsyncValidator<C extends BaseControl>(
+  node: C,
+  validator: (node: C, abortSignal: AbortSignal) => Promise<string | undefined>,
+  delay: number
+) {
+  const handler = useRef<number>();
+  const abortController = useRef<AbortController>();
+  useChangeListener(
+    node,
+    (n) => {
+      if (handler.current) {
+        window.clearTimeout(handler.current);
+      }
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      let currentVersion = n.stateVersion;
+      handler.current = window.setTimeout(() => {
+        const aborter = new AbortController();
+        abortController.current = aborter;
+        validator(n, aborter.signal)
+          .then((error) => {
+            if (n.stateVersion === currentVersion) {
+              n.setShowValidation(true);
+              n.setError(error);
+            }
+          })
+          .catch((e) => {
+            if (
+              !(e instanceof DOMException && e.code == DOMException.ABORT_ERR)
+            ) {
+              throw e;
+            }
+          });
+      }, delay);
+    },
+    NodeChange.Value | NodeChange.Validate
+  );
 }

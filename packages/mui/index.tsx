@@ -12,7 +12,8 @@ export function FTextField({
   ...others
 }: FTextFieldProps): ReactElement {
   useFormStateVersion(state);
-  const showError = state.touched && !state.valid && Boolean(state.error);
+  const showError =
+    state.showValidation && !state.valid && Boolean(state.error);
   return (
     <TextField
       {...others}
@@ -20,7 +21,7 @@ export function FTextField({
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
-      onBlur={() => state.setTouched(true)}
+      onBlur={() => state.setShowValidation(true)}
       onChange={(e) => state.setValue(e.currentTarget.value)}
     />
   );
@@ -39,7 +40,8 @@ export function FNumberField({
   ...others
 }: FNumberFieldProps): ReactElement {
   useFormStateVersion(state);
-  const showError = state.touched && !state.valid && Boolean(state.error);
+  const showError =
+    state.showValidation && !state.valid && Boolean(state.error);
   const [text, setText] = useState(state.value?.toString() ?? "");
   useEffect(() => {
     setText(state.value?.toString() ?? "");
@@ -51,7 +53,7 @@ export function FNumberField({
       error={showError}
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
-      onBlur={() => state.setTouched(true)}
+      onBlur={() => state.setShowValidation(true)}
       onChange={(e) => {
         const textVal = e.currentTarget.value;
         setText(textVal);
