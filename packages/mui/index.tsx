@@ -1,7 +1,7 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useState } from "react";
 
-import { FormControl, useFormStateVersion } from "@react-typed-form/core";
+import { FormControl, useFormStateVersion } from "@react-typed-forms/core";
 
 export type FTextFieldProps = {
   state: FormControl<string | undefined>;

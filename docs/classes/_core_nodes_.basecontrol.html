@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>BaseControl | @react-typed-form/core</title>
-	<meta name="description" content="Documentation for @react-typed-form/core">
+	<title>BaseControl | @react-typed-forms/core</title>
+	<meta name="description" content="Documentation for @react-typed-forms/core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 </head>
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@react-typed-form/core</a>
+					<a href="../index.html" class="title">@react-typed-forms/core</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -95,9 +95,8 @@
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#dirty" class="tsd-kind-icon">dirty</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#disabled" class="tsd-kind-icon">disabled</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#error" class="tsd-kind-icon">error</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#listeners" class="tsd-kind-icon">listeners</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#showvalidation" class="tsd-kind-icon">show<wbr>Validation</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#stateversion" class="tsd-kind-icon">state<wbr>Version</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#touched" class="tsd-kind-icon">touched</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#valid" class="tsd-kind-icon">valid</a></li>
 							</ul>
 						</section>
@@ -107,6 +106,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#addchangelistener" class="tsd-kind-icon">add<wbr>Change<wbr>Listener</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#removechangelistener" class="tsd-kind-icon">remove<wbr>Change<wbr>Listener</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#seterror" class="tsd-kind-icon">set<wbr>Error</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_nodes_.basecontrol.html#setshowvalidation" class="tsd-kind-icon">set<wbr>Show<wbr>Validation</a></li>
 							</ul>
 						</section>
 					</div>
@@ -120,7 +120,7 @@
 					<div class="tsd-signature tsd-kind-icon">dirty<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L29">core/nodes.ts:29</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L29">core/nodes.ts:29</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -130,7 +130,7 @@
 					<div class="tsd-signature tsd-kind-icon">disabled<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L28">core/nodes.ts:28</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L28">core/nodes.ts:28</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -140,17 +140,17 @@
 					<div class="tsd-signature tsd-kind-icon">error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L26">core/nodes.ts:26</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L26">core/nodes.ts:26</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="listeners" class="tsd-anchor"></a>
-					<h3>listeners</h3>
-					<div class="tsd-signature tsd-kind-icon">listeners<span class="tsd-signature-symbol">:</span> <a href="../modules/_core_nodes_.html#changelistener" class="tsd-signature-type">ChangeListener</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
+					<a name="showvalidation" class="tsd-anchor"></a>
+					<h3>show<wbr>Validation</h3>
+					<div class="tsd-signature tsd-kind-icon">show<wbr>Validation<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L31">core/nodes.ts:31</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L27">core/nodes.ts:27</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -160,17 +160,7 @@
 					<div class="tsd-signature tsd-kind-icon">state<wbr>Version<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L32">core/nodes.ts:32</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="touched" class="tsd-anchor"></a>
-					<h3>touched</h3>
-					<div class="tsd-signature tsd-kind-icon">touched<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L27">core/nodes.ts:27</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L35">core/nodes.ts:35</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -180,7 +170,7 @@
 					<div class="tsd-signature tsd-kind-icon">valid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L25">core/nodes.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L25">core/nodes.ts:25</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -197,7 +187,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L142">core/nodes.ts:142</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L147">core/nodes.ts:147</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -244,7 +234,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L152">core/nodes.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L157">core/nodes.ts:157</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -288,13 +278,36 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L157">core/nodes.ts:157</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L161">core/nodes.ts:161</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>error: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="setshowvalidation" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> set<wbr>Show<wbr>Validation</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">set<wbr>Show<wbr>Validation<span class="tsd-signature-symbol">(</span>showValidation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L54">core/nodes.ts:54</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>showValidation: <span class="tsd-signature-type">boolean</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -325,6 +338,24 @@
 						<a href="../modules/_examples_basic_.html">&quot;examples/basic&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_bootstrap_.html">&quot;examples/bootstrap&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_index_.html">&quot;examples/index&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_rerender_.html">&quot;examples/rerender&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_server_.html">&quot;examples/server&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_simple_.html">&quot;examples/simple&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/_examples_validation_.html">&quot;examples/validation&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
 						<a href="../modules/_mui_index_.html">&quot;mui/index&quot;</a>
 					</li>
 				</ul>
@@ -352,13 +383,10 @@
 								<a href="_core_nodes_.basecontrol.html#error" class="tsd-kind-icon">error</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_nodes_.basecontrol.html#listeners" class="tsd-kind-icon">listeners</a>
+								<a href="_core_nodes_.basecontrol.html#showvalidation" class="tsd-kind-icon">show<wbr>Validation</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_nodes_.basecontrol.html#stateversion" class="tsd-kind-icon">state<wbr>Version</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_nodes_.basecontrol.html#touched" class="tsd-kind-icon">touched</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_nodes_.basecontrol.html#valid" class="tsd-kind-icon">valid</a>
@@ -371,6 +399,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_nodes_.basecontrol.html#seterror" class="tsd-kind-icon">set<wbr>Error</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_nodes_.basecontrol.html#setshowvalidation" class="tsd-kind-icon">set<wbr>Show<wbr>Validation</a>
 							</li>
 						</ul>
 					</li>

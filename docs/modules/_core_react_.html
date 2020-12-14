@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;core/react&quot; | @react-typed-form/core</title>
-	<meta name="description" content="Documentation for @react-typed-form/core">
+	<title>&quot;core/react&quot; | @react-typed-forms/core</title>
+	<meta name="description" content="Documentation for @react-typed-forms/core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 </head>
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@react-typed-form/core</a>
+					<a href="../index.html" class="title">@react-typed-forms/core</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -75,6 +75,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_core_react_.html#finput" class="tsd-kind-icon">Finput</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_core_react_.html#formarray" class="tsd-kind-icon">Form<wbr>Array</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_core_react_.html#useasyncvalidator" class="tsd-kind-icon">use<wbr>Async<wbr>Validator</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_core_react_.html#usechangelistener" class="tsd-kind-icon">use<wbr>Change<wbr>Listener</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_core_react_.html#useformlistener" class="tsd-kind-icon">use<wbr>Form<wbr>Listener</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_core_react_.html#useformlistenercomponent" class="tsd-kind-icon">use<wbr>Form<wbr>Listener<wbr>Component</a></li>
@@ -98,7 +99,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L82">core/react.tsx:82</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L87">core/react.tsx:87</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -129,7 +130,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L58">core/react.tsx:58</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L63">core/react.tsx:63</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -175,6 +176,62 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+					<a name="useasyncvalidator" class="tsd-anchor"></a>
+					<h3>use<wbr>Async<wbr>Validator</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+						<li class="tsd-signature tsd-kind-icon">use<wbr>Async<wbr>Validator&lt;C&gt;<span class="tsd-signature-symbol">(</span>node<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span>, validator<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>node<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span>, abortSignal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbortSignal</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span>, delay<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L119">core/react.tsx:119</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-type-parameters-title">Type parameters</h4>
+							<ul class="tsd-type-parameters">
+								<li>
+									<h4>C<span class="tsd-signature-symbol">: </span><a href="../classes/_core_nodes_.basecontrol.html" class="tsd-signature-type">BaseControl</a></h4>
+								</li>
+							</ul>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>node: <span class="tsd-signature-type">C</span></h5>
+								</li>
+								<li>
+									<h5>validator: <span class="tsd-signature-symbol">(</span>node<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span>, abortSignal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbortSignal</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-signature">
+											<ul class="tsd-signatures tsd-kind-type-literal">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>node<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span>, abortSignal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbortSignal</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>node: <span class="tsd-signature-type">C</span></h5>
+														</li>
+														<li>
+															<h5>abortSignal: <span class="tsd-signature-type">AbortSignal</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+								<li>
+									<h5>delay: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
 					<a name="usechangelistener" class="tsd-anchor"></a>
 					<h3>use<wbr>Change<wbr>Listener</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
@@ -184,7 +241,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L69">core/react.tsx:69</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L74">core/react.tsx:74</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -243,7 +300,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L15">core/react.tsx:15</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L15">core/react.tsx:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -299,7 +356,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L34">core/react.tsx:34</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L39">core/react.tsx:39</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -349,13 +406,13 @@
 					<a name="useformstate" class="tsd-anchor"></a>
 					<h3>use<wbr>Form<wbr>State</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">use<wbr>Form<wbr>State&lt;FIELDS&gt;<span class="tsd-signature-symbol">(</span>group<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.groupdef.html" class="tsd-signature-type">GroupDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span>, value<span class="tsd-signature-symbol">: </span><a href="_core_nodes_.html#tooptional" class="tsd-signature-type">ToOptional</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupvalues" class="tsd-signature-type">GroupValues</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_core_nodes_.groupcontrol.html" class="tsd-signature-type">GroupControl</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupcontrols" class="tsd-signature-type">GroupControls</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">use<wbr>Form<wbr>State&lt;FIELDS&gt;<span class="tsd-signature-symbol">(</span>group<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.groupdef.html" class="tsd-signature-type">GroupDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span>, value<span class="tsd-signature-symbol">: </span><a href="_core_nodes_.html#tooptional" class="tsd-signature-type">ToOptional</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupvalues" class="tsd-signature-type">GroupValues</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span>, dontValidate<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_core_nodes_.groupcontrol.html" class="tsd-signature-type">GroupControl</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupcontrols" class="tsd-signature-type">GroupControls</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L25">core/react.tsx:25</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L25">core/react.tsx:25</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -372,6 +429,9 @@
 								<li>
 									<h5>value: <a href="_core_nodes_.html#tooptional" class="tsd-signature-type">ToOptional</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupvalues" class="tsd-signature-type">GroupValues</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h5>
 								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> dontValidate: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span></h5>
+								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../classes/_core_nodes_.groupcontrol.html" class="tsd-signature-type">GroupControl</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#groupcontrols" class="tsd-signature-type">GroupControls</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FIELDS</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
@@ -387,7 +447,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L112">core/react.tsx:112</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L115">core/react.tsx:115</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -413,7 +473,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/react.tsx#L48">core/react.tsx:48</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/react.tsx#L53">core/react.tsx:53</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -450,6 +510,24 @@
 						<a href="_examples_basic_.html">&quot;examples/basic&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
+						<a href="_examples_bootstrap_.html">&quot;examples/bootstrap&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_index_.html">&quot;examples/index&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_rerender_.html">&quot;examples/rerender&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_server_.html">&quot;examples/server&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_simple_.html">&quot;examples/simple&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_validation_.html">&quot;examples/validation&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
 						<a href="_mui_index_.html">&quot;mui/index&quot;</a>
 					</li>
 				</ul>
@@ -461,6 +539,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
 						<a href="_core_react_.html#formarray" class="tsd-kind-icon">Form<wbr>Array</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="_core_react_.html#useasyncvalidator" class="tsd-kind-icon">use<wbr>Async<wbr>Validator</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
 						<a href="_core_react_.html#usechangelistener" class="tsd-kind-icon">use<wbr>Change<wbr>Listener</a>

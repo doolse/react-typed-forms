@@ -1,6 +1,6 @@
-import { ctrl, useFormState } from "@react-typed-form/core";
-import { Finput } from "@react-typed-form/core";
-import { formGroup } from "@react-typed-form/core";
+import { ctrl, useFormState } from "@react-typed-forms/core";
+import { Finput } from "@react-typed-forms/core";
+import { formGroup } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 
 type SimpleForm = {

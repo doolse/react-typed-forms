@@ -1,4 +1,4 @@
-import { FormControl, useFormStateVersion } from "@react-typed-form/core";
+import { FormControl, useFormStateVersion } from "@react-typed-forms/core";
 import React, { ReactNode } from "react";
 
 export function FormInput({

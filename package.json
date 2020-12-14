@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "react-typed-form",
+  "name": "react-typed-forms",
   "workspaces": [
     "packages/*"
   ],
@@ -12,20 +12,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/doolse/react-typed-form.git"
+    "url": "git+https://github.com/doolse/react-typed-forms.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/doolse/react-typed-form/issues"
+    "url": "https://github.com/doolse/react-typed-forms/issues"
   },
-  "homepage": "https://github.com/doolse/react-typed-form#readme",
+  "homepage": "https://github.com/doolse/react-typed-forms#readme",
   "devDependencies": {
-    "@date-io/date-fns": "^1.3.13",
-    "@material-ui/core": "^4.9.12",
-    "@material-ui/pickers": "^3.2.10",
-    "@types/react": "^16.9.34",
     "lerna": "^3.20.2",
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0",
     "typedoc": "^0.19.2",
     "typescript": "^3.9.3",
     "yalc": "^1.0.0-pre.35"

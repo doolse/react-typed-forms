@@ -4,8 +4,10 @@ import { BasicFormExample } from "./basic";
 import { ArraysExample } from "./arrays";
 import { BrowserRouter, Link, Route } from "react-router-dom";
 import { ValidationExample } from "./validation";
+import { SimpleExample } from "./simple";
 
 const examples: [string, FC, string][] = [
+  ["/simple", SimpleExample, "Simple"],
   ["/basic", BasicFormExample, "Basic"],
   ["/arrays", ArraysExample, "Arrays"],
   ["/validation", ValidationExample, "Validation"],

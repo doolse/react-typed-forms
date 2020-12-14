@@ -1,5 +1,5 @@
 {
-  "name": "@react-typed-form/core",
+  "name": "@react-typed-forms/core",
   "version": "1.0.0-alpha.0",
   "description": "",
   "main": "dist/index.js",
@@ -10,22 +10,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/doolse/react-typed-form.git"
+    "url": "git+https://github.com/doolse/react-typed-forms.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/doolse/react-typed-form/issues"
+    "url": "https://github.com/doolse/react-typed-forms/issues"
   },
-  "homepage": "https://github.com/doolse/react-typed-form#readme",
+  "homepage": "https://github.com/doolse/react-typed-forms#readme",
   "peerDependencies": {
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
   },
-  "dependencies": {
-    "deep-equal": "^2.0.4"
-  },
   "devDependencies": {
-    "@types/deep-equal": "^1.0.1"
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
   }
 }

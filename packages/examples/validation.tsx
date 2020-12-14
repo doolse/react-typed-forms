@@ -1,5 +1,5 @@
-import { ctrl, useFormState, useAsyncValidator } from "@react-typed-form/core";
-import { formGroup } from "@react-typed-form/core";
+import { ctrl, useFormState, useAsyncValidator } from "@react-typed-forms/core";
+import { formGroup } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "./bootstrap";
 

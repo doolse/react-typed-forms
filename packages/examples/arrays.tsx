@@ -1,6 +1,6 @@
-import { ctrl, useFormState, formArray, group } from "@react-typed-form/core";
-import { Finput } from "@react-typed-form/core";
-import { formGroup, FormArray } from "@react-typed-form/core";
+import { ctrl, useFormState, formArray, group } from "@react-typed-forms/core";
+import { Finput } from "@react-typed-forms/core";
+import { formGroup, FormArray } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
 type MainForm = {

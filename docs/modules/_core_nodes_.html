@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;core/nodes&quot; | @react-typed-form/core</title>
-	<meta name="description" content="Documentation for @react-typed-form/core">
+	<title>&quot;core/nodes&quot; | @react-typed-forms/core</title>
+	<meta name="description" content="Documentation for @react-typed-forms/core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 </head>
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@react-typed-form/core</a>
+					<a href="../index.html" class="title">@react-typed-forms/core</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -131,7 +131,7 @@
 					<div class="tsd-signature tsd-kind-icon">Allowed<wbr>Def&lt;V&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-symbol">infer </span> X<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ArrayDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">AllowedDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">X</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">GroupDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> | </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L530">core/nodes.ts:530</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L537">core/nodes.ts:537</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -147,7 +147,7 @@
 					<div class="tsd-signature tsd-kind-icon">Change<wbr>Listener&lt;C&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">[</span><a href="../enums/_core_nodes_.nodechange.html" class="tsd-signature-type">NodeChange</a><span class="tsd-signature-symbol">, </span><span class="tsd-signature-symbol">(</span>control<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">C</span>, cb<span class="tsd-signature-symbol">: </span><a href="../enums/_core_nodes_.nodechange.html" class="tsd-signature-type">NodeChange</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L19">core/nodes.ts:19</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L19">core/nodes.ts:19</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -163,7 +163,7 @@
 					<div class="tsd-signature tsd-kind-icon">Control<wbr>Type&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">ControlDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> V<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">FormControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">ArrayDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> E<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ArrayControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ControlType</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">E</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">GroupDef</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> F<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">GroupControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L494">core/nodes.ts:494</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L501">core/nodes.ts:501</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -179,7 +179,7 @@
 					<div class="tsd-signature tsd-kind-icon">Control<wbr>Value&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">FormControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> V<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">ArrayControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> E<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ControlValue</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">E</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">GroupControl</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">infer </span> F<span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> ? </span><span class="tsd-signature-type">ToOptional</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">never</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L177">core/nodes.ts:177</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L180">core/nodes.ts:180</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -195,7 +195,7 @@
 					<div class="tsd-signature tsd-kind-icon">Form<wbr>Fields&lt;R&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L359">core/nodes.ts:359</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L366">core/nodes.ts:366</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -216,7 +216,7 @@
 					<div class="tsd-signature tsd-kind-icon">Group<wbr>Control<wbr>Fields&lt;R&gt;<span class="tsd-signature-symbol">:</span> <a href="../classes/_core_nodes_.groupcontrol.html" class="tsd-signature-type">GroupControl</a><span class="tsd-signature-symbol">&lt;</span><a href="_core_nodes_.html#formfields" class="tsd-signature-type">FormFields</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L361">core/nodes.ts:361</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L368">core/nodes.ts:368</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -232,7 +232,7 @@
 					<div class="tsd-signature tsd-kind-icon">Group<wbr>Controls&lt;DEF&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L516">core/nodes.ts:516</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L523">core/nodes.ts:523</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -253,7 +253,7 @@
 					<div class="tsd-signature tsd-kind-icon">Group<wbr>Values&lt;DEF&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L520">core/nodes.ts:520</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L527">core/nodes.ts:527</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -274,7 +274,7 @@
 					<div class="tsd-signature tsd-kind-icon">To<wbr>Optional&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">, </span><a href="_core_nodes_.html#undefinedproperties" class="tsd-signature-type">UndefinedProperties</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Exclude</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">keyof </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">, </span><a href="_core_nodes_.html#undefinedproperties" class="tsd-signature-type">UndefinedProperties</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L5">core/nodes.ts:5</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L5">core/nodes.ts:5</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -290,7 +290,7 @@
 					<div class="tsd-signature tsd-kind-icon">Undefined<wbr>Properties&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-symbol">keyof </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L1">core/nodes.ts:1</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L1">core/nodes.ts:1</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -307,13 +307,13 @@
 					<a name="ctrl" class="tsd-anchor"></a>
 					<h3>ctrl</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">ctrl&lt;V&gt;<span class="tsd-signature-symbol">(</span>validator<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>v<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">ctrl&lt;V&gt;<span class="tsd-signature-symbol">(</span>validator<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>v<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L538">core/nodes.ts:538</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L545">core/nodes.ts:545</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -325,7 +325,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> validator: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>v<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">)</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> validator: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>v<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">V</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -342,7 +342,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L546">core/nodes.ts:546</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L553">core/nodes.ts:553</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -371,7 +371,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L562">core/nodes.ts:562</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L569">core/nodes.ts:569</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -418,7 +418,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L556">core/nodes.ts:556</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L563">core/nodes.ts:563</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -447,7 +447,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L163">core/nodes.ts:163</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L166">core/nodes.ts:166</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -476,7 +476,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/7497938/packages/core/nodes.ts#L167">core/nodes.ts:167</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/core/nodes.ts#L170">core/nodes.ts:170</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -511,6 +511,24 @@
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="_examples_basic_.html">&quot;examples/basic&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_bootstrap_.html">&quot;examples/bootstrap&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_index_.html">&quot;examples/index&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_rerender_.html">&quot;examples/rerender&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_server_.html">&quot;examples/server&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_simple_.html">&quot;examples/simple&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="_examples_validation_.html">&quot;examples/validation&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="_mui_index_.html">&quot;mui/index&quot;</a>

@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@react-typed-form/core</title>
-	<meta name="description" content="Documentation for @react-typed-form/core">
+	<title>@react-typed-forms/core</title>
+	<meta name="description" content="Documentation for @react-typed-forms/core">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 </head>
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">@react-typed-form/core</a>
+					<a href="index.html" class="title">@react-typed-forms/core</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -56,7 +56,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1>@react-typed-form/core</h1>
+			<h1>@react-typed-forms/core</h1>
 		</div>
 	</div>
 </header>
@@ -64,6 +64,62 @@
 	<div class="row">
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
+				<a href="#react-typed-forms" id="react-typed-forms" style="color: inherit; text-decoration: none;">
+					<h1>React typed forms</h1>
+				</a>
+				<p>Yes, another form library for React. <strong>Why?</strong></p>
+				<p>To take advantage of Typescript&#39;s advanced type system to give you more safety and a nice dev experience within your IDE.</p>
+				<p>Other reasons to use this library:</p>
+				<ul>
+					<li>Zero re-rendering of parent components</li>
+					<li>Easy validation including async validators.</li>
+					<li>Standard form/related state (disabled, dirty, show validatons, error message).</li>
+					<li>Zero dependencies besides React.</li>
+					<li>MUI binding</li>
+				</ul>
+				<a href="#let39s-go" id="let39s-go" style="color: inherit; text-decoration: none;">
+					<h2>Let&#39;s go</h2>
+				</a>
+				<pre><code class="language-tsx">import { formGroup, ctrl, useFormState, Finput } from &quot;@react-typed-forms/core&quot;;
+import { useState } from &quot;react&quot;;
+import React from &quot;react&quot;;
+
+type SimpleForm = {
+  firstName: string;
+  lastName: string;
+};
+
+const FormDef = formGroup&lt;SimpleForm&gt;()({
+  firstName: ctrl(),
+  lastName: ctrl((v) =&gt; (!v ? &quot;Required field&quot; : undefined)),
+});
+
+export function SimpleExample() {
+  const formState = useFormState(FormDef, { firstName: &quot;&quot;, lastName: &quot;&quot; });
+  const { fields } = formState;
+  const [formData, setFormData] = useState&lt;SimpleForm&gt;();
+  return (
+    &lt;div&gt;
+      &lt;form
+        onSubmit={(e) =&gt; {
+          e.preventDefault();
+          setFormData(formState.toObject());
+        }}
+      &gt;
+        &lt;label&gt;First Name&lt;/label&gt;
+        &lt;Finput type=&quot;text&quot; state={fields.firstName} /&gt;
+        &lt;label&gt;Last Name *&lt;/label&gt;
+        &lt;Finput type=&quot;text&quot; state={fields.lastName} /&gt;
+        &lt;div&gt;
+          &lt;button&gt;Validate and toObject()&lt;/button&gt;
+        &lt;/div&gt;
+        {formData &amp;&amp; (
+          &lt;pre className=&quot;my-2&quot;&gt;{JSON.stringify(formData, undefined, 2)}&lt;/pre&gt;
+        )}
+      &lt;/form&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -86,6 +142,24 @@
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/_examples_basic_.html">&quot;examples/basic&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_bootstrap_.html">&quot;examples/bootstrap&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_index_.html">&quot;examples/index&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_rerender_.html">&quot;examples/rerender&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_server_.html">&quot;examples/server&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_simple_.html">&quot;examples/simple&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_examples_validation_.html">&quot;examples/validation&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/_mui_index_.html">&quot;mui/index&quot;</a>
