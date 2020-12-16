@@ -23,7 +23,7 @@ export type ChangeListener<C extends BaseControl> = [
 
 export abstract class BaseControl {
   valid: boolean = true;
-  error: string | undefined;
+  error: string | undefined | null;
   showValidation: boolean = false;
   disabled: boolean = false;
   dirty: boolean = false;
@@ -56,7 +56,7 @@ export abstract class BaseControl {
   /**
    * @internal
    */
-  updateError(error: string | undefined): NodeChange {
+  updateError(error?: string | null): NodeChange {
     if (this.error !== error) {
       this.error = error;
       return NodeChange.Error | this.updateValid(!Boolean(error));
@@ -158,7 +158,7 @@ export abstract class BaseControl {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
-  setError(error: string | undefined) {
+  setError(error?: string | null) {
     this.runChange(this.updateError(error));
   }
 }
@@ -190,7 +190,7 @@ export class FormControl<V> extends BaseControl {
 
   constructor(
     public value: V,
-    validator?: ((v: V) => string | undefined) | null
+    validator?: ((v: V) => string | undefined | null) | null
   ) {
     super();
     this.initialValue = value;
@@ -498,6 +498,8 @@ export class GroupControl<
   }
 }
 
+export type FormDataType<DEF> = ControlValue<ControlType<DEF>>;
+
 type ControlType<T> = T extends ControlDef<infer V>
   ? FormControl<V>
   : T extends ArrayDef<infer E>
@@ -542,7 +544,7 @@ export type AllowedDef<V> =
       : never)
   | ControlDef<V>;
 
-export function ctrl<V>(
+export function control<V>(
   validator?: ((v: V) => string | undefined) | null
 ): ControlDef<V> {
   return {
@@ -560,16 +562,24 @@ export function formArray<CHILD>(child: CHILD): ArrayDef<CHILD> {
   };
 }
 
-export function group<V extends object>(children: V): GroupDef<V> {
+/**
+ *
+ * @param children
+ */
+export function formGroup<DEF extends object>(children: DEF): GroupDef<DEF> {
   return {
-    createGroup: (v: GroupValues<V>) => new GroupControl<any>(children, v),
+    createGroup: (v: GroupValues<DEF>) => new GroupControl<any>(children, v),
   };
 }
 
-export function formGroup<R>(): <
-  V extends { [K in keyof R]-?: AllowedDef<R[K]> }
+/**
+ * Create a form group function which only accepts
+ * valid definitions that will produce values of given type T.
+ */
+export function buildGroup<T>(): <
+  DEF extends { [K in keyof T]-?: AllowedDef<T[K]> }
 >(
-  children: V
-) => GroupDef<V> {
-  return group;
+  children: DEF
+) => GroupDef<DEF> {
+  return formGroup;
 }

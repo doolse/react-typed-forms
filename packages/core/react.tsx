@@ -84,34 +84,6 @@ export function useChangeListener<Node extends BaseControl>(
   }, [updater]);
 }
 
-export function Finput({
-  state,
-  ...others
-}: React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
-}) {
-  useFormStateVersion(state);
-  const domRef = useRef<HTMLInputElement | null>(null);
-  useChangeListener(
-    state,
-    () => domRef.current?.setCustomValidity(state.error ?? ""),
-    NodeChange.Error
-  );
-  return (
-    <input
-      ref={(r) => {
-        domRef.current = r;
-        if (r) r.setCustomValidity(state.error ?? "");
-      }}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setShowValidation(true)}
-      {...others}
-    />
-  );
-}
-
 export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
   return useFormListener(control, (c) => c.stateVersion, mask);
 }
@@ -153,5 +125,73 @@ export function useAsyncValidator<C extends BaseControl>(
       }, delay);
     },
     NodeChange.Value | NodeChange.Validate
+  );
+}
+
+// Only allow strings and numbers
+export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  state: FormControl<string | number>;
+};
+
+export function Finput({ state, ...others }: FinputProps) {
+  // Re-render on value or disabled state change
+  useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+
+  // We need the DOM element for setting validation errors
+  const domRef = useRef<HTMLInputElement | null>(null);
+
+  // Update the HTML5 custom validity whenever the error message is changed/cleared
+  useChangeListener(
+    state,
+    () => domRef.current?.setCustomValidity(state.error ?? ""),
+    NodeChange.Error
+  );
+  return (
+    <input
+      ref={(r) => {
+        domRef.current = r;
+        if (r) r.setCustomValidity(state.error ?? "");
+      }}
+      value={state.value}
+      disabled={state.disabled}
+      onChange={(e) => state.setValue(e.currentTarget.value)}
+      onBlur={() => state.setShowValidation(true)}
+      {...others}
+    />
+  );
+}
+
+// Only allow strings and numbers
+export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
+  state: FormControl<string | number>;
+};
+
+export function Fselect({ state, children, ...others }: FselectProps) {
+  // Re-render on value or disabled state change
+  useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+
+  // We need the DOM element for setting validation errors
+  const domRef = useRef<HTMLSelectElement | null>(null);
+
+  // Update the HTML5 custom validity whenever the error message is changed/cleared
+  useChangeListener(
+    state,
+    () => domRef.current?.setCustomValidity(state.error ?? ""),
+    NodeChange.Error
+  );
+  return (
+    <select
+      ref={(r) => {
+        domRef.current = r;
+        if (r) r.setCustomValidity(state.error ?? "");
+      }}
+      value={state.value}
+      disabled={state.disabled}
+      onChange={(e) => state.setValue(e.currentTarget.value)}
+      onBlur={() => state.setShowValidation(true)}
+      {...others}
+    >
+      {children}
+    </select>
   );
 }

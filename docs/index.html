@@ -71,16 +71,22 @@
 				<p>To take advantage of Typescript&#39;s advanced type system to give you more safety and a nice dev experience within your IDE.</p>
 				<p>Other reasons to use this library:</p>
 				<ul>
-					<li>Zero re-rendering of parent components</li>
-					<li>Easy validation including async validators.</li>
+					<li><a href="packages/examples/basic.tsx">Zero re-rendering</a> of parent components</li>
+					<li>Easy validation including <a href="packages/examples/validation.tsx">async validators</a>.</li>
 					<li>Standard form/related state (disabled, dirty, show validatons, error message).</li>
+					<li><a href="packages/example/arrays.tsx">Arrays</a> and nested forms.</li>
 					<li>Zero dependencies besides React.</li>
 					<li>MUI binding</li>
 				</ul>
-				<a href="#let39s-go" id="let39s-go" style="color: inherit; text-decoration: none;">
-					<h2>Let&#39;s go</h2>
+				<a href="#simple-example" id="simple-example" style="color: inherit; text-decoration: none;">
+					<h2>Simple example</h2>
 				</a>
-				<pre><code class="language-tsx">import { formGroup, ctrl, useFormState, Finput } from &quot;@react-typed-forms/core&quot;;
+				<pre><code class="language-tsx">import {
+  control,
+  useFormState,
+  Finput,
+  buildGroup,
+} from &quot;@react-typed-forms/core&quot;;
 import { useState } from &quot;react&quot;;
 import React from &quot;react&quot;;
 
@@ -89,9 +95,9 @@ type SimpleForm = {
   lastName: string;
 };
 
-const FormDef = formGroup&lt;SimpleForm&gt;()({
-  firstName: ctrl(),
-  lastName: ctrl((v) =&gt; (!v ? &quot;Required field&quot; : undefined)),
+const FormDef = buildGroup&lt;SimpleForm&gt;()({
+  firstName: control(),
+  lastName: control((v) =&gt; (!v ? &quot;Required field&quot; : undefined)),
 });
 
 export function SimpleExample() {
@@ -99,27 +105,110 @@ export function SimpleExample() {
   const { fields } = formState;
   const [formData, setFormData] = useState&lt;SimpleForm&gt;();
   return (
-    &lt;div&gt;
-      &lt;form
-        onSubmit={(e) =&gt; {
-          e.preventDefault();
-          setFormData(formState.toObject());
-        }}
-      &gt;
-        &lt;label&gt;First Name&lt;/label&gt;
-        &lt;Finput type=&quot;text&quot; state={fields.firstName} /&gt;
-        &lt;label&gt;Last Name *&lt;/label&gt;
-        &lt;Finput type=&quot;text&quot; state={fields.lastName} /&gt;
-        &lt;div&gt;
-          &lt;button&gt;Validate and toObject()&lt;/button&gt;
-        &lt;/div&gt;
-        {formData &amp;&amp; (
-          &lt;pre className=&quot;my-2&quot;&gt;{JSON.stringify(formData, undefined, 2)}&lt;/pre&gt;
-        )}
-      &lt;/form&gt;
-    &lt;/div&gt;
+    &lt;form
+      onSubmit={(e) =&gt; {
+        e.preventDefault();
+        setFormData(formState.toObject());
+      }}
+    &gt;
+      &lt;label&gt;First Name&lt;/label&gt;
+      &lt;Finput type=&quot;text&quot; state={fields.firstName} /&gt;
+      &lt;label&gt;Last Name *&lt;/label&gt;
+      &lt;Finput type=&quot;text&quot; state={fields.lastName} /&gt;
+      &lt;div&gt;
+        &lt;button&gt;Validate and toObject()&lt;/button&gt;
+      &lt;/div&gt;
+      {formData &amp;&amp; (
+        &lt;pre className=&quot;my-2&quot;&gt;{JSON.stringify(formData, undefined, 2)}&lt;/pre&gt;
+      )}
+    &lt;/form&gt;
   );
 }</code></pre>
+				<a href="#define-your-form" id="define-your-form" style="color: inherit; text-decoration: none;">
+					<h2>Define your form</h2>
+				</a>
+				<p>In order to render your form you first need to define it&#39;s structure and validators.</p>
+				<p>The function <code>buildGroup&lt;T&gt;()</code> can be used to create a definition that matches the structure of your form data type. This comes in handy when you are creating forms based on types which are generated from a swagger or OpenAPI definition.</p>
+				<pre><code class="language-tsx">type SimpleForm = {
+  firstName: string;
+  lastName: string;
+};
+
+const FormDef = buildGroup&lt;SimpleForm&gt;()({
+  firstName: control(),
+  lastName: control((v) =&gt; (!v ? &quot;Required field&quot; : undefined)),
+});</code></pre>
+				<p><code>control&lt;V&gt;()</code> is used to define a control which holds a single immutable value of type V. When used within <code>buildGroup</code> the type will be inferred.</p>
+				<p>Instead of starting with a datatype and checking the form structure, you can also go with a form first approach:</p>
+				<pre><code class="language-tsx">const FormDef = formGroup({
+  firstName: control&lt;string&gt;(),
+  lastName: control&lt;string&gt;((v) =&gt; (!v ? &quot;Required field&quot; : undefined)),
+});
+
+type SimpleForm = FormDataType&lt;typeof FormDef&gt;;</code></pre>
+				<a href="#render-your-form" id="render-your-form" style="color: inherit; text-decoration: none;">
+					<h2>Render your form</h2>
+				</a>
+				<p>With the form defined you need to initialise it within your component by using the <code>useFormState()</code> hook:</p>
+				<pre><code class="language-tsx">const formState = useFormState(FormDef, { firstName: &quot;&quot;, lastName: &quot;&quot; });</code></pre>
+				<p>This will return an instance of <code>GroupControl</code> which has a <code>fields</code> property which contains <code>FormControl</code> instances.</p>
+				<p>The core library contains an <code>&lt;input&gt;</code> renderer for <code>FormControl</code>s called <code>Finput</code> which uses html5&#39;s custom validation feature to show errors.</p>
+				<pre><code class="language-tsx">return (
+  &lt;div&gt;
+    &lt;Finput type=&quot;text&quot; state={formState.fields.firstName} /&gt;
+    &lt;Finput type=&quot;text&quot; state={formState.fields.lastName} /&gt;
+  &lt;/div&gt;
+);</code></pre>
+				<p>There is also a small library <a href="packages/mui/index.tsx">(@react-typed-forms/core)</a> which has some renderers for the <a href="https://material-ui.com/">MUI</a> <code>TextField</code> component.</p>
+				<a href="#rendering" id="rendering" style="color: inherit; text-decoration: none;">
+					<h2>Rendering</h2>
+				</a>
+				<p>Creating renderers for <code>FormControl</code>s is very easy, it&#39;s a simple matter of using a hook function to register change listening.</p>
+				<p>The easiest way is to just use <code>useFormStateVersion()</code> to trigger a re-render whenever any change that needs to be re-rendered occurs.</p>
+				<p>The most low level change listener hook is <code>useChangeListener()</code> which just runs an arbitrary listener function for the given change types.</p>
+				<p>Let&#39;s take a look at the <code>FInput</code> implementation which uses both:</p>
+				<pre><code class="language-tsx">// Only allow strings and numbers
+export type FinputProps = React.InputHTMLAttributes&lt;HTMLInputElement&gt; &amp; {
+  state: FormControl&lt;string | number&gt;;
+};
+
+export function Finput({ state, ...others }: FinputProps) {
+  // Re-render on value or disabled state change
+  useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+
+  // We need the DOM element for setting validation errors
+  const domRef = useRef&lt;HTMLInputElement | null&gt;(null);
+
+  // Update the HTML5 custom validity whenever the error message is changed/cleared
+  useChangeListener(
+    state,
+    () =&gt; domRef.current?.setCustomValidity(state.error ?? &quot;&quot;),
+    NodeChange.Error
+  );
+  return (
+    &lt;input
+      ref={(r) =&gt; {
+        domRef.current = r;
+        if (r) r.setCustomValidity(state.error ?? &quot;&quot;);
+      }}
+      value={state.value}
+      disabled={state.disabled}
+      onChange={(e) =&gt; state.setValue(e.currentTarget.value)}
+      onBlur={() =&gt; state.setShowValidation(true)}
+      {...others}
+    /&gt;
+  );
+}</code></pre>
+				<a href="#other-listener-hooks" id="other-listener-hooks" style="color: inherit; text-decoration: none;">
+					<h2>Other listener hooks</h2>
+				</a>
+				<p>TODO</p>
+				<ul>
+					<li><code>useAsyncValidator()</code></li>
+					<li><code>useFormListener()</code></li>
+					<li><code>useFormListenerComponent()</code></li>
+					<li><code>useValidChangeComponent()</code></li>
+				</ul>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

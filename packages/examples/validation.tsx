@@ -1,5 +1,9 @@
-import { ctrl, useFormState, useAsyncValidator } from "@react-typed-forms/core";
-import { formGroup } from "@react-typed-forms/core";
+import {
+  control,
+  useFormState,
+  useAsyncValidator,
+  buildGroup,
+} from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "./bootstrap";
 
@@ -10,9 +14,9 @@ type ValidationForm = {
 
 const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
-const FormDef = formGroup<ValidationForm>()({
-  email: ctrl((v) => (!emailRegExp.test(v) ? "Invalid email address" : "")),
-  async: ctrl(null),
+const FormDef = buildGroup<ValidationForm>()({
+  email: control((v) => (!emailRegExp.test(v) ? "Invalid email address" : "")),
+  async: control(null),
 });
 
 let renders = 0;

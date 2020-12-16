@@ -97,15 +97,18 @@
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-is-not-exported">
 					<a name="simpleform" class="tsd-anchor"></a>
 					<h3>Simple<wbr>Form</h3>
-					<div class="tsd-signature tsd-kind-icon">Simple<wbr>Form<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>password<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>username<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
+					<div class="tsd-signature tsd-kind-icon">Simple<wbr>Form<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>number<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>password<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>username<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/examples/basic.tsx#L6">examples/basic.tsx:6</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/386510d/packages/examples/basic.tsx#L10">examples/basic.tsx:10</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
 						<h4>Type declaration</h4>
 						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>number<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+							</li>
 							<li class="tsd-parameter">
 								<h5>password<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
 							</li>
@@ -121,10 +124,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
 					<a name="formdef" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> Form<wbr>Def</h3>
-					<div class="tsd-signature tsd-kind-icon">Form<wbr>Def<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_core_nodes_.groupdef.html" class="tsd-signature-type">GroupDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>password<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>username<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = formGroup&lt;SimpleForm&gt;()({password: ctrl((v) &#x3D;&gt;v.length &lt; 6 ? &quot;Password must be 6 characters&quot; : undefined),username: ctrl((v) &#x3D;&gt; (!v ? &quot;Required field&quot; : undefined)),})</span></div>
+					<div class="tsd-signature tsd-kind-icon">Form<wbr>Def<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_core_nodes_.groupdef.html" class="tsd-signature-type">GroupDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>number<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>password<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>username<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_nodes_.controldef.html" class="tsd-signature-type">ControlDef</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = buildGroup&lt;SimpleForm&gt;()({password: control((v) &#x3D;&gt;v.length &lt; 6 ? &quot;Password must be 6 characters&quot; : undefined),username: control((v) &#x3D;&gt; (!v ? &quot;Required field&quot; : undefined)),number: control(),})</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/examples/basic.tsx#L11">examples/basic.tsx:11</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/386510d/packages/examples/basic.tsx#L16">examples/basic.tsx:16</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -134,7 +137,7 @@
 					<div class="tsd-signature tsd-kind-icon">renders<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/examples/basic.tsx#L18">examples/basic.tsx:18</a></li>
+							<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/386510d/packages/examples/basic.tsx#L24">examples/basic.tsx:24</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -151,7 +154,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/589a915/packages/examples/basic.tsx#L20">examples/basic.tsx:20</a></li>
+									<li>Defined in <a href="https://github.com/doolse/react-typed-form/blob/386510d/packages/examples/basic.tsx#L26">examples/basic.tsx:26</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Element</span></h4>

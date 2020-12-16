@@ -1,4 +1,9 @@
-import { ctrl, useFormState, formArray, group } from "@react-typed-forms/core";
+import {
+  control,
+  useFormState,
+  formArray,
+  buildGroup,
+} from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { formGroup, FormArray } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -11,9 +16,9 @@ type MainForm = {
   }[];
 };
 
-const FormDef = formGroup<MainForm>()({
-  strings: formArray(ctrl()),
-  structured: formArray(group({ id: ctrl(), name: ctrl() })),
+const FormDef = buildGroup<MainForm>()({
+  strings: formArray(control()),
+  structured: formArray(formGroup({ id: control(), name: control() })),
 });
 
 let renders = 0;

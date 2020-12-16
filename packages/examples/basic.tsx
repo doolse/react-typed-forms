@@ -1,25 +1,35 @@
-import { ctrl, useFormState } from "@react-typed-forms/core";
+import {
+  control,
+  useFormState,
+  buildGroup,
+  Fselect,
+} from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
-import { formGroup } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 
 type SimpleForm = {
   username: string;
   password: string;
+  number: string;
 };
 
-const FormDef = formGroup<SimpleForm>()({
-  password: ctrl((v) =>
+const FormDef = buildGroup<SimpleForm>()({
+  password: control((v) =>
     v.length < 6 ? "Password must be 6 characters" : undefined
   ),
-  username: ctrl((v) => (!v ? "Required field" : undefined)),
+  username: control((v) => (!v ? "Required field" : undefined)),
+  number: control(),
 });
 
 let renders = 0;
 
 export function BasicFormExample() {
   renders++;
-  const formState = useFormState(FormDef, { username: "", password: "" });
+  const formState = useFormState(FormDef, {
+    username: "",
+    password: "",
+    number: "",
+  });
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
@@ -46,6 +56,14 @@ export function BasicFormExample() {
             className="form-control"
             state={fields.password}
           />
+        </div>
+        <div className="form-group">
+          <label>A number:</label>
+          <Fselect className="form-control" state={fields.number}>
+            <option value="">None</option>
+            <option value="one">1</option>
+            <option value="two">2</option>
+          </Fselect>
         </div>
         <div>
           <button
