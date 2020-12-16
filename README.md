@@ -102,7 +102,7 @@ const formState = useFormState(FormDef, { firstName: "", lastName: "" });
 
 This will return an instance of `GroupControl` which has a `fields` property which contains `FormControl` instances.
 
-The core library contains an `<input>` renderer for `FormControl`s called `Finput` which uses html5's custom validation feature to show errors.
+The core library contains an `<input>` renderer for `FormControl` called `Finput` which uses html5's custom validation feature to show errors.
 
 ```tsx
 return (
@@ -113,11 +113,11 @@ return (
 );
 ```
 
-There is also a small library [(@react-typed-forms/core)](packages/mui/index.tsx) which has some renderers for the [MUI](https://material-ui.com/) `TextField` component.
+There is also a small library [(@react-typed-forms/mui)](packages/mui/index.tsx) which has some renderers for the [MUI](https://material-ui.com/) `TextField` component.
 
 ## Rendering
 
-Creating renderers for `FormControl`s is very easy, it's a simple matter of using a hook function to register change listening.
+Creating renderers for a `FormControl` is very easy, it's a simple matter of using a hook function to register change listening.
 
 The easiest way is to just use `useFormStateVersion()` to trigger a re-render whenever any change that needs to be re-rendered occurs.
 
