@@ -10,7 +10,7 @@
   "scripts": {
     "docs": "typedoc --stripInternal --out docs",
     "prepack": "lerna run build"
-  },  
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/doolse/react-typed-forms.git"

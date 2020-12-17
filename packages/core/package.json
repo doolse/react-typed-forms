@@ -28,5 +28,10 @@
   "devDependencies": {
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
+  },
+  "gitHead": "29073ffec049a1dfb0a53975be838f573e8e4a2e",
+  "dependencies": {
+    "@types/react": "^16.14.2",
+    "@types/react-dom": "^16.9.10"
   }
 }
