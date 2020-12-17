@@ -18,6 +18,9 @@
     "url": "https://github.com/doolse/react-typed-forms/issues"
   },
   "homepage": "https://github.com/doolse/react-typed-forms#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@react-typed-forms/core": "^1.0.0"
   },
