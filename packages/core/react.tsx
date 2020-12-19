@@ -90,7 +90,10 @@ export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
 
 export function useAsyncValidator<C extends BaseControl>(
   node: C,
-  validator: (node: C, abortSignal: AbortSignal) => Promise<string | undefined>,
+  validator: (
+    node: C,
+    abortSignal: AbortSignal
+  ) => Promise<string | null | undefined>,
   delay: number
 ) {
   const handler = useRef<number>();
@@ -111,7 +114,7 @@ export function useAsyncValidator<C extends BaseControl>(
         validator(n, aborter.signal)
           .then((error) => {
             if (n.stateVersion === currentVersion) {
-              n.setShowValidation(true);
+              n.setTouched(true);
               n.setError(error);
             }
           })
@@ -155,7 +158,7 @@ export function Finput({ state, ...others }: FinputProps) {
       value={state.value}
       disabled={state.disabled}
       onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setShowValidation(true)}
+      onBlur={() => state.setTouched(true)}
       {...others}
     />
   );
@@ -188,7 +191,7 @@ export function Fselect({ state, children, ...others }: FselectProps) {
       value={state.value}
       disabled={state.disabled}
       onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setShowValidation(true)}
+      onBlur={() => state.setTouched(true)}
       {...others}
     >
       {children}

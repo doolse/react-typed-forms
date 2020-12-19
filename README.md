@@ -1,3 +1,5 @@
+![npm](https://img.shields.io/npm/v/@react-typed-forms/core?style=plastic)
+
 # React typed forms
 
 Yes, another form library for React. **Why?**
@@ -7,11 +9,11 @@ To take advantage of Typescript's advanced type system to give you more safety a
 Other reasons to use this library:
 
 - [Zero re-rendering](packages/examples/basic.tsx) of parent components
-- Easy validation including [async validators](packages/examples/validation.tsx).
-- Standard form/related state (disabled, dirty, show validatons, error message).
-- [Arrays](packages/example/arrays.tsx) and nested forms.
-- Zero dependencies besides React.
-- MUI binding
+- Easy validation including [async validators](packages/examples/validation.tsx)
+- Standard form related state (valid, disabled, dirty, touched, error string)
+- [Arrays](packages/example/arrays.tsx) and nested forms
+- Zero dependencies besides React
+- [MUI](https://material-ui.com/) TextField binding
 
 ## Simple example
 
@@ -162,9 +164,10 @@ export function Finput({ state, ...others }: FinputProps) {
 
 ## Other listener hooks
 
-TODO
+`useAsyncValidator()`
 
-- `useAsyncValidator()`
+If you need complex validation which requires calling a web service, call `useAsyncValidator()` with your validation callback which returns a `Promise` with the error message (or null/undefined for valid). You also pass in a debounce time in milliseconds, so that you don't validate on each keypress.
+
 - `useFormListener()`
 - `useFormListenerComponent()`
 - `useValidChangeComponent()`

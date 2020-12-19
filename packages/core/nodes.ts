@@ -8,11 +8,11 @@ export type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
 export enum NodeChange {
   Value = 1,
   Valid = 2,
-  ShowValidation = 4,
+  Touched = 4,
   Disabled = 8,
   Error = 16,
   Dirty = 32,
-  All = Value | Valid | ShowValidation | Disabled | Error | Dirty,
+  All = Value | Valid | Touched | Disabled | Error | Dirty,
   Validate = 64,
 }
 
@@ -24,7 +24,7 @@ export type ChangeListener<C extends BaseControl> = [
 export abstract class BaseControl {
   valid: boolean = true;
   error: string | undefined | null;
-  showValidation: boolean = false;
+  touched: boolean = false;
   disabled: boolean = false;
   dirty: boolean = false;
 
@@ -51,7 +51,7 @@ export abstract class BaseControl {
     recurse?: boolean
   ): boolean;
 
-  abstract setShowValidation(showValidation: boolean): void;
+  abstract setTouched(showValidation: boolean): void;
 
   /**
    * @internal
@@ -100,10 +100,10 @@ export abstract class BaseControl {
   /**
    * @internal
    */
-  updateShowValidation(showValidation: boolean): NodeChange {
-    if (this.showValidation !== showValidation) {
-      this.showValidation = showValidation;
-      return NodeChange.ShowValidation;
+  updateTouched(touched: boolean): NodeChange {
+    if (this.touched !== touched) {
+      this.touched = touched;
+      return NodeChange.Touched;
     }
     return 0;
   }
@@ -234,11 +234,11 @@ export class FormControl<V> extends BaseControl {
   }
 
   /**
-   * Set the showValidation flag.
-   * @param showValidation
+   * Set the touched flag.
+   * @param touched
    */
-  setShowValidation(showValidation: boolean) {
-    this.runChange(this.updateShowValidation(showValidation));
+  setTouched(touched: boolean) {
+    this.runChange(this.updateTouched(touched));
   }
 
   /**
@@ -271,7 +271,7 @@ export abstract class ParentControl extends BaseControl {
     return [
       NodeChange.Value |
         NodeChange.Valid |
-        NodeChange.ShowValidation |
+        NodeChange.Touched |
         NodeChange.Dirty,
       (child, change) => {
         var flags: NodeChange = change & NodeChange.Value;
@@ -285,10 +285,8 @@ export abstract class ParentControl extends BaseControl {
             child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
           flags |= this.updateDirty(dirty);
         }
-        if (change & NodeChange.ShowValidation) {
-          flags |= this.updateShowValidation(
-            child.showValidation || this.showValidation
-          );
+        if (change & NodeChange.Touched) {
+          flags |= this.updateTouched(child.touched || this.touched);
         }
         this.runChange(flags);
       },
@@ -318,11 +316,11 @@ export abstract class ParentControl extends BaseControl {
   }
 
   /**
-   * Set the showValidation flag on this and any children.
-   * @param showValidation
+   * Set the touched flag on this and any children.
+   * @param touched
    */
-  setShowValidation(showValidation: boolean) {
-    this.updateAll((c) => c.updateShowValidation(showValidation));
+  setTouched(touched: boolean) {
+    this.updateAll((c) => c.updateTouched(touched));
   }
 
   /**
