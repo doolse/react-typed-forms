@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
   },
-  "gitHead": "29073ffec049a1dfb0a53975be838f573e8e4a2e",
+  "gitHead": "25b6eda8a4f28113a3928a9045f5656c1448b029",
   "dependencies": {
     "@types/react": "^16.14.2",
     "@types/react-dom": "^16.9.10"

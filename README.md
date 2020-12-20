@@ -155,7 +155,7 @@ export function Finput({ state, ...others }: FinputProps) {
       value={state.value}
       disabled={state.disabled}
       onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setShowValidation(true)}
+      onBlur={() => state.setTouched(true)}
       {...others}
     />
   );
@@ -164,10 +164,38 @@ export function Finput({ state, ...others }: FinputProps) {
 
 ## Other listener hooks
 
-`useAsyncValidator()`
+### `useAsyncValidator()`
 
 If you need complex validation which requires calling a web service, call `useAsyncValidator()` with your validation callback which returns a `Promise` with the error message (or null/undefined for valid). You also pass in a debounce time in milliseconds, so that you don't validate on each keypress.
 
-- `useFormListener()`
-- `useFormListenerComponent()`
-- `useValidChangeComponent()`
+### `useFormListener()`
+
+A common scenario for forms is that you'd like to have a Save button which is disabled when the form is invalid.
+
+```tsx
+const [formValid, setFormValid] = useState(formState.valid);
+useChangeListener(formState, () => setFormValid(formState.valid), NodeChange.Valid);
+
+... render form...
+<button disabled={!formValid} onClick={() => save()}>Save</button>
+```
+
+`useFormListener()` handles the state updates for you so you could replace the above code with:
+
+```ts
+const formValid = useFormListener(formState, (c) => c.valid, NodeChange.Valid);
+```
+
+### `useFormListenerComponent()`
+
+The only downside to `useFormListener()` is that you will be re-rendering the whole component, which usually won't matter if it's not too complicated but we can do better.
+
+```tsx
+const FormValid = useFormListenerComponent(formState, c => c.valid, NodeChange.Valid);
+...render form...
+<FormValid>{(formValid) => <button disabled={!formValid} onClick={() => save()}>Save</button>}</FormValid>
+```
+
+## API Docs
+
+Typedoc API [docs](docs/README.md)

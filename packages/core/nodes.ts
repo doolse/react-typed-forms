@@ -202,17 +202,25 @@ export class FormControl<V> extends BaseControl {
     }
   }
 
-  setValue(v: V, initial?: boolean): void {
-    if (v !== this.value) {
-      this.value = v;
+  /**
+   * Set the value for this control and
+   * update the dirty flag if changed.
+   * @param value The value to set
+   * @param initial If true the dirty flag is reset
+   * and a copy of the value is kept to check for dirtiness
+   * on any future updates.
+   */
+  setValue(value: V, initial?: boolean): void {
+    if (value !== this.value) {
+      this.value = value;
       if (initial) {
-        this.initialValue = v;
+        this.initialValue = value;
       }
       this.runChange(
-        NodeChange.Value | this.updateDirty(v !== this.initialValue)
+        NodeChange.Value | this.updateDirty(value !== this.initialValue)
       );
     } else if (initial) {
-      this.initialValue = v;
+      this.initialValue = value;
       this.runChange(this.updateDirty(false));
     }
   }
@@ -373,6 +381,12 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     super();
   }
 
+  /**
+   * Set the child values. Underlying nodes will be
+   * added/deleted if the size of the array changes.
+   * @param value The values to set on child nodes
+   * @param initial If true reset the dirty flag
+   */
   setValue(value: ControlValue<FIELD>[], initial?: boolean): void {
     this.groupedChanges(() => {
       var flags: NodeChange = 0;
@@ -424,6 +438,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     return true;
   }
 
+  /**
+   * Add a new element to the array
+   * @param value The value for the child control
+   */
   addFormElement(value: ControlValue<FIELD>): FIELD {
     const newCtrl = this.controlFromDef(this.childDefinition, value) as FIELD;
     this.elems = [...this.elems, newCtrl];
@@ -431,6 +449,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     return newCtrl;
   }
 
+  /**
+   * Remove an element in the array by index
+   * @param index The index of the form element to remove
+   */
   removeFormElement(index: number): void {
     this.elems = this.elems.filter((e, i) => i !== index);
     this.runChange(NodeChange.Value);
@@ -474,6 +496,12 @@ export class GroupControl<
     return true;
   }
 
+  /**
+   * Set the value of all child nodes.
+   * If the child type contains `undefined` the fields is optional.
+   * @param value The value for all child nodes
+   * @param initial If true reset the dirty flag
+   */
   setValue(
     value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>,
     initial?: boolean
@@ -542,6 +570,10 @@ export type AllowedDef<V> =
       : never)
   | ControlDef<V>;
 
+/**
+ * Define a leaf node containing values of type V
+ * @param validator An optional synchronous validator
+ */
 export function control<V>(
   validator?: ((v: V) => string | undefined) | null
 ): ControlDef<V> {

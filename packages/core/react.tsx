@@ -12,9 +12,9 @@ import {
   GroupDef,
 } from "./nodes";
 
-export function useFormListener<V extends BaseControl, S>(
-  control: V,
-  toState: (state: V) => S,
+export function useFormListener<C extends BaseControl, S>(
+  control: C,
+  toState: (state: C) => S,
   mask?: NodeChange
 ): S {
   const [state, setState] = useState(toState(control));
@@ -36,9 +36,9 @@ export function useFormState<FIELDS extends object>(
   }, [group]);
 }
 
-export function useFormListenerComponent<S, V extends BaseControl>(
-  control: V,
-  toState: (state: V) => S,
+export function useFormListenerComponent<S, C extends BaseControl>(
+  control: C,
+  toState: (state: C) => S,
   mask?: NodeChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
@@ -50,23 +50,29 @@ export function useFormListenerComponent<S, V extends BaseControl>(
   );
 }
 
-export function useValidChangeComponent(
-  control: BaseControl
-): FC<{ children: (formState: boolean) => ReactElement }> {
-  return useFormListenerComponent(
-    control,
+export interface FormValidAndDirtyProps {
+  state: BaseControl;
+  children: (validForm: boolean) => ReactElement;
+}
+
+export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
+  const validForm = useFormListener(
+    state,
     (c) => c.valid && c.dirty,
     NodeChange.Valid | NodeChange.Dirty
   );
+  return children(validForm);
 }
 
-export function FormArray<V extends BaseControl>({
+export interface FormArrayProps<C extends BaseControl> {
+  state: ArrayControl<C>;
+  children: (elems: C[]) => ReactNode;
+}
+
+export function FormArray<C extends BaseControl>({
   state,
   children,
-}: {
-  state: ArrayControl<V>;
-  children: (elems: V[]) => ReactNode;
-}) {
+}: FormArrayProps<C>) {
   useFormListener(state, (c) => c.elems.length, NodeChange.Value);
   return <>{children(state.elems)}</>;
 }

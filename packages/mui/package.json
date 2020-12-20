@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/mui",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@react-typed-forms/core": "^1.0.1"
+    "@react-typed-forms/core": "^1.0.3"
   },
   "peerDependencies": {
     "@date-io/date-fns": "^1.3.13",
@@ -34,5 +34,5 @@
     "@material-ui/core": "4.9.12",
     "@material-ui/pickers": "^3.2.10"
   },
-  "gitHead": "29073ffec049a1dfb0a53975be838f573e8e4a2e"
+  "gitHead": "25b6eda8a4f28113a3928a9045f5656c1448b029"
 }
