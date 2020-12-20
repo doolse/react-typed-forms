@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/mui",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@react-typed-forms/core": "^1.0.4"
+    "@react-typed-forms/core": "^1.0.5"
   },
   "peerDependencies": {
     "@date-io/date-fns": "^1.3.13",
