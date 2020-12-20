@@ -19,9 +19,9 @@ export function FormInput({
         value={state.value}
         disabled={state.disabled}
         onChange={(e) => state.setValue(e.currentTarget.value)}
-        onBlur={() => state.setShowValidation(true)}
+        onBlur={() => state.setTouched(true)}
         className={`form-control ${
-          state.showValidation
+          state.touched
             ? state.valid
               ? showValid
                 ? "is-valid"
