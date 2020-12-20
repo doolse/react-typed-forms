@@ -15,6 +15,12 @@ Other reasons to use this library:
 - Zero dependencies besides React
 - [MUI](https://material-ui.com/) TextField binding
 
+## Install
+
+```npm
+npm install @react-typed-forms/core
+```
+
 ## Simple example
 
 ```tsx
