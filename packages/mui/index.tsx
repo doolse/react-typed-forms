@@ -21,7 +21,7 @@ export function FTextField({
       disabled={state.disabled}
       helperText={showError ? state.error : others.helperText}
       onBlur={() => state.setTouched(true)}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
+      onChange={(e) => state.setValue(e.target.value)}
     />
   );
 }
@@ -53,7 +53,7 @@ export function FNumberField({
       helperText={showError ? state.error : others.helperText}
       onBlur={() => state.setTouched(true)}
       onChange={(e) => {
-        const textVal = e.currentTarget.value;
+        const textVal = e.target.value;
         setText(textVal);
         if (!textVal) {
           if (blankError) {
