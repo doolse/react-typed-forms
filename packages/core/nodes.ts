@@ -21,12 +21,15 @@ export type ChangeListener<C extends BaseControl> = [
   (control: C, cb: NodeChange) => void
 ];
 
+let nodeCount = 0;
+
 export abstract class BaseControl {
   valid: boolean = true;
   error: string | undefined | null;
   touched: boolean = false;
   disabled: boolean = false;
   dirty: boolean = false;
+  uniqueId = ++nodeCount;
 
   /**
    * @internal
@@ -445,7 +448,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   addFormElement(value: ControlValue<FIELD>): FIELD {
     const newCtrl = this.controlFromDef(this.childDefinition, value) as FIELD;
     this.elems = [...this.elems, newCtrl];
-    this.runChange(NodeChange.Value);
+    this.runChange(NodeChange.Value | this.updateArrayFlags());
     return newCtrl;
   }
 
@@ -455,7 +458,17 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
    */
   removeFormElement(index: number): void {
     this.elems = this.elems.filter((e, i) => i !== index);
-    this.runChange(NodeChange.Value);
+    this.runChange(NodeChange.Value | this.updateArrayFlags());
+  }
+
+  private updateArrayFlags() {
+    return (
+      this.updateTouched(true) |
+      this.updateDirty(
+        this.elems.length !== this.initialValueLength ||
+          !this.visitChildren((c) => !c.dirty)
+      )
+    );
   }
 }
 
