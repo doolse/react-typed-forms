@@ -539,7 +539,7 @@ export class GroupControl<
 
 export type FormDataType<DEF> = ControlValue<ControlType<DEF>>;
 
-type ControlType<T> = T extends ControlDef<infer V>
+export type ControlType<T> = T extends ControlDef<infer V>
   ? FormControl<V>
   : T extends ArrayDef<infer E>
   ? ArrayControl<ControlType<E>>
