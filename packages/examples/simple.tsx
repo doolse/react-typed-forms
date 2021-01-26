@@ -29,11 +29,11 @@ export function SimpleExample() {
       }}
     >
       <label>First Name</label>
-      <Finput type="text" state={fields.firstName} />
+      <Finput id="firstName" type="text" state={fields.firstName} />
       <label>Last Name *</label>
-      <Finput type="text" state={fields.lastName} />
+      <Finput id="lastName" type="text" state={fields.lastName} />
       <div>
-        <button>Validate and toObject()</button>
+        <button id="submit">Validate and toObject()</button>
       </div>
       {formData && (
         <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>

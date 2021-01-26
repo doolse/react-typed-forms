@@ -5,6 +5,7 @@ export function FormInput({
   state,
   label,
   showValid,
+  id,
   ...others
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   state: FormControl<string | number>;
@@ -13,7 +14,7 @@ export function FormInput({
 }) {
   useFormStateVersion(state);
   return (
-    <div className="form-group">
+    <div className="form-group" id={id}>
       {label && <label>{label}</label>}
       <input
         value={state.value}

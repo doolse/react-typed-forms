@@ -35,7 +35,9 @@ export function BasicFormExample() {
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <div className="container">
-      <h2>Basic Form Example - {renders} render(s)</h2>
+      <h2>
+        Basic Form Example - <span id="renderCount">{renders}</span> render(s)
+      </h2>
       <p>
         Hitting the toObject() button will also trigger the html5 validity
         errors to show.
@@ -46,6 +48,7 @@ export function BasicFormExample() {
           <Finput
             type="text"
             className="form-control"
+            id="username"
             state={fields.username}
           />
         </div>
@@ -53,13 +56,14 @@ export function BasicFormExample() {
           <label>Password:</label>
           <Finput
             type="password"
+            id="password"
             className="form-control"
             state={fields.password}
           />
         </div>
         <div className="form-group">
           <label>A number:</label>
-          <Fselect className="form-control" state={fields.number}>
+          <Fselect className="form-control" id="number" state={fields.number}>
             <option value="">None</option>
             <option value="one">1</option>
             <option value="two">2</option>
@@ -67,6 +71,7 @@ export function BasicFormExample() {
         </div>
         <div>
           <button
+            id="toggleDisabled"
             className="btn btn-secondary"
             onClick={(e) => {
               e.preventDefault();
@@ -76,6 +81,7 @@ export function BasicFormExample() {
             Toggle disabled
           </button>{" "}
           <button
+            id="submit"
             className="btn btn-primary"
             onClick={(e) => {
               setFormData(formState.toObject());

@@ -3,22 +3,33 @@ import {
   useFormState,
   formArray,
   buildGroup,
+  ControlValue,
+  FormControl,
+  GroupControl,
+  formGroup,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
-import { formGroup, FormArray } from "@react-typed-forms/core";
+import { FormArray } from "@react-typed-forms/core";
 import React, { useState } from "react";
+
+type RowForm = {
+  id: string;
+  name: string;
+};
 
 type MainForm = {
   strings: string[];
-  structured: {
-    id: string;
-    name: string;
-  }[];
+  structured: RowForm[];
 };
 
 const FormDef = buildGroup<MainForm>()({
   strings: formArray(control()),
-  structured: formArray(formGroup({ id: control(), name: control() })),
+  structured: formArray(
+    formGroup({
+      id: control(),
+      name: control(),
+    })
+  ),
 });
 
 let renders = 0;
@@ -39,7 +50,11 @@ export function ArraysExample() {
         <FormArray state={fields.strings}>
           {(elems) =>
             elems.map((c, idx) => (
-              <div key={idx} className="form-inline">
+              <div
+                key={c.uniqueId}
+                id={`string-${idx + 1}`}
+                className="form-inline"
+              >
                 <div className="form-group mb-2">
                   <label className="mx-2">Value:</label>
                   <Finput type="text" className="form-control" state={c} />
@@ -58,6 +73,7 @@ export function ArraysExample() {
         </FormArray>
         <div>
           <button
+            id="addString"
             className="btn"
             onClick={() => fields.strings.addFormElement("")}
           >
@@ -69,15 +85,23 @@ export function ArraysExample() {
         <h5>Structured elements</h5>
         <FormArray state={fields.structured}>
           {(elems) =>
-            elems.map(({ fields: c }, idx) => (
-              <div key={idx} className="form-inline">
+            elems.map(({ fields: c, uniqueId }, idx) => (
+              <div id={`obj-${idx + 1}`} key={uniqueId} className="form-inline">
                 <div className="form-group mb-2">
                   <label className="mx-2">Id:</label>
-                  <Finput type="text" className="form-control" state={c.id} />
+                  <Finput
+                    type="text"
+                    className="idField form-control"
+                    state={c.id}
+                  />
                 </div>
                 <div className="form-group mb-2">
                   <label className="mx-2">Name:</label>
-                  <Finput type="text" className="form-control" state={c.name} />
+                  <Finput
+                    type="text"
+                    className="nameField form-control"
+                    state={c.name}
+                  />
                 </div>
                 <div>
                   <button
@@ -93,6 +117,7 @@ export function ArraysExample() {
         </FormArray>
         <div>
           <button
+            id="addObj"
             className="btn"
             onClick={() =>
               fields.structured.addFormElement({ id: "", name: "" })
@@ -104,12 +129,14 @@ export function ArraysExample() {
       </div>
       <div>
         <button
+          id="toggleDisabled"
           className="btn btn-secondary"
           onClick={() => formState.setDisabled(!formState.disabled)}
         >
           Toggle disabled
         </button>{" "}
         <button
+          id="submit"
           className="btn btn-primary"
           onClick={() => setFormData(formState.toObject())}
         >

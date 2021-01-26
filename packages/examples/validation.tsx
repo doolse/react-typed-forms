@@ -45,12 +45,14 @@ export function ValidationExample() {
   return (
     <div className="container">
       <h2>Validation Example - {renders} render(s)</h2>
-      <p>
-        Hitting the toObject() button will also trigger the html5 validity
-        errors to show.
-      </p>
-      <FormInput label="Email:" type="text" state={fields.email} />
-      <FormInput label="Async:" type="text" state={fields.async} showValid />
+      <FormInput id="email" label="Email:" type="text" state={fields.email} />
+      <FormInput
+        id="async"
+        label="Async:"
+        type="text"
+        state={fields.async}
+        showValid
+      />
       <div>
         <button
           className="btn btn-secondary"
@@ -59,6 +61,7 @@ export function ValidationExample() {
           Toggle disabled
         </button>{" "}
         <button
+          id="submit"
           className="btn btn-primary"
           onClick={(e) => setFormData(formState.toObject())}
         >

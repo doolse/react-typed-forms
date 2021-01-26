@@ -8,5 +8,6 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react"
-  }
+  },
+  "include": ["packages/*/**/*.ts*"]
 }

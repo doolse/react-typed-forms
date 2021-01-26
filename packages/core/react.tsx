@@ -5,7 +5,6 @@ import {
   NodeChange,
   FormControl,
   ArrayControl,
-  ToOptional,
   GroupControl,
   GroupControls,
   GroupValues,
@@ -24,7 +23,7 @@ export function useFormListener<C extends BaseControl, S>(
 
 export function useFormState<FIELDS extends object>(
   group: GroupDef<FIELDS>,
-  value: ToOptional<GroupValues<FIELDS>>,
+  value: GroupValues<FIELDS>,
   dontValidate?: boolean
 ): GroupControl<GroupControls<FIELDS>> {
   return useMemo(() => {
@@ -94,16 +93,22 @@ export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
   return useFormListener(control, (c) => c.stateVersion, mask);
 }
 
+function defaultValidCheck(n: BaseControl) {
+  return n instanceof FormControl ? n.value : n.stateVersion;
+}
+
 export function useAsyncValidator<C extends BaseControl>(
   node: C,
   validator: (
     node: C,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
-  delay: number
+  delay: number,
+  validCheckValue?: (node: C) => any
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
+  const validCheck = validCheckValue ?? defaultValidCheck;
   useChangeListener(
     node,
     (n) => {
@@ -113,13 +118,13 @@ export function useAsyncValidator<C extends BaseControl>(
       if (abortController.current) {
         abortController.current.abort();
       }
-      let currentVersion = n.stateVersion;
+      let currentVersion = validCheck(n);
       handler.current = window.setTimeout(() => {
         const aborter = new AbortController();
         abortController.current = aborter;
         validator(n, aborter.signal)
           .then((error) => {
-            if (n.stateVersion === currentVersion) {
+            if (validCheck(n) === currentVersion) {
               n.setTouched(true);
               n.setError(error);
             }

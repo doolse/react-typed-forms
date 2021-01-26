@@ -1,10 +1,3 @@
-type UndefinedProperties<T> = {
-  [P in keyof T]-?: undefined extends T[P] ? P : never;
-}[keyof T];
-
-export type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> &
-  Pick<T, Exclude<keyof T, UndefinedProperties<T>>>;
-
 export enum NodeChange {
   Value = 1,
   Valid = 2,
@@ -180,12 +173,25 @@ function toValueUnsafe(ctrl: BaseControl): any {
     : undefined;
 }
 
-export type ControlValue<T> = T extends FormControl<infer V>
+type IsOptionalField<K, C> = C extends FormControl<infer V>
+  ? undefined extends V
+    ? K
+    : never
+  : never;
+
+type IsRequiredField<K, C> = C extends FormControl<infer V>
+  ? undefined extends V
+    ? never
+    : K
+  : K;
+
+export type ControlValue<C> = C extends GroupControl<infer F>
+  ? { [K in keyof F as IsRequiredField<K, F[K]>]: ControlValue<F[K]> } &
+      { [K in keyof F as IsOptionalField<K, F[K]>]?: ControlValue<F[K]> }
+  : C extends FormControl<infer V>
   ? V
-  : T extends ArrayControl<infer E>
-  ? ControlValue<E>[]
-  : T extends GroupControl<infer F>
-  ? ToOptional<{ [K in keyof F]: ControlValue<F[K]> }>
+  : C extends ArrayControl<infer AC>
+  ? ControlValue<AC>[]
   : never;
 
 export class FormControl<V> extends BaseControl {
@@ -516,7 +522,7 @@ export class GroupControl<
    * @param initial If true reset the dirty flag
    */
   setValue(
-    value: ToOptional<{ [K in keyof FIELDS]: ControlValue<FIELDS[K]> }>,
+    value: { [K in keyof FIELDS]: ControlValue<FIELDS[K]> },
     initial?: boolean
   ): void {
     this.groupedChanges(() => {
@@ -565,14 +571,12 @@ export type GroupControls<DEF> = {
   [K in keyof DEF]: ControlType<DEF[K]>;
 };
 
-export type GroupValues<DEF> = {
-  [K in keyof DEF]: ControlValue<ControlType<DEF[K]>>;
-};
+export type GroupValues<DEF extends object> = ControlValue<
+  GroupControl<GroupControls<DEF>>
+>;
 
 export interface GroupDef<FIELDS extends object> {
-  createGroup(
-    value: ToOptional<GroupValues<FIELDS>>
-  ): GroupControl<GroupControls<FIELDS>>;
+  createGroup(value: GroupValues<FIELDS>): GroupControl<GroupControls<FIELDS>>;
 }
 
 export type AllowedDef<V> =
