@@ -79,6 +79,13 @@ export function ArraysExample() {
           >
             Add
           </button>
+          <button
+            id="addStartString"
+            className="btn"
+            onClick={() => fields.strings.addFormElement("", 0)}
+          >
+            Add to start
+          </button>
         </div>
       </div>
       <div className="my-3">

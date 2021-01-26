@@ -9,7 +9,9 @@
   "main": "index.js",
   "scripts": {
     "docs": "typedoc --stripInternal --out docs",
-    "prepack": "lerna run build"
+    "prepack": "lerna run build",
+    "build": "lerna run build",
+    "start": "lerna run start --stream"
   },
   "repository": {
     "type": "git",
@@ -26,6 +28,7 @@
     "lerna": "^3.20.2",
     "react": "^16.8.0",
     "react-dom": "^16.8.0",
+    "ts-node": "^9.1.1",
     "typedoc": "^0.19.2",
     "typedoc-plugin-markdown": "^3.1.1",
     "typescript": "^4.1.2"

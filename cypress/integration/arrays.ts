@@ -10,6 +10,8 @@ describe("Arrays", () => {
     cy.get("#addString").click();
     cy.get("#string-3 input").type("Third string");
     cy.get("#string-2 button").click();
+    cy.get("#addStartString").click();
+    cy.get("#string-1 input").type("Zero string");
     cy.get("#obj-1 .idField").type("1");
     cy.get("#obj-1 .nameField").type("One");
     cy.get("#addObj").click();
@@ -29,7 +31,7 @@ describe("Arrays", () => {
     cy.get("#submit").click();
     cy.get("pre").should(
       compareJson({
-        strings: ["First string", "Third string"],
+        strings: ["Zero string", "First string", "Third string"],
         structured: [
           { id: "2", name: "Two" },
           { id: "3", name: "Three" },

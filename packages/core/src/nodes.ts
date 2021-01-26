@@ -451,9 +451,14 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
    * Add a new element to the array
    * @param value The value for the child control
    */
-  addFormElement(value: ControlValue<FIELD>): FIELD {
+  addFormElement(value: ControlValue<FIELD>, index?: number): FIELD {
     const newCtrl = this.controlFromDef(this.childDefinition, value) as FIELD;
-    this.elems = [...this.elems, newCtrl];
+    this.elems = [...this.elems];
+    if (index !== undefined) {
+      this.elems.splice(index, 0, newCtrl);
+    } else {
+      this.elems.push(newCtrl);
+    }
     this.runChange(NodeChange.Value | this.updateArrayFlags());
     return newCtrl;
   }
