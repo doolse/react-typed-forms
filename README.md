@@ -8,10 +8,10 @@ To take advantage of Typescript's advanced type system to give you more safety a
 
 Other reasons to use this library:
 
-- [Zero re-rendering](packages/examples/basic.tsx) of parent components
-- Easy validation including [async validators](packages/examples/validation.tsx)
+- [Zero re-rendering](packages/examples/src/basic.tsx) of parent components
+- Easy validation including [async validators](packages/examples/src/validation.tsx)
 - Standard form related state (valid, disabled, dirty, touched, error string)
-- [Arrays](packages/example/arrays.tsx) and nested forms
+- [Arrays](packages/example/src/arrays.tsx) and nested forms
 - Zero dependencies besides React
 - [MUI](https://material-ui.com/) TextField binding
 
@@ -121,7 +121,7 @@ return (
 );
 ```
 
-There is also a small library [(@react-typed-forms/mui)](packages/mui/index.tsx) which has some renderers for the [MUI](https://material-ui.com/) `TextField` component.
+There is also a small library [(@react-typed-forms/mui)](packages/mui/src/index.tsx) which has some renderers for the [MUI](https://material-ui.com/) `TextField` component.
 
 ## Rendering
 

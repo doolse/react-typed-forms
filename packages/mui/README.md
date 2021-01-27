@@ -1,6 +1,6 @@
 ![npm](https://img.shields.io/npm/v/@react-typed-forms/mui?style=plastic)
 
-See the documentation [here](../../README.md)
+See the documentation [here](https://github.com/doolse/react-typed-forms#readme)
 
 ## Install
 

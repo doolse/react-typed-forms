@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/doolse/react-typed-forms.git"
   },
-  "author": "",
+  "author": "Jolse Maginnis",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/doolse/react-typed-forms/issues"
@@ -21,6 +21,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "react",
+    "typescript",
+    "forms"
+  ],
   "peerDependencies": {
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
