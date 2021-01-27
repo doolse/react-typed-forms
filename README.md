@@ -4,7 +4,7 @@
 
 Yes, another form library for React. **Why?**
 
-To take advantage of Typescript's advanced type system to give you more safety and a nice dev experience within your IDE.
+To take advantage of Typescript's advanced type system (v4.1) to give you more safety and a nice dev experience within your IDE.
 
 Other reasons to use this library:
 

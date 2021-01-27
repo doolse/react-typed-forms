@@ -5,6 +5,7 @@ import { ArraysExample } from "./arrays";
 import { BrowserRouter, Link, Route } from "react-router-dom";
 import { ValidationExample } from "./validation";
 import { SimpleExample } from "./simple";
+import { OptionalsTest } from "./optionals";
 
 const examples: [string, FC, string][] = [
   ["/simple", SimpleExample, "Simple"],
@@ -24,6 +25,7 @@ render(
     {examples.map(([path, component]) => (
       <Route key={path} path={path} component={component} />
     ))}
+    <Route key="/optionals" path="/optionals" component={OptionalsTest} />
   </BrowserRouter>,
   document.getElementById("main")
 );

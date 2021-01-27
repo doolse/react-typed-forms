@@ -194,6 +194,14 @@ export type ControlValue<C> = C extends GroupControl<infer F>
   ? ControlValue<AC>[]
   : never;
 
+export type ControlValueOut<C> = C extends GroupControl<infer F>
+  ? { [K in keyof F]: ControlValueOut<F[K]> }
+  : C extends FormControl<infer V>
+  ? V
+  : C extends ArrayControl<infer AC>
+  ? ControlValueOut<AC>[]
+  : never;
+
 export class FormControl<V> extends BaseControl {
   initialValue: V;
 
@@ -426,7 +434,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     });
   }
 
-  toArray(): ControlValue<FIELD>[] {
+  toArray(): ControlValueOut<FIELD>[] {
     return this.elems.map((e) => toValueUnsafe(e));
   }
 
@@ -526,10 +534,7 @@ export class GroupControl<
    * @param value The value for all child nodes
    * @param initial If true reset the dirty flag
    */
-  setValue(
-    value: { [K in keyof FIELDS]: ControlValue<FIELDS[K]> },
-    initial?: boolean
-  ): void {
+  setValue(value: ControlValue<this>, initial?: boolean): void {
     this.groupedChanges(() => {
       const fields = this.fields;
       for (const k in fields) {
@@ -538,7 +543,7 @@ export class GroupControl<
     });
   }
 
-  toObject(): { [K in keyof FIELDS]: ControlValue<FIELDS[K]> } {
+  toObject(): ControlValueOut<this> {
     const rec: Record<string, any> = {};
     for (const k in this.fields) {
       const bctrl = this.fields[k];
