@@ -1,5 +1,12 @@
-import React, { ReactElement, FC, useRef, useCallback } from "react";
-import { useMemo, useState, useEffect, ReactNode } from "react";
+import React, {
+  ReactElement,
+  FC,
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import {
   BaseControl,
   NodeChange,
@@ -16,8 +23,11 @@ export function useFormListener<C extends BaseControl, S>(
   toState: (state: C) => S,
   mask?: NodeChange
 ): S {
-  const [state, setState] = useState(toState(control));
-  useChangeListener(control, () => setState(toState(control)), mask);
+  const [state, setState] = useState(() => toState(control));
+  useEffect(() => {
+    setState(toState(control));
+  }, [control]);
+  useChangeListener(control, (control) => setState(toState(control)), mask);
   return state;
 }
 
@@ -82,7 +92,7 @@ export function useChangeListener<Node extends BaseControl>(
   mask?: NodeChange,
   deps?: any[]
 ) {
-  const updater = useMemo(() => listener, deps ?? []);
+  const updater = useMemo(() => listener, deps ?? [control]);
   useEffect(() => {
     control.addChangeListener(updater, mask);
     return () => control.removeChangeListener(updater);

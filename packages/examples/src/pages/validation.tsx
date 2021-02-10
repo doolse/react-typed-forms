@@ -5,7 +5,7 @@ import {
   buildGroup,
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
-import { FormInput } from "./bootstrap";
+import { FormInput } from "../bootstrap";
 
 type ValidationForm = {
   email: string;
@@ -21,11 +21,12 @@ const FormDef = buildGroup<ValidationForm>()({
 
 let renders = 0;
 
-export function ValidationExample() {
+export default function ValidationExample() {
   renders++;
+
+  const [formData, setFormData] = useState<ValidationForm>();
   const formState = useFormState(FormDef, { email: "", async: "" });
   const { fields } = formState;
-  const [formData, setFormData] = useState<ValidationForm>();
 
   useAsyncValidator(
     fields.async,

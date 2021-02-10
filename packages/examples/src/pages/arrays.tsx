@@ -7,6 +7,8 @@ import {
   FormControl,
   GroupControl,
   formGroup,
+  useFormListener,
+  useFormListenerComponent,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FormArray } from "@react-typed-forms/core";
@@ -34,7 +36,7 @@ const FormDef = buildGroup<MainForm>()({
 
 let renders = 0;
 
-export function ArraysExample() {
+export default function ArraysExample() {
   renders++;
   const formState = useFormState(FormDef, {
     strings: [""],
@@ -42,6 +44,7 @@ export function ArraysExample() {
   });
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
+  const Dirty = useFormListenerComponent(fields.structured, (c) => c.dirty);
   return (
     <div className="container">
       <h2>Arrays Example - {renders} render(s)</h2>
@@ -78,14 +81,14 @@ export function ArraysExample() {
             onClick={() => fields.strings.addFormElement("")}
           >
             Add
-          </button>
+          </button>{" "}
           <button
             id="addStartString"
             className="btn"
             onClick={() => fields.strings.addFormElement("", 0)}
           >
             Add to start
-          </button>
+          </button>{" "}
         </div>
       </div>
       <div className="my-3">
@@ -131,7 +134,29 @@ export function ArraysExample() {
             }
           >
             Add
-          </button>
+          </button>{" "}
+          <button
+            id="setObj"
+            className="btn"
+            onClick={() =>
+              fields.structured.setValue(
+                [
+                  { name: "Reset", id: "reset" },
+                  { id: "id", name: "Name" },
+                ],
+                true
+              )
+            }
+          >
+            Reset
+          </button>{" "}
+          <Dirty>
+            {(dirty) => (
+              <span>
+                Dirty: <span id="dirtyFlag">{dirty.toString()}</span>
+              </span>
+            )}
+          </Dirty>
         </div>
       </div>
       <div>

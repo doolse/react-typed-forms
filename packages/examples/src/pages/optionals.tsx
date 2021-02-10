@@ -6,8 +6,8 @@ import {
   formGroup,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
+import { FTextField } from "@react-typed-forms/mui";
 import React, { useState, useRef } from "react";
-import { FTextField } from "../../mui/dist";
 
 type Form = {
   firstName?: string;
@@ -23,7 +23,7 @@ const FormDef = buildGroup<Form>()({
   nested: formGroup({ optional: control() }),
 });
 
-export function OptionalsTest() {
+export default function OptionalsTest() {
   const formState = useFormState(FormDef, { nested: {} });
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();

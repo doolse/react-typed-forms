@@ -17,7 +17,7 @@ const FormDef = buildGroup<SimpleForm>()({
   lastName: control((v) => (!v ? "Required field" : undefined)),
 });
 
-export function SimpleExample() {
+export default function SimpleExample() {
   const formState = useFormState(FormDef, { firstName: "", lastName: "" });
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();

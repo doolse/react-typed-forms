@@ -1,6 +1,6 @@
 import { valMessage, compareJson } from "../lib";
 
-describe("Validation", () => {
+describe("Optional data", () => {
   it("Works", () => {
     cy.visit("/optionals");
     cy.contains("Optionals Test");

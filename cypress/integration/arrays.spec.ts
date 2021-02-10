@@ -38,5 +38,15 @@ describe("Arrays", () => {
         ],
       })
     );
+    cy.get("#toggleDisabled").click();
+    cy.contains("#dirtyFlag", "true");
+    cy.get("#setObj").click();
+    cy.contains("#dirtyFlag", "false");
+    cy.get("#addObj").click();
+    cy.contains("#dirtyFlag", "true");
+    cy.get("#obj-3 button").click();
+    cy.contains("#dirtyFlag", "false");
+    cy.get("#obj-1 .idField").type("1");
+    cy.contains("#dirtyFlag", "true");
   });
 });

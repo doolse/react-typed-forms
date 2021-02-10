@@ -392,7 +392,7 @@ export type GroupControlFields<R> = GroupControl<FormFields<R>>;
 
 export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   elems: FIELD[] = [];
-  initialValueLength: number = 0;
+  initialFields: FIELD[] = [];
 
   constructor(private childDefinition: any) {
     super();
@@ -411,12 +411,6 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       if (childElems.length !== value.length) {
         flags |= NodeChange.Value;
       }
-      if (initial) {
-        this.initialValueLength = value.length;
-        flags |= this.updateDirty(false);
-      } else {
-        flags |= this.updateDirty(value.length !== this.initialValueLength);
-      }
       value.map((v, i) => {
         if (childElems.length <= i) {
           const newControl = this.controlFromDef(this.childDefinition, v);
@@ -429,6 +423,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       const actualLength = childElems.length;
       if (targetLength !== actualLength) {
         childElems.splice(targetLength, actualLength - targetLength);
+      }
+      if (initial) {
+        this.initialFields = [...childElems];
+        flags |= this.updateDirty(false);
       }
       this.runChange(flags);
     });
@@ -480,11 +478,18 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     this.runChange(NodeChange.Value | this.updateArrayFlags());
   }
 
+  private shallowEquals<A>(a: A[], b: A[]) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    return !a.some((v, i) => v !== b[i]);
+  }
+
   private updateArrayFlags() {
     return (
       this.updateTouched(true) |
       this.updateDirty(
-        this.elems.length !== this.initialValueLength ||
+        !this.shallowEquals(this.elems, this.initialFields) ||
           !this.visitChildren((c) => !c.dirty)
       )
     );

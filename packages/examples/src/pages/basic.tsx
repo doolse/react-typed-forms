@@ -23,7 +23,7 @@ const FormDef = buildGroup<SimpleForm>()({
 
 let renders = 0;
 
-export function BasicFormExample() {
+export default function BasicFormExample() {
   renders++;
   const formState = useFormState(FormDef, {
     username: "",

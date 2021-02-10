@@ -25,6 +25,6 @@ jobs:
     - run: npm i -g lerna wait-on
     - run: lerna bootstrap
     - run: lerna run build
-    - run: cd packages/examples && npm run start & wait-on http://localhost:1234
+    - run: npm run dev & wait-on http://localhost:3000
     - run: npx cypress run
     
