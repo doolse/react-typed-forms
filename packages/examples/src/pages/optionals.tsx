@@ -6,12 +6,12 @@ import {
   formGroup,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
-import { FTextField } from "@react-typed-forms/mui";
+import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState, useRef } from "react";
 
 type Form = {
   firstName?: string;
-  lastName?: string;
+  age?: number;
   nested?: {
     optional: string | undefined;
   };
@@ -19,7 +19,7 @@ type Form = {
 
 const FormDef = buildGroup<Form>()({
   firstName: control(),
-  lastName: control(),
+  age: control(),
   nested: formGroup({ optional: control() }),
 });
 
@@ -39,7 +39,7 @@ export default function OptionalsTest() {
         />
       </div>
       <div>
-        <FTextField id="lastName" label="Last Name" state={fields.lastName} />
+        <FNumberField id="age" label="Age" state={fields.age} />
       </div>
       <div>
         <button

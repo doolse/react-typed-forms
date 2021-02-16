@@ -12,12 +12,12 @@ describe("Optional data", () => {
       })
     );
     cy.get("#firstName").type("a").clear();
-    cy.get("#lastName").type("a").clear();
+    cy.get("#age").type("10").clear();
     cy.get("#submit").click();
     cy.get("pre").should(
       compareJson({
         firstName: "",
-        lastName: "",
+        age: null,
         nested: {},
       })
     );
@@ -25,6 +25,14 @@ describe("Optional data", () => {
     cy.get("#submit").click();
     cy.get("pre").should(
       compareJson({
+        nested: {},
+      })
+    );
+    cy.get("#age").type("10.3");
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
         nested: {},
       })
     );

@@ -62,7 +62,7 @@ export function FNumberField({
             state.setValue(null);
           }
         } else {
-          const value = parseInt(textVal, 10);
+          const value = parseFloat(textVal);
           if (!isNaN(value)) {
             state.setValue(value);
           } else {
