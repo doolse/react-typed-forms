@@ -1,7 +1,7 @@
 {
   "name": "@react-typed-forms/example",
   "private": true,
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "",
   "scripts": {
     "dev": "next dev",
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/doolse/react-typed-forms#readme",
   "dependencies": {
     "@react-typed-forms/core": "^1.2.3",
-    "@react-typed-forms/mui": "^1.2.3"
+    "@react-typed-forms/mui": "^1.2.4"
   },
   "devDependencies": {
     "@types/react": "17.0.1"
