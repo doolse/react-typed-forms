@@ -407,7 +407,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   setValue(value: ControlValue<FIELD>[], initial?: boolean): void {
     this.groupedChanges(() => {
       var flags: NodeChange = 0;
-      const childElems = this.elems;
+      const childElems = [...this.elems];
       if (childElems.length !== value.length) {
         flags |= NodeChange.Value;
       }
@@ -424,8 +424,9 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       if (targetLength !== actualLength) {
         childElems.splice(targetLength, actualLength - targetLength);
       }
+      this.elems = childElems;
       if (initial) {
-        this.initialFields = [...childElems];
+        this.initialFields = childElems;
         flags |= this.updateDirty(false);
       }
       this.runChange(flags);
@@ -467,6 +468,27 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     }
     this.runChange(NodeChange.Value | this.updateArrayFlags());
     return newCtrl;
+  }
+
+  /**
+   * Update the form elements and check flags.
+   * @param f A function which takes the array of form elements and a function which
+   * can create new elements and returns a new array.
+   */
+  updateFormElements(
+    f: (
+      fields: FIELD[],
+      makeChild: (value: ControlValue<FIELD>) => FIELD
+    ) => FIELD[]
+  ): void {
+    const newElems = f(
+      this.elems,
+      (v) => this.controlFromDef(this.childDefinition, v) as FIELD
+    );
+    if (this.elems !== newElems) {
+      this.elems = newElems;
+      this.runChange(NodeChange.Value | this.updateArrayFlags());
+    }
   }
 
   /**

@@ -82,7 +82,7 @@ export function FormArray<C extends BaseControl>({
   state,
   children,
 }: FormArrayProps<C>) {
-  useFormListener(state, (c) => c.elems.length, NodeChange.Value);
+  useFormListener(state, (c) => c.elems, NodeChange.Value);
   return <>{children(state.elems)}</>;
 }
 

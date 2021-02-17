@@ -9,6 +9,7 @@ import {
   formGroup,
   useFormListener,
   useFormListenerComponent,
+  ArrayControl,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FormArray } from "@react-typed-forms/core";
@@ -45,6 +46,31 @@ export default function ArraysExample() {
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useFormListenerComponent(fields.structured, (c) => c.dirty);
+
+  function moveUp(fa: ArrayControl<any>, index: number) {
+    if (index > 0 && index < fa.elems.length)
+      fa.updateFormElements((fields) =>
+        fields.map((f, idx) =>
+          idx === index
+            ? fields[idx - 1]
+            : idx === index - 1
+            ? fields[index]
+            : f
+        )
+      );
+  }
+  function moveDown(fa: ArrayControl<any>, index: number) {
+    if (index >= 0 && index < fa.elems.length - 1)
+      fa.updateFormElements((fields) =>
+        fields.map((f, idx) =>
+          idx === index
+            ? fields[idx + 1]
+            : idx === index + 1
+            ? fields[idx - 1]
+            : f
+        )
+      );
+  }
   return (
     <div className="container">
       <h2>Arrays Example - {renders} render(s)</h2>
@@ -115,10 +141,22 @@ export default function ArraysExample() {
                 </div>
                 <div>
                   <button
-                    className="btn mx-2"
+                    className="btn mx-2 remove"
                     onClick={() => fields.structured.removeFormElement(idx)}
                   >
                     X
+                  </button>
+                  <button
+                    className="btn mx-2 up"
+                    onClick={() => moveUp(fields.structured, idx)}
+                  >
+                    Up
+                  </button>
+                  <button
+                    className="btn mx-2 down"
+                    onClick={() => moveDown(fields.structured, idx)}
+                  >
+                    Down
                   </button>
                 </div>
               </div>

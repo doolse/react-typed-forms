@@ -20,7 +20,7 @@ describe("Arrays", () => {
     cy.get("#addObj").click();
     cy.get("#obj-3 .idField").type("3");
     cy.get("#obj-3 .nameField").type("Three");
-    cy.get("#obj-1 button").click();
+    cy.get("#obj-1 .remove").click();
     cy.get("#toggleDisabled").click();
     cy.get("#string-1 input").should("be.disabled");
     cy.get("#string-2 input").should("be.disabled");
@@ -44,9 +44,32 @@ describe("Arrays", () => {
     cy.contains("#dirtyFlag", "false");
     cy.get("#addObj").click();
     cy.contains("#dirtyFlag", "true");
-    cy.get("#obj-3 button").click();
+    cy.get("#obj-3 .remove").click();
     cy.contains("#dirtyFlag", "false");
     cy.get("#obj-1 .idField").type("1");
     cy.contains("#dirtyFlag", "true");
+    cy.get("#setObj").click();
+    cy.get("#obj-1 .down").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        strings: ["Zero string", "First string", "Third string"],
+        structured: [
+          { id: "id", name: "Name" },
+          { id: "reset", name: "Reset" },
+        ],
+      })
+    );
+    cy.get("#obj-2 .up").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        strings: ["Zero string", "First string", "Third string"],
+        structured: [
+          { id: "reset", name: "Reset" },
+          { id: "id", name: "Name" },
+        ],
+      })
+    );
   });
 });
