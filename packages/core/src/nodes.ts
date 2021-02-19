@@ -600,7 +600,7 @@ export interface ControlDef<V> {
 
 export interface ArrayDef<ELEM> {
   createArray: (
-    v: ControlValue<ControlType<ELEM>>
+    v: ControlValue<ControlType<ELEM>>[]
   ) => ArrayControl<ControlType<ELEM>>;
 }
 
