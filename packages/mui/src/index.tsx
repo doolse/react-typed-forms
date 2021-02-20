@@ -16,6 +16,7 @@ export function FTextField({
   return (
     <TextField
       {...others}
+      ref={(e) => (state.element = e)}
       value={state.value || ""}
       error={showError}
       disabled={state.disabled}
@@ -47,6 +48,7 @@ export function FNumberField({
   return (
     <TextField
       {...others}
+      ref={(e) => (state.element = e)}
       value={text}
       error={showError}
       disabled={state.disabled}

@@ -143,19 +143,17 @@ export function Finput({ state, ...others }: FinputProps) {
   // Re-render on value or disabled state change
   useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
 
-  // We need the DOM element for setting validation errors
-  const domRef = useRef<HTMLInputElement | null>(null);
-
   // Update the HTML5 custom validity whenever the error message is changed/cleared
   useChangeListener(
     state,
-    () => domRef.current?.setCustomValidity(state.error ?? ""),
+    (s) =>
+      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
     NodeChange.Error
   );
   return (
     <input
       ref={(r) => {
-        domRef.current = r;
+        state.element = r;
         if (r) r.setCustomValidity(state.error ?? "");
       }}
       value={state.value}

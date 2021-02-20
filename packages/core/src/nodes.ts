@@ -23,6 +23,7 @@ export abstract class BaseControl {
   disabled: boolean = false;
   dirty: boolean = false;
   uniqueId = ++nodeCount;
+  element: HTMLElement | null = null;
 
   /**
    * @internal
