@@ -44,13 +44,15 @@ export function useFormState<FIELDS extends object>(
   value: GroupValues<FIELDS>,
   dontValidate?: boolean
 ): GroupControl<GroupControls<FIELDS>> {
-  return useMemo(() => {
+  const ref = useRef<GroupControl<GroupControls<FIELDS>> | undefined>();
+  if (!ref.current) {
     const groupState = group.createGroup(value);
     if (!dontValidate) {
       groupState.validate();
     }
-    return groupState;
-  }, []);
+    ref.current = groupState;
+  }
+  return ref.current!;
 }
 
 export function useFormListenerComponent<S, C extends BaseControl>(
