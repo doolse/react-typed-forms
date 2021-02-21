@@ -31,6 +31,14 @@ export function useFormListener<C extends BaseControl, S>(
   return state;
 }
 
+/**
+ * Create a group control using the given definition.
+ * Please note that once created, it will already return the same instance,
+ * e.g. the definition should be constant.
+ * @param group The definition of the form group
+ * @param value The initial value for the form
+ * @param dontValidate Whether to run validation on initial values
+ */
 export function useFormState<FIELDS extends object>(
   group: GroupDef<FIELDS>,
   value: GroupValues<FIELDS>,
@@ -42,7 +50,7 @@ export function useFormState<FIELDS extends object>(
       groupState.validate();
     }
     return groupState;
-  }, [group]);
+  }, []);
 }
 
 export function useFormListenerComponent<S, C extends BaseControl>(
