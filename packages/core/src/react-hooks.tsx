@@ -10,24 +10,24 @@ import React, {
 import {
   BaseNode,
   NodeChange,
-  ValueNode,
+  Node,
   ArrayNode,
-  NodeTypeForDefinition,
-  control,
+  node,
   ValueTypeForDefintion,
-  AnyNodeDefinition,
+  NodeCreator,
+  ValueTypeForNode,
 } from "./nodes";
 
 export function useNodeChangeEffect<Node extends BaseNode>(
-  control: Node,
+  node: Node,
   listenerEffect: (node: Node, change: NodeChange) => void,
   mask?: NodeChange,
   deps?: any[]
 ) {
-  const updater = useMemo(() => listenerEffect, deps ?? [control]);
+  const updater = useMemo(() => listenerEffect, deps ?? [node]);
   useEffect(() => {
-    control.addChangeListener(updater, mask);
-    return () => control.removeChangeListener(updater);
+    node.addChangeListener(updater, mask);
+    return () => node.removeChangeListener(updater);
   }, [updater]);
 }
 
@@ -44,7 +44,7 @@ export function useNodeState<N extends BaseNode, S>(
   return state;
 }
 
-export function useNodeValue<A>(node: ValueNode<A>, mask?: NodeChange) {
+export function useNodeValue<A>(node: Node<A>, mask?: NodeChange) {
   return useNodeState(node, (n) => n.value, mask);
 }
 
@@ -60,19 +60,13 @@ export function useNodeStateVersion(control: BaseNode, mask?: NodeChange) {
  * @param value The initial value for the form
  * @param dontValidate Whether to run validation on initial values
  */
-export function useNodeForDefinition<DEF extends AnyNodeDefinition>(
-  def: DEF,
-  value: ValueTypeForDefintion<DEF>,
+export function useNodeForDefinition<N extends BaseNode>(
+  definition: () => N,
   dontValidate?: boolean
-): NodeTypeForDefinition<DEF> {
+): N {
   const ref = useRef<any | undefined>();
   if (!ref.current) {
-    const cdef = def as any;
-    const node = cdef.createNode
-      ? cdef.createNode(value)
-      : cdef.createArray
-      ? cdef.createArray(value)
-      : cdef.createGroup(value);
+    const node = definition();
     if (!dontValidate) {
       node.validate();
     }
@@ -82,7 +76,7 @@ export function useNodeForDefinition<DEF extends AnyNodeDefinition>(
 }
 
 export function useNodeForValue<A>(value: A) {
-  return useNodeForDefinition(control<A>(), value);
+  return useNodeForDefinition(node<A>(value));
 }
 
 export function useNodeStateComponent<S, C extends BaseNode>(
@@ -127,7 +121,7 @@ export function FormArray<C extends BaseNode>({
 }
 
 function defaultValidCheck(n: BaseNode) {
-  return n instanceof ValueNode ? n.value : n.stateVersion;
+  return n instanceof Node ? n.value : n.stateVersion;
 }
 
 export function useAsyncValidator<C extends BaseNode>(
@@ -177,7 +171,7 @@ export function useAsyncValidator<C extends BaseNode>(
 
 // Only allow strings and numbers
 export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: ValueNode<string | number>;
+  state: Node<string | number>;
 };
 
 export function Finput({ state, ...others }: FinputProps) {
@@ -208,7 +202,7 @@ export function Finput({ state, ...others }: FinputProps) {
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  state: ValueNode<string | number>;
+  state: Node<string | number>;
 };
 
 export function Fselect({ state, children, ...others }: FselectProps) {

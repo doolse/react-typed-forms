@@ -1,10 +1,10 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useState } from "react";
 
-import { useNodeStateVersion, ValueNode } from "@react-typed-forms/core";
+import { useNodeStateVersion, Node } from "@react-typed-forms/core";
 
 export type FTextFieldProps = {
-  state: ValueNode<string | undefined>;
+  state: Node<string | undefined>;
 } & TextFieldProps;
 
 export function FTextField({
@@ -28,7 +28,7 @@ export function FTextField({
 }
 
 export type FNumberFieldProps = {
-  state: ValueNode<number | null | undefined>;
+  state: Node<number | null | undefined>;
   invalidError?: string | undefined;
   blankError?: string | undefined;
 } & TextFieldProps;

@@ -1,9 +1,10 @@
 import {
-  control,
   buildGroup,
   Fselect,
   formGroup,
   useNodeForDefinition,
+  withInitialValue,
+  node,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -17,14 +18,18 @@ type Form = {
   };
 };
 
-const FormDef = buildGroup<Form>()({
-  firstName: control(),
-  age: control(),
-  nested: formGroup({ optional: control() }),
-});
+const adef = {
+  firstName: "",
+  age: 0,
+  nested: formGroup({ optional: "" }),
+};
+
+const FormDef = buildGroup<Form>()(adef);
 
 export default function OptionalsTest() {
-  const formState = useNodeForDefinition(FormDef, { nested: {} });
+  const formState = useNodeForDefinition(
+    withInitialValue(FormDef, { nested: {} })
+  );
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();
 

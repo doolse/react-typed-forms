@@ -1,8 +1,8 @@
 import {
-  control,
   useAsyncValidator,
   buildGroup,
   useNodeForDefinition,
+  node,
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "../bootstrap";
@@ -15,8 +15,8 @@ type ValidationForm = {
 const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
 const FormDef = buildGroup<ValidationForm>()({
-  email: control((v) => (!emailRegExp.test(v) ? "Invalid email address" : "")),
-  async: control(null),
+  email: node("", (v) => (!emailRegExp.test(v) ? "Invalid email address" : "")),
+  async: node("", null),
 });
 
 let renders = 0;
@@ -25,7 +25,7 @@ export default function ValidationExample() {
   renders++;
 
   const [formData, setFormData] = useState<ValidationForm>();
-  const formState = useNodeForDefinition(FormDef, { email: "", async: "" });
+  const formState = useNodeForDefinition(FormDef);
   const { fields } = formState;
 
   useAsyncValidator(

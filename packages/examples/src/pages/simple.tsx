@@ -1,8 +1,8 @@
 import {
-  control,
   useNodeForDefinition,
   Finput,
   buildGroup,
+  node,
 } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
@@ -13,15 +13,12 @@ type SimpleForm = {
 };
 
 const FormDef = buildGroup<SimpleForm>()({
-  firstName: control(),
-  lastName: control((v) => (!v ? "Required field" : undefined)),
+  firstName: "",
+  lastName: node("", (v) => (!v ? "Required field" : undefined)),
 });
 
 export default function SimpleExample() {
-  const formState = useNodeForDefinition(FormDef, {
-    firstName: "",
-    lastName: "",
-  });
+  const formState = useNodeForDefinition(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (

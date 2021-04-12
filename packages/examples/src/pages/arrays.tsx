@@ -1,5 +1,5 @@
 import {
-  control,
+  withInitialValue,
   formArray,
   buildGroup,
   formGroup,
@@ -22,11 +22,11 @@ type MainForm = {
 };
 
 const FormDef = buildGroup<MainForm>()({
-  strings: formArray(control()),
+  strings: formArray(""),
   structured: formArray(
     formGroup({
-      id: control(),
-      name: control(),
+      id: "",
+      name: "",
     })
   ),
 });
@@ -35,10 +35,12 @@ let renders = 0;
 
 export default function ArraysExample() {
   renders++;
-  const formState = useNodeForDefinition(FormDef, {
-    strings: [""],
-    structured: [{ id: "", name: "" }],
-  });
+  const formState = useNodeForDefinition(
+    withInitialValue(FormDef, {
+      strings: [""],
+      structured: [{ id: "", name: "" }],
+    })
+  );
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useNodeStateComponent(fields.structured, (c) => c.dirty);

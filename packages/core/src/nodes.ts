@@ -158,6 +158,13 @@ export abstract class BaseNode {
   setError(error?: string | null) {
     this.runChange(this.updateError(error));
   }
+
+  /**
+   * Run validation listeners.
+   */
+  validate() {
+    this.runChange(NodeChange.Validate);
+  }
 }
 
 function setValueUnsafe(ctrl: BaseNode, v: any, initial?: boolean) {
@@ -165,7 +172,7 @@ function setValueUnsafe(ctrl: BaseNode, v: any, initial?: boolean) {
 }
 
 function toValueUnsafe(ctrl: BaseNode): any {
-  return ctrl instanceof ValueNode
+  return ctrl instanceof Node
     ? ctrl.value
     : ctrl instanceof ArrayNode
     ? ctrl.toArray()
@@ -174,13 +181,13 @@ function toValueUnsafe(ctrl: BaseNode): any {
     : undefined;
 }
 
-type IsOptionalField<K, C> = C extends ValueNode<infer V>
+type IsOptionalField<K, C> = C extends Node<infer V>
   ? undefined extends V
     ? K
     : never
   : never;
 
-type IsRequiredField<K, C> = C extends ValueNode<infer V>
+type IsRequiredField<K, C> = C extends Node<infer V>
   ? undefined extends V
     ? never
     : K
@@ -189,7 +196,7 @@ type IsRequiredField<K, C> = C extends ValueNode<infer V>
 export type ValueTypeForNode<C> = C extends GroupNode<infer F>
   ? { [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForNode<F[K]> } &
       { [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForNode<F[K]> }
-  : C extends ValueNode<infer V>
+  : C extends Node<infer V>
   ? V
   : C extends ArrayNode<infer AC>
   ? ValueTypeForNode<AC>[]
@@ -197,13 +204,13 @@ export type ValueTypeForNode<C> = C extends GroupNode<infer F>
 
 export type NodeValueTypeOut<C> = C extends GroupNode<infer F>
   ? { [K in keyof F]: NodeValueTypeOut<F[K]> }
-  : C extends ValueNode<infer V>
+  : C extends Node<infer V>
   ? V
   : C extends ArrayNode<infer AC>
   ? NodeValueTypeOut<AC>[]
   : never;
 
-export class ValueNode<V> extends BaseNode {
+export class Node<V> extends BaseNode {
   initialValue: V;
 
   constructor(
@@ -266,13 +273,6 @@ export class ValueNode<V> extends BaseNode {
   setTouched(touched: boolean) {
     this.runChange(this.updateTouched(touched));
   }
-
-  /**
-   * Run validation listeners.
-   */
-  validate() {
-    this.runChange(NodeChange.Validate);
-  }
 }
 
 export abstract class ParentNode extends BaseNode {
@@ -322,13 +322,9 @@ export abstract class ParentNode extends BaseNode {
   /**
    * @internal
    */
-  protected controlFromDef(cdef: any, value: any): BaseNode {
+  protected controlFromDef<N extends BaseNode>(cdef: () => N): N {
     const l = this.parentListener();
-    var child = cdef.createNode
-      ? cdef.createNode(value)
-      : cdef.createArray
-      ? cdef.createArray(value)
-      : cdef.createGroup(value);
+    var child = cdef();
     child.addChangeListener(l[1], l[0]);
     return child;
   }
@@ -387,7 +383,7 @@ export abstract class ParentNode extends BaseNode {
   }
 }
 
-export type ValueNodeFields<R> = { [K in keyof R]-?: ValueNode<R[K]> };
+export type ValueNodeFields<R> = { [K in keyof R]-?: Node<R[K]> };
 
 export type GroupNodeForType<R> = GroupNode<ValueNodeFields<R>>;
 
@@ -395,7 +391,7 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
   elems: FIELD[] = [];
   initialFields: FIELD[] = [];
 
-  constructor(private childDefinition: any) {
+  constructor(private childDefinition: () => FIELD) {
     super();
   }
 
@@ -414,7 +410,8 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
       }
       value.map((v, i) => {
         if (childElems.length <= i) {
-          const newControl = this.controlFromDef(this.childDefinition, v);
+          const newControl = this.controlFromDef(this.childDefinition);
+          setValueUnsafe(newControl, v, true);
           childElems.push(newControl as FIELD);
         } else {
           setValueUnsafe(childElems[i], v, initial);
@@ -460,7 +457,8 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
    * @param value The value for the child control
    */
   addFormElement(value: ValueTypeForNode<FIELD>, index?: number): FIELD {
-    const newCtrl = this.controlFromDef(this.childDefinition, value) as FIELD;
+    const newCtrl = this.controlFromDef(this.childDefinition);
+    setValueUnsafe(newCtrl, value, true);
     this.elems = [...this.elems];
     if (index !== undefined) {
       this.elems.splice(index, 0, newCtrl);
@@ -482,10 +480,11 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
       makeChild: (value: ValueTypeForNode<FIELD>) => FIELD
     ) => FIELD[]
   ): void {
-    const newElems = f(
-      this.elems,
-      (v) => this.controlFromDef(this.childDefinition, v) as FIELD
-    );
+    const newElems = f(this.elems, (v) => {
+      const ctrl = this.controlFromDef(this.childDefinition);
+      setValueUnsafe(ctrl, v);
+      return ctrl;
+    });
     if (this.elems !== newElems) {
       this.elems = newElems;
       this.runChange(NodeChange.Value | this.updateArrayFlags());
@@ -524,16 +523,9 @@ export class GroupNode<
 > extends ParentNode {
   fields: FIELDS;
 
-  constructor(children: FIELDS, v: ValueTypeForFields<FIELDS>) {
+  constructor(children: FIELDS) {
     super();
-    const fields: Record<string, BaseNode> = {};
-    const rec = v as Record<string, any>;
-    for (const k in children) {
-      const cdef = children[k];
-      const value = rec[k];
-      fields[k] = this.controlFromDef(cdef, value);
-    }
-    this.fields = (fields as unknown) as FIELDS;
+    this.fields = children;
   }
 
   visitChildren(
@@ -585,32 +577,13 @@ export type ValueTypeForDefintion<DEF> = ValueTypeForNode<
   NodeTypeForDefinition<DEF>
 >;
 
-export type NodeTypeForDefinition<T> = T extends NodeDefinition<infer V>
-  ? ValueNode<V>
-  : T extends ArrayNodeDefinition<infer E>
-  ? ArrayNode<NodeTypeForDefinition<E>>
-  : T extends GroupNodeDefinition<infer F>
-  ? GroupNode<
-      {
-        [K in keyof F]: NodeTypeForDefinition<F[K]>;
-      }
-    >
-  : never;
+export type NodeTypeForDefinition<T> = T extends NodeCreator<infer X>
+  ? X
+  : Node<T>;
 
-export type AnyNodeDefinition =
-  | NodeDefinition<any>
-  | ArrayNodeDefinition<any>
-  | GroupNodeDefinition<any>;
+export type AnyNodeDefinition = NodeCreator<any> | any;
 
-export interface NodeDefinition<V> {
-  createNode: (V: V) => ValueNode<V>;
-}
-
-export interface ArrayNodeDefinition<ELEM> {
-  createArray: (
-    v: ValueTypeForNode<NodeTypeForDefinition<ELEM>>[]
-  ) => ArrayNode<NodeTypeForDefinition<ELEM>>;
-}
+export type NodeCreator<V extends BaseNode> = () => V;
 
 export type NodeTypeForFieldDefinitions<DEF> = {
   [K in keyof DEF]: NodeTypeForDefinition<DEF[K]>;
@@ -620,54 +593,76 @@ export type ValueTypeForFields<DEF extends object> = ValueTypeForNode<
   GroupNode<NodeTypeForFieldDefinitions<DEF>>
 >;
 
-export interface GroupNodeDefinition<FIELDS extends object> {
-  createGroup(
-    value: ValueTypeForFields<FIELDS>
-  ): GroupNode<NodeTypeForFieldDefinitions<FIELDS>>;
-}
-
 export type AllowedDef<V> =
+  | V
+  | (() => Node<V>)
   | (V extends (infer X)[]
-      ? ArrayNodeDefinition<AllowedDef<X>>
+      ? () => ArrayNode<NodeTypeForDefinition<AllowedDef<X>>>
       : V extends object
-      ? GroupNodeDefinition<{ [K in keyof V]-?: AllowedDef<V[K]> }>
-      : never)
-  | NodeDefinition<V>;
+      ? () => GroupNode<
+          {
+            [K in keyof V]-?: NodeTypeForDefinition<AllowedDef<V[K]>>;
+          }
+        >
+      : never);
 
 /**
  * Define a leaf node containing values of type V
  * @param validator An optional synchronous validator
  */
-export function control<V>(
+export function node<V>(
+  value: V,
   validator?: ((v: V) => string | undefined) | null
-): NodeDefinition<V> {
-  return {
-    createNode: (value: V) => new ValueNode<V>(value, validator),
-  };
+): () => Node<V> {
+  return () => new Node(value, validator);
 }
 
-export function formArray<CHILD>(child: CHILD): ArrayNodeDefinition<CHILD> {
-  return {
-    createArray: (value: any) => {
-      const arrayCtrl = new ArrayNode<any>(child);
-      arrayCtrl.setValue(value, true);
-      return arrayCtrl;
-    },
-  };
+function makeCreator(v: any): NodeCreator<any> {
+  if (typeof v === "function") {
+    return v;
+  }
+  return () => new Node(v);
+}
+
+export function formArray<CHILD>(
+  child: CHILD
+): () => ArrayNode<NodeTypeForDefinition<CHILD>> {
+  return () => new ArrayNode(makeCreator(child));
 }
 
 /**
  *
  * @param children
  */
-export function formGroup<DEF extends object>(
+export function formGroup<DEF extends { [t: string]: any }>(
   children: DEF
-): GroupNodeDefinition<DEF> {
-  return {
-    createGroup: (v: ValueTypeForFields<DEF>) =>
-      new GroupNode<any>(children, v),
+): () => GroupNode<
+  {
+    [K in keyof DEF]: NodeTypeForDefinition<DEF[K]>;
+  }
+> {
+  return () => {
+    const fields: any = {};
+    for (const k in children) {
+      fields[k] = makeCreator(children[k])();
+    }
+    return new GroupNode(fields);
   };
 }
+
+type FieldType<T, K> = K extends keyof Exclude<T, undefined>
+  ? Exclude<T, undefined>[K]
+  : T;
+
+type FixType<V, D> = D extends Node<any>
+  ? Node<V>
+  : D extends GroupNode<infer FIELDS>
+  ? GroupNode<
+      {
+        [CK in keyof FIELDS]: FixType<FieldType<V, CK>, FIELDS[CK]>;
+      }
+    >
+  : D;
 
 /**
  * Create a form group function which only accepts
@@ -677,6 +672,27 @@ export function buildGroup<T>(): <
   DEF extends { [K in keyof T]-?: AllowedDef<T[K]> }
 >(
   children: DEF
-) => GroupNodeDefinition<DEF> {
-  return formGroup;
+) => () => FixType<T, GroupNode<NodeTypeForFieldDefinitions<DEF>>> {
+  return formGroup as any;
+}
+
+export function withInitialValue<N extends BaseNode>(
+  f: () => ArrayNode<N>,
+  value: ValueTypeForNode<N>[]
+): () => ArrayNode<N>;
+
+export function withInitialValue<N extends { [t: string]: BaseNode }>(
+  f: () => GroupNode<N>,
+  value: ValueTypeForNode<GroupNode<N>>
+): () => GroupNode<N>;
+
+export function withInitialValue<N extends ArrayNode<any> | GroupNode<any>>(
+  f: NodeCreator<N>,
+  value: ValueTypeForNode<N>
+): NodeCreator<N> {
+  return () => {
+    const n = f();
+    n.setValue(value as any, true);
+    return n;
+  };
 }

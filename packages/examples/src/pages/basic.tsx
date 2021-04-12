@@ -1,5 +1,5 @@
 import {
-  control,
+  node,
   buildGroup,
   Fselect,
   useNodeForDefinition,
@@ -14,22 +14,18 @@ type SimpleForm = {
 };
 
 const FormDef = buildGroup<SimpleForm>()({
-  password: control((v) =>
+  password: node("", (v) =>
     v.length < 6 ? "Password must be 6 characters" : undefined
   ),
-  username: control((v) => (!v ? "Required field" : undefined)),
-  number: control(),
+  username: node("", (v) => (!v ? "Required field" : undefined)),
+  number: "",
 });
 
 let renders = 0;
 
 export default function BasicFormExample() {
   renders++;
-  const formState = useNodeForDefinition(FormDef, {
-    username: "",
-    password: "",
-    number: "",
-  });
+  const formState = useNodeForDefinition(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
