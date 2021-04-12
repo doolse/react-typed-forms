@@ -1,15 +1,11 @@
 import {
   control,
-  useFormState,
   formArray,
   buildGroup,
-  ControlValue,
-  FormControl,
-  GroupControl,
   formGroup,
-  useFormListener,
-  useFormListenerComponent,
-  ArrayControl,
+  useNodeForDefinition,
+  useNodeStateComponent,
+  ArrayNode,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FormArray } from "@react-typed-forms/core";
@@ -39,15 +35,15 @@ let renders = 0;
 
 export default function ArraysExample() {
   renders++;
-  const formState = useFormState(FormDef, {
+  const formState = useNodeForDefinition(FormDef, {
     strings: [""],
     structured: [{ id: "", name: "" }],
   });
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
-  const Dirty = useFormListenerComponent(fields.structured, (c) => c.dirty);
+  const Dirty = useNodeStateComponent(fields.structured, (c) => c.dirty);
 
-  function moveUp(fa: ArrayControl<any>, index: number) {
+  function moveUp(fa: ArrayNode<any>, index: number) {
     if (index > 0 && index < fa.elems.length)
       fa.updateFormElements((fields) =>
         fields.map((f, idx) =>
@@ -59,7 +55,7 @@ export default function ArraysExample() {
         )
       );
   }
-  function moveDown(fa: ArrayControl<any>, index: number) {
+  function moveDown(fa: ArrayNode<any>, index: number) {
     if (index >= 0 && index < fa.elems.length - 1)
       fa.updateFormElements((fields) =>
         fields.map((f, idx) =>

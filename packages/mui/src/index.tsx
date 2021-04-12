@@ -1,17 +1,17 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useState } from "react";
 
-import { FormControl, useFormStateVersion } from "@react-typed-forms/core";
+import { useNodeStateVersion, ValueNode } from "@react-typed-forms/core";
 
 export type FTextFieldProps = {
-  state: FormControl<string | undefined>;
+  state: ValueNode<string | undefined>;
 } & TextFieldProps;
 
 export function FTextField({
   state,
   ...others
 }: FTextFieldProps): ReactElement {
-  useFormStateVersion(state);
+  useNodeStateVersion(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   return (
     <TextField
@@ -28,7 +28,7 @@ export function FTextField({
 }
 
 export type FNumberFieldProps = {
-  state: FormControl<number | null | undefined>;
+  state: ValueNode<number | null | undefined>;
   invalidError?: string | undefined;
   blankError?: string | undefined;
 } & TextFieldProps;
@@ -39,7 +39,7 @@ export function FNumberField({
   blankError,
   ...others
 }: FNumberFieldProps): ReactElement {
-  useFormStateVersion(state);
+  useNodeStateVersion(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   const [text, setText] = useState(state.value?.toString() ?? "");
   useEffect(() => {

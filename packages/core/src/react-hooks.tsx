@@ -8,27 +8,48 @@ import React, {
   ReactNode,
 } from "react";
 import {
-  BaseControl,
+  BaseNode,
   NodeChange,
-  FormControl,
-  ArrayControl,
-  GroupControl,
-  GroupControls,
-  GroupValues,
-  GroupDef,
+  ValueNode,
+  ArrayNode,
+  NodeTypeForDefinition,
+  control,
+  ValueTypeForDefintion,
+  AnyNodeDefinition,
 } from "./nodes";
 
-export function useFormListener<C extends BaseControl, S>(
-  control: C,
-  toState: (state: C) => S,
+export function useNodeChangeEffect<Node extends BaseNode>(
+  control: Node,
+  listenerEffect: (node: Node, change: NodeChange) => void,
+  mask?: NodeChange,
+  deps?: any[]
+) {
+  const updater = useMemo(() => listenerEffect, deps ?? [control]);
+  useEffect(() => {
+    control.addChangeListener(updater, mask);
+    return () => control.removeChangeListener(updater);
+  }, [updater]);
+}
+
+export function useNodeState<N extends BaseNode, S>(
+  node: N,
+  toState: (state: N) => S,
   mask?: NodeChange
 ): S {
-  const [state, setState] = useState(() => toState(control));
+  const [state, setState] = useState(() => toState(node));
   useEffect(() => {
-    setState(toState(control));
-  }, [control]);
-  useChangeListener(control, (control) => setState(toState(control)), mask);
+    setState(toState(node));
+  }, [node]);
+  useNodeChangeEffect(node, (node) => setState(toState(node)), mask);
   return state;
+}
+
+export function useNodeValue<A>(node: ValueNode<A>, mask?: NodeChange) {
+  return useNodeState(node, (n) => n.value, mask);
+}
+
+export function useNodeStateVersion(control: BaseNode, mask?: NodeChange) {
+  return useNodeState(control, (c) => c.stateVersion, mask);
 }
 
 /**
@@ -39,30 +60,39 @@ export function useFormListener<C extends BaseControl, S>(
  * @param value The initial value for the form
  * @param dontValidate Whether to run validation on initial values
  */
-export function useFormState<FIELDS extends object>(
-  group: GroupDef<FIELDS>,
-  value: GroupValues<FIELDS>,
+export function useNodeForDefinition<DEF extends AnyNodeDefinition>(
+  def: DEF,
+  value: ValueTypeForDefintion<DEF>,
   dontValidate?: boolean
-): GroupControl<GroupControls<FIELDS>> {
-  const ref = useRef<GroupControl<GroupControls<FIELDS>> | undefined>();
+): NodeTypeForDefinition<DEF> {
+  const ref = useRef<any | undefined>();
   if (!ref.current) {
-    const groupState = group.createGroup(value);
+    const cdef = def as any;
+    const node = cdef.createNode
+      ? cdef.createNode(value)
+      : cdef.createArray
+      ? cdef.createArray(value)
+      : cdef.createGroup(value);
     if (!dontValidate) {
-      groupState.validate();
+      node.validate();
     }
-    ref.current = groupState;
+    ref.current = node;
   }
   return ref.current!;
 }
 
-export function useFormListenerComponent<S, C extends BaseControl>(
+export function useNodeForValue<A>(value: A) {
+  return useNodeForDefinition(control<A>(), value);
+}
+
+export function useNodeStateComponent<S, C extends BaseNode>(
   control: C,
   toState: (state: C) => S,
   mask?: NodeChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
     () => ({ children }) => {
-      const state = useFormListener(control, toState, mask);
+      const state = useNodeState(control, toState, mask);
       return children(state);
     },
     []
@@ -70,12 +100,12 @@ export function useFormListenerComponent<S, C extends BaseControl>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: BaseControl;
+  state: BaseNode;
   children: (validForm: boolean) => ReactElement;
 }
 
 export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
-  const validForm = useFormListener(
+  const validForm = useNodeState(
     state,
     (c) => c.valid && c.dirty,
     NodeChange.Valid | NodeChange.Dirty
@@ -83,41 +113,24 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
   return children(validForm);
 }
 
-export interface FormArrayProps<C extends BaseControl> {
-  state: ArrayControl<C>;
+export interface FormArrayProps<C extends BaseNode> {
+  state: ArrayNode<C>;
   children: (elems: C[]) => ReactNode;
 }
 
-export function FormArray<C extends BaseControl>({
+export function FormArray<C extends BaseNode>({
   state,
   children,
 }: FormArrayProps<C>) {
-  useFormListener(state, (c) => c.elems, NodeChange.Value);
+  useNodeState(state, (c) => c.elems, NodeChange.Value);
   return <>{children(state.elems)}</>;
 }
 
-export function useChangeListener<Node extends BaseControl>(
-  control: Node,
-  listener: (node: Node, change: NodeChange) => void,
-  mask?: NodeChange,
-  deps?: any[]
-) {
-  const updater = useMemo(() => listener, deps ?? [control]);
-  useEffect(() => {
-    control.addChangeListener(updater, mask);
-    return () => control.removeChangeListener(updater);
-  }, [updater]);
+function defaultValidCheck(n: BaseNode) {
+  return n instanceof ValueNode ? n.value : n.stateVersion;
 }
 
-export function useFormStateVersion(control: BaseControl, mask?: NodeChange) {
-  return useFormListener(control, (c) => c.stateVersion, mask);
-}
-
-function defaultValidCheck(n: BaseControl) {
-  return n instanceof FormControl ? n.value : n.stateVersion;
-}
-
-export function useAsyncValidator<C extends BaseControl>(
+export function useAsyncValidator<C extends BaseNode>(
   node: C,
   validator: (
     node: C,
@@ -129,7 +142,7 @@ export function useAsyncValidator<C extends BaseControl>(
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
   const validCheck = validCheckValue ?? defaultValidCheck;
-  useChangeListener(
+  useNodeChangeEffect(
     node,
     (n) => {
       if (handler.current) {
@@ -164,15 +177,15 @@ export function useAsyncValidator<C extends BaseControl>(
 
 // Only allow strings and numbers
 export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
+  state: ValueNode<string | number>;
 };
 
 export function Finput({ state, ...others }: FinputProps) {
   // Re-render on value or disabled state change
-  useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+  useNodeStateVersion(state, NodeChange.Value | NodeChange.Disabled);
 
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useChangeListener(
+  useNodeChangeEffect(
     state,
     (s) =>
       (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
@@ -195,15 +208,15 @@ export function Finput({ state, ...others }: FinputProps) {
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  state: FormControl<string | number>;
+  state: ValueNode<string | number>;
 };
 
 export function Fselect({ state, children, ...others }: FselectProps) {
   // Re-render on value or disabled state change
-  useFormStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+  useNodeStateVersion(state, NodeChange.Value | NodeChange.Disabled);
 
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useChangeListener(
+  useNodeChangeEffect(
     state,
     (s) =>
       (s.element as HTMLSelectElement)?.setCustomValidity(state.error ?? ""),

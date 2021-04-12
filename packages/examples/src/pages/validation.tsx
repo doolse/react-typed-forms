@@ -1,8 +1,8 @@
 import {
   control,
-  useFormState,
   useAsyncValidator,
   buildGroup,
+  useNodeForDefinition,
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "../bootstrap";
@@ -25,7 +25,7 @@ export default function ValidationExample() {
   renders++;
 
   const [formData, setFormData] = useState<ValidationForm>();
-  const formState = useFormState(FormDef, { email: "", async: "" });
+  const formState = useNodeForDefinition(FormDef, { email: "", async: "" });
   const { fields } = formState;
 
   useAsyncValidator(

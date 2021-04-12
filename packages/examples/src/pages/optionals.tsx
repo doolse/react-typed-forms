@@ -1,9 +1,9 @@
 import {
   control,
-  useFormState,
   buildGroup,
   Fselect,
   formGroup,
+  useNodeForDefinition,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -24,7 +24,7 @@ const FormDef = buildGroup<Form>()({
 });
 
 export default function OptionalsTest() {
-  const formState = useFormState(FormDef, { nested: {} });
+  const formState = useNodeForDefinition(FormDef, { nested: {} });
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();
 

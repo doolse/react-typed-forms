@@ -1,10 +1,23 @@
 import {
   control,
-  useFormListener,
-  useFormStateVersion,
+  formGroup,
+  ValueNodeFields,
+  ValueTypeForDefintion,
 } from "@react-typed-forms/core";
 
+interface FormData {
+  shit: string;
+  arse: string;
+}
+
+type FieldsType = ValueNodeFields<FormData>;
+
+const Def = formGroup({
+  blah: control<string>(),
+});
+
+type DefValue = ValueTypeForDefintion<typeof Def>;
+
 export default function Doit() {
-  const ok = useFormStateVersion(control<string>().createControl(""));
-  return <div>Hello {ok}</div>;
+  return <div>Hello</div>;
 }

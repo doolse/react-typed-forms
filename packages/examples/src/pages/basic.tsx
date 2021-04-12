@@ -1,8 +1,8 @@
 import {
   control,
-  useFormState,
   buildGroup,
   Fselect,
+  useNodeForDefinition,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
@@ -25,7 +25,7 @@ let renders = 0;
 
 export default function BasicFormExample() {
   renders++;
-  const formState = useFormState(FormDef, {
+  const formState = useNodeForDefinition(FormDef, {
     username: "",
     password: "",
     number: "",
