@@ -1,11 +1,4 @@
-import {
-  buildGroup,
-  Fselect,
-  formGroup,
-  useNodeForDefinition,
-  withInitialValue,
-  node,
-} from "@react-typed-forms/core";
+import { buildGroup, Fselect, formGroup, node } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState, useRef } from "react";
@@ -27,9 +20,7 @@ const adef = {
 const FormDef = buildGroup<Form>()(adef);
 
 export default function OptionalsTest() {
-  const formState = useNodeForDefinition(
-    withInitialValue(FormDef, { nested: {} })
-  );
+  const [formState] = useState(() => FormDef().setValue({ nested: {} }, true));
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();
 

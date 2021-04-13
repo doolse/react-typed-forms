@@ -1,9 +1,4 @@
-import {
-  useNodeForDefinition,
-  Finput,
-  buildGroup,
-  node,
-} from "@react-typed-forms/core";
+import { Finput, buildGroup, node } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
@@ -18,7 +13,7 @@ const FormDef = buildGroup<SimpleForm>()({
 });
 
 export default function SimpleExample() {
-  const formState = useNodeForDefinition(FormDef);
+  const [formState] = useState(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (

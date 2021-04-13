@@ -7,24 +7,15 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import {
-  BaseNode,
-  NodeChange,
-  Node,
-  ArrayNode,
-  node,
-  ValueTypeForDefintion,
-  NodeCreator,
-  ValueTypeForNode,
-} from "./nodes";
+import { BaseNode, NodeChange, Node, ArrayNode } from "./nodes";
 
 export function useNodeChangeEffect<Node extends BaseNode>(
   node: Node,
-  listenerEffect: (node: Node, change: NodeChange) => void,
+  changeEffect: (node: Node, change: NodeChange) => void,
   mask?: NodeChange,
   deps?: any[]
 ) {
-  const updater = useMemo(() => listenerEffect, deps ?? [node]);
+  const updater = useMemo(() => changeEffect, deps ?? [node]);
   useEffect(() => {
     node.addChangeListener(updater, mask);
     return () => node.removeChangeListener(updater);
@@ -50,33 +41,6 @@ export function useNodeValue<A>(node: Node<A>, mask?: NodeChange) {
 
 export function useNodeStateVersion(control: BaseNode, mask?: NodeChange) {
   return useNodeState(control, (c) => c.stateVersion, mask);
-}
-
-/**
- * Create a group control using the given definition.
- * Please note that once created, it will already return the same instance,
- * e.g. the definition should be constant.
- * @param group The definition of the form group
- * @param value The initial value for the form
- * @param dontValidate Whether to run validation on initial values
- */
-export function useNodeForDefinition<N extends BaseNode>(
-  definition: () => N,
-  dontValidate?: boolean
-): N {
-  const ref = useRef<any | undefined>();
-  if (!ref.current) {
-    const node = definition();
-    if (!dontValidate) {
-      node.validate();
-    }
-    ref.current = node;
-  }
-  return ref.current!;
-}
-
-export function useNodeForValue<A>(value: A) {
-  return useNodeForDefinition(node<A>(value));
 }
 
 export function useNodeStateComponent<S, C extends BaseNode>(

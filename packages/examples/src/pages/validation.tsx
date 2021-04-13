@@ -1,9 +1,4 @@
-import {
-  useAsyncValidator,
-  buildGroup,
-  useNodeForDefinition,
-  node,
-} from "@react-typed-forms/core";
+import { useAsyncValidator, buildGroup, node } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "../bootstrap";
 
@@ -25,7 +20,7 @@ export default function ValidationExample() {
   renders++;
 
   const [formData, setFormData] = useState<ValidationForm>();
-  const formState = useNodeForDefinition(FormDef);
+  const [formState] = useState(FormDef);
   const { fields } = formState;
 
   useAsyncValidator(

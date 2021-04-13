@@ -1,9 +1,7 @@
 import {
-  withInitialValue,
   formArray,
   buildGroup,
   formGroup,
-  useNodeForDefinition,
   useNodeStateComponent,
   ArrayNode,
 } from "@react-typed-forms/core";
@@ -35,8 +33,8 @@ let renders = 0;
 
 export default function ArraysExample() {
   renders++;
-  const formState = useNodeForDefinition(
-    withInitialValue(FormDef, {
+  const [formState] = useState(() =>
+    FormDef().setValue({
       strings: [""],
       structured: [{ id: "", name: "" }],
     })

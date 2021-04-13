@@ -119,7 +119,7 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  runChange(changed: NodeChange) {
+  runChange(changed: NodeChange): this {
     if (changed) {
       if (this.freezeCount === 0) {
         this.runListeners(changed);
@@ -127,18 +127,20 @@ export abstract class BaseNode {
         this.frozenChanges |= changed;
       }
     }
+    return this;
   }
 
   /**
    * @internal
    */
-  protected groupedChanges(run: () => void) {
+  protected groupedChanges(run: () => void): this {
     this.freezeCount++;
     run();
     this.freezeCount--;
     if (this.freezeCount === 0 && this.frozenChanges) {
       this.runListeners(this.frozenChanges);
     }
+    return this;
   }
 
   addChangeListener(
@@ -155,15 +157,15 @@ export abstract class BaseNode {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
-  setError(error?: string | null) {
-    this.runChange(this.updateError(error));
+  setError(error?: string | null): this {
+    return this.runChange(this.updateError(error));
   }
 
   /**
    * Run validation listeners.
    */
-  validate() {
-    this.runChange(NodeChange.Validate);
+  validate(): this {
+    return this.runChange(NodeChange.Validate);
   }
 }
 
@@ -220,6 +222,7 @@ export class Node<V> extends BaseNode {
     super();
     this.initialValue = value;
     if (validator !== null) {
+      this.setError(validator?.(value));
       this.addChangeListener(() => {
         const error = validator?.(this.value);
         this.runChange(this.updateError(error));
@@ -235,7 +238,7 @@ export class Node<V> extends BaseNode {
    * and a copy of the value is kept to check for dirtiness
    * on any future updates.
    */
-  setValue(value: V, initial?: boolean): void {
+  setValue(value: V, initial?: boolean): this {
     if (value !== this.value) {
       this.value = value;
       if (initial) {
@@ -248,6 +251,7 @@ export class Node<V> extends BaseNode {
       this.initialValue = value;
       this.runChange(this.updateDirty(false));
     }
+    return this;
   }
 
   visitChildren(
@@ -262,16 +266,18 @@ export class Node<V> extends BaseNode {
    * Set the disabled flag.
    * @param disabled
    */
-  setDisabled(disabled: boolean) {
+  setDisabled(disabled: boolean): this {
     this.runChange(this.updateDisabled(disabled));
+    return this;
   }
 
   /**
    * Set the touched flag.
    * @param touched
    */
-  setTouched(touched: boolean) {
+  setTouched(touched: boolean): this {
     this.runChange(this.updateTouched(touched));
+    return this;
   }
 }
 
@@ -333,30 +339,34 @@ export abstract class ParentNode extends BaseNode {
    * Set the disabled flag on this and all children.
    * @param disabled
    */
-  setDisabled(disabled: boolean) {
+  setDisabled(disabled: boolean): this {
     this.updateAll((c) => c.updateDisabled(disabled));
+    return this;
   }
 
   /**
    * Set the touched flag on this and any children.
    * @param touched
    */
-  setTouched(touched: boolean) {
+  setTouched(touched: boolean): this {
     this.updateAll((c) => c.updateTouched(touched));
+    return this;
   }
 
   /**
    * Run validation listeners for this and any children.
    */
-  validate() {
+  validate(): this {
     this.updateAll(() => NodeChange.Validate);
+    return this;
   }
 
   /**
    * Clear all error messages and mark controls as valid.
    */
-  clearErrors() {
+  clearErrors(): this {
     this.updateAll((c) => c.updateError(undefined));
+    return this;
   }
 
   /**
@@ -401,8 +411,8 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
    * @param value The values to set on child nodes
    * @param initial If true reset the dirty flag
    */
-  setValue(value: ValueTypeForNode<FIELD>[], initial?: boolean): void {
-    this.groupedChanges(() => {
+  setValue(value: ValueTypeForNode<FIELD>[], initial?: boolean): this {
+    return this.groupedChanges(() => {
       var flags: NodeChange = 0;
       const childElems = [...this.elems];
       if (childElems.length !== value.length) {
@@ -554,8 +564,8 @@ export class GroupNode<
    * @param value The value for all child nodes
    * @param initial If true reset the dirty flag
    */
-  setValue(value: ValueTypeForNode<this>, initial?: boolean): void {
-    this.groupedChanges(() => {
+  setValue(value: ValueTypeForNode<this>, initial?: boolean): this {
+    return this.groupedChanges(() => {
       const fields = this.fields;
       for (const k in fields) {
         setValueUnsafe(fields[k], (value as any)[k], initial);
@@ -652,14 +662,14 @@ export function formGroup<DEF extends { [t: string]: any }>(
 
 type FieldType<T, K> = K extends keyof Exclude<T, undefined>
   ? Exclude<T, undefined>[K]
-  : T;
+  : never;
 
-type FixType<V, D> = D extends Node<any>
+type Correlate<V, D> = D extends Node<any>
   ? Node<V>
   : D extends GroupNode<infer FIELDS>
   ? GroupNode<
       {
-        [CK in keyof FIELDS]: FixType<FieldType<V, CK>, FIELDS[CK]>;
+        [CK in keyof FIELDS]: Correlate<FieldType<V, CK>, FIELDS[CK]>;
       }
     >
   : D;
@@ -672,27 +682,6 @@ export function buildGroup<T>(): <
   DEF extends { [K in keyof T]-?: AllowedDef<T[K]> }
 >(
   children: DEF
-) => () => FixType<T, GroupNode<NodeTypeForFieldDefinitions<DEF>>> {
+) => () => Correlate<T, GroupNode<NodeTypeForFieldDefinitions<DEF>>> {
   return formGroup as any;
-}
-
-export function withInitialValue<N extends BaseNode>(
-  f: () => ArrayNode<N>,
-  value: ValueTypeForNode<N>[]
-): () => ArrayNode<N>;
-
-export function withInitialValue<N extends { [t: string]: BaseNode }>(
-  f: () => GroupNode<N>,
-  value: ValueTypeForNode<GroupNode<N>>
-): () => GroupNode<N>;
-
-export function withInitialValue<N extends ArrayNode<any> | GroupNode<any>>(
-  f: NodeCreator<N>,
-  value: ValueTypeForNode<N>
-): NodeCreator<N> {
-  return () => {
-    const n = f();
-    n.setValue(value as any, true);
-    return n;
-  };
 }

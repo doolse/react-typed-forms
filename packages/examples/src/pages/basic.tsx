@@ -1,9 +1,4 @@
-import {
-  node,
-  buildGroup,
-  Fselect,
-  useNodeForDefinition,
-} from "@react-typed-forms/core";
+import { node, buildGroup, Fselect } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 
@@ -25,7 +20,7 @@ let renders = 0;
 
 export default function BasicFormExample() {
   renders++;
-  const formState = useNodeForDefinition(FormDef);
+  const [formState] = useState(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
