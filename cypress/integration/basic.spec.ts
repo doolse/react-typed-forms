@@ -16,7 +16,7 @@ describe("Simple Bootstrap Form", () => {
     cy.get("#password").should("be.disabled");
     cy.get("#number").should("be.disabled");
     cy.get("#submit").click();
-    cy.get("#renderCount").should("have.text", "4");
+    cy.get("#renderCount").should("have.text", "5");
     cy.get("pre").should(
       compareJson({
         password: "MyPassword",
