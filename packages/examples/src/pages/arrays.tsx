@@ -1,9 +1,9 @@
 import {
-  formArray,
+  ArrayControl,
+  arrayControl,
   buildGroup,
-  formGroup,
-  useNodeStateComponent,
-  ArrayNode,
+  groupControl,
+  useControlStateComponent,
 } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import { FormArray } from "@react-typed-forms/core";
@@ -20,9 +20,9 @@ type MainForm = {
 };
 
 const FormDef = buildGroup<MainForm>()({
-  strings: formArray(""),
-  structured: formArray(
-    formGroup({
+  strings: arrayControl(""),
+  structured: arrayControl(
+    groupControl({
       id: "",
       name: "",
     })
@@ -41,11 +41,11 @@ export default function ArraysExample() {
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
-  const Dirty = useNodeStateComponent(fields.structured, (c) => c.dirty);
+  const Dirty = useControlStateComponent(fields.structured, (c) => c.dirty);
 
-  function moveUp(fa: ArrayNode<any>, index: number) {
+  function moveUp(fa: ArrayControl<any>, index: number) {
     if (index > 0 && index < fa.elems.length)
-      fa.updateFormElements((fields) =>
+      fa.update((fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx - 1]
@@ -55,9 +55,9 @@ export default function ArraysExample() {
         )
       );
   }
-  function moveDown(fa: ArrayNode<any>, index: number) {
+  function moveDown(fa: ArrayControl<any>, index: number) {
     if (index >= 0 && index < fa.elems.length - 1)
-      fa.updateFormElements((fields) =>
+      fa.update((fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx + 1]
@@ -87,7 +87,7 @@ export default function ArraysExample() {
                 <div>
                   <button
                     className="btn mx-2"
-                    onClick={() => fields.strings.removeFormElement(idx)}
+                    onClick={() => fields.strings.remove(idx)}
                   >
                     X
                   </button>
@@ -100,14 +100,14 @@ export default function ArraysExample() {
           <button
             id="addString"
             className="btn"
-            onClick={() => fields.strings.addFormElement("")}
+            onClick={() => fields.strings.add()}
           >
             Add
           </button>{" "}
           <button
             id="addStartString"
             className="btn"
-            onClick={() => fields.strings.addFormElement("", 0)}
+            onClick={() => fields.strings.add(0)}
           >
             Add to start
           </button>{" "}
@@ -138,7 +138,7 @@ export default function ArraysExample() {
                 <div>
                   <button
                     className="btn mx-2 remove"
-                    onClick={() => fields.structured.removeFormElement(idx)}
+                    onClick={() => fields.structured.remove(idx)}
                   >
                     X
                   </button>
@@ -163,9 +163,7 @@ export default function ArraysExample() {
           <button
             id="addObj"
             className="btn"
-            onClick={() =>
-              fields.structured.addFormElement({ id: "", name: "" })
-            }
+            onClick={() => fields.structured.add()}
           >
             Add
           </button>{" "}

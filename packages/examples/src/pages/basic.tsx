@@ -1,4 +1,4 @@
-import { node, buildGroup, Fselect } from "@react-typed-forms/core";
+import { control, buildGroup, Fselect } from "@react-typed-forms/core";
 import { Finput } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 
@@ -9,10 +9,10 @@ type SimpleForm = {
 };
 
 const FormDef = buildGroup<SimpleForm>()({
-  password: node("", (v) =>
+  password: control("", (v) =>
     v.length < 6 ? "Password must be 6 characters" : undefined
   ),
-  username: node("", (v) => (!v ? "Required field" : undefined)),
+  username: control("", (v) => (!v ? "Required field" : undefined)),
   number: "",
 });
 
@@ -75,9 +75,9 @@ export default function BasicFormExample() {
             id="submit"
             className="btn btn-primary"
             onClick={(e) => {
-              setFormData(formState.toObject());
-              formRef.current?.reportValidity();
               e.preventDefault();
+              formRef.current?.reportValidity();
+              setFormData(formState.toObject());
             }}
           >
             toObject()

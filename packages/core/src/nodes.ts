@@ -1,28 +1,32 @@
-export enum NodeChange {
-  Value = 1,
-  Valid = 2,
-  Touched = 4,
+export enum ControlFlags {
+  Valid = 1,
+  Touched = 2,
+  Dirty = 4,
   Disabled = 8,
-  Error = 16,
-  Dirty = 32,
+}
+
+export enum ControlChange {
+  Valid = 1,
+  Touched = 2,
+  Dirty = 4,
+  Disabled = 8,
+  Value = 16,
+  Error = 32,
   All = Value | Valid | Touched | Disabled | Error | Dirty,
   Validate = 64,
 }
 
-export type ChangeListener<C extends BaseNode> = [
-  NodeChange,
-  (control: C, cb: NodeChange) => void
+export type ChangeListener<C extends BaseControl> = [
+  ControlChange,
+  (control: C, cb: ControlChange) => void
 ];
 
-let nodeCount = 0;
+let controlCount = 0;
 
-export abstract class BaseNode {
-  valid: boolean = true;
+export abstract class BaseControl {
+  flags: ControlFlags = ControlFlags.Valid;
   error: string | undefined | null;
-  touched: boolean = false;
-  disabled: boolean = false;
-  dirty: boolean = false;
-  uniqueId = ++nodeCount;
+  uniqueId = ++controlCount;
   element: HTMLElement | null = null;
 
   /**
@@ -37,13 +41,13 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  frozenChanges: NodeChange = 0;
+  frozenChanges: ControlChange = 0;
 
   /**
    * @internal
    */
   abstract visitChildren(
-    visit: (c: BaseNode) => boolean,
+    visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean;
@@ -53,21 +57,41 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  updateError(error?: string | null): NodeChange {
+  updateError(error?: string | null): ControlChange {
     if (this.error !== error) {
       this.error = error;
-      return NodeChange.Error | this.updateValid(!Boolean(error));
+      return ControlChange.Error | this.updateValid(!Boolean(error));
     }
     return this.updateValid(!Boolean(error));
   }
 
+  get valid() {
+    return Boolean(this.flags & ControlFlags.Valid);
+  }
+
+  get dirty() {
+    return Boolean(this.flags & ControlFlags.Dirty);
+  }
+
+  get disabled() {
+    return Boolean(this.flags & ControlFlags.Disabled);
+  }
+
+  get touched() {
+    return Boolean(this.flags & ControlFlags.Touched);
+  }
+
+  setFlag(flag: ControlFlags, b: boolean) {
+    this.flags = b ? this.flags | flag : this.flags & ~flag;
+  }
+
   /**
    * @internal
    */
-  updateValid(valid: boolean): NodeChange {
+  updateValid(valid: boolean): ControlChange {
     if (this.valid !== valid) {
-      this.valid = valid;
-      return NodeChange.Valid;
+      this.setFlag(ControlFlags.Valid, valid);
+      return ControlChange.Valid;
     }
     return 0;
   }
@@ -75,10 +99,10 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  updateDisabled(disabled: boolean): NodeChange {
+  updateDisabled(disabled: boolean): ControlChange {
     if (this.disabled !== disabled) {
-      this.disabled = disabled;
-      return NodeChange.Disabled;
+      this.setFlag(ControlFlags.Disabled, disabled);
+      return ControlChange.Disabled;
     }
     return 0;
   }
@@ -86,10 +110,10 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  updateDirty(dirty: boolean): NodeChange {
+  updateDirty(dirty: boolean): ControlChange {
     if (this.dirty !== dirty) {
-      this.dirty = dirty;
-      return NodeChange.Dirty;
+      this.setFlag(ControlFlags.Dirty, dirty);
+      return ControlChange.Dirty;
     }
     return 0;
   }
@@ -97,10 +121,10 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  updateTouched(touched: boolean): NodeChange {
+  updateTouched(touched: boolean): ControlChange {
     if (this.touched !== touched) {
-      this.touched = touched;
-      return NodeChange.Touched;
+      this.setFlag(ControlFlags.Touched, touched);
+      return ControlChange.Touched;
     }
     return 0;
   }
@@ -108,7 +132,7 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  private runListeners(changed: NodeChange) {
+  private runListeners(changed: ControlChange) {
     this.frozenChanges = 0;
     this.stateVersion++;
     this.listeners.forEach(([m, cb]) => {
@@ -119,7 +143,7 @@ export abstract class BaseNode {
   /**
    * @internal
    */
-  runChange(changed: NodeChange): this {
+  runChange(changed: ControlChange): this {
     if (changed) {
       if (this.freezeCount === 0) {
         this.runListeners(changed);
@@ -144,16 +168,18 @@ export abstract class BaseNode {
   }
 
   addChangeListener(
-    listener: (node: this, change: NodeChange) => void,
-    mask?: NodeChange
+    listener: (control: this, change: ControlChange) => void,
+    mask?: ControlChange
   ) {
     this.listeners = [
       ...this.listeners,
-      [mask ? mask : NodeChange.All, listener],
+      [mask ? mask : ControlChange.All, listener],
     ];
   }
 
-  removeChangeListener(listener: (node: this, change: NodeChange) => void) {
+  removeChangeListener(
+    listener: (control: this, change: ControlChange) => void
+  ) {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
@@ -165,54 +191,54 @@ export abstract class BaseNode {
    * Run validation listeners.
    */
   validate(): this {
-    return this.runChange(NodeChange.Validate);
+    return this.runChange(ControlChange.Validate);
   }
 }
 
-function setValueUnsafe(ctrl: BaseNode, v: any, initial?: boolean) {
+function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
   (ctrl as any).setValue(v, initial);
 }
 
-function toValueUnsafe(ctrl: BaseNode): any {
-  return ctrl instanceof Node
+function toValueUnsafe(ctrl: BaseControl): any {
+  return ctrl instanceof FormControl
     ? ctrl.value
-    : ctrl instanceof ArrayNode
+    : ctrl instanceof ArrayControl
     ? ctrl.toArray()
-    : ctrl instanceof GroupNode
+    : ctrl instanceof GroupControl
     ? ctrl.toObject()
     : undefined;
 }
 
-type IsOptionalField<K, C> = C extends Node<infer V>
+type IsOptionalField<K, C> = C extends FormControl<infer V>
   ? undefined extends V
     ? K
     : never
   : never;
 
-type IsRequiredField<K, C> = C extends Node<infer V>
+type IsRequiredField<K, C> = C extends FormControl<infer V>
   ? undefined extends V
     ? never
     : K
   : K;
 
-export type ValueTypeForNode<C> = C extends GroupNode<infer F>
-  ? { [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForNode<F[K]> } &
-      { [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForNode<F[K]> }
-  : C extends Node<infer V>
+export type ValueTypeForControl<C> = C extends GroupControl<infer F>
+  ? { [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForControl<F[K]> } &
+      { [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForControl<F[K]> }
+  : C extends FormControl<infer V>
   ? V
-  : C extends ArrayNode<infer AC>
-  ? ValueTypeForNode<AC>[]
+  : C extends ArrayControl<infer AC>
+  ? ValueTypeForControl<AC>[]
   : never;
 
-export type NodeValueTypeOut<C> = C extends GroupNode<infer F>
-  ? { [K in keyof F]: NodeValueTypeOut<F[K]> }
-  : C extends Node<infer V>
+export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
+  ? { [K in keyof F]: ControlValueTypeOut<F[K]> }
+  : C extends FormControl<infer V>
   ? V
-  : C extends ArrayNode<infer AC>
-  ? NodeValueTypeOut<AC>[]
+  : C extends ArrayControl<infer AC>
+  ? ControlValueTypeOut<AC>[]
   : never;
 
-export class Node<V> extends BaseNode {
+export class FormControl<V> extends BaseControl {
   initialValue: V;
 
   constructor(
@@ -226,7 +252,7 @@ export class Node<V> extends BaseNode {
       this.addChangeListener(() => {
         const error = validator?.(this.value);
         this.runChange(this.updateError(error));
-      }, NodeChange.Value | NodeChange.Validate);
+      }, ControlChange.Value | ControlChange.Validate);
     }
   }
 
@@ -245,7 +271,7 @@ export class Node<V> extends BaseNode {
         this.initialValue = value;
       }
       this.runChange(
-        NodeChange.Value | this.updateDirty(value !== this.initialValue)
+        ControlChange.Value | this.updateDirty(value !== this.initialValue)
       );
     } else if (initial) {
       this.initialValue = value;
@@ -255,7 +281,7 @@ export class Node<V> extends BaseNode {
   }
 
   visitChildren(
-    visit: (c: BaseNode) => boolean,
+    visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean {
@@ -281,11 +307,11 @@ export class Node<V> extends BaseNode {
   }
 }
 
-export abstract class ParentNode extends BaseNode {
+export abstract class ParentControl extends BaseControl {
   /**
    * @internal
    */
-  protected updateAll(change: (c: BaseNode) => NodeChange) {
+  protected updateAll(change: (c: BaseControl) => ControlChange) {
     this.visitChildren(
       (c) => {
         c.runChange(change(c));
@@ -299,25 +325,25 @@ export abstract class ParentNode extends BaseNode {
   /**
    * @internal
    */
-  protected parentListener(): ChangeListener<BaseNode> {
+  protected parentListener(): ChangeListener<BaseControl> {
     return [
-      NodeChange.Value |
-        NodeChange.Valid |
-        NodeChange.Touched |
-        NodeChange.Dirty,
+      ControlChange.Value |
+        ControlChange.Valid |
+        ControlChange.Touched |
+        ControlChange.Dirty,
       (child, change) => {
-        var flags: NodeChange = change & NodeChange.Value;
-        if (change & NodeChange.Valid) {
+        var flags: ControlChange = change & ControlChange.Value;
+        if (change & ControlChange.Valid) {
           const valid =
             child.valid && (this.valid || this.visitChildren((c) => c.valid));
           flags |= this.updateValid(valid);
         }
-        if (change & NodeChange.Dirty) {
+        if (change & ControlChange.Dirty) {
           const dirty =
             child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
           flags |= this.updateDirty(dirty);
         }
-        if (change & NodeChange.Touched) {
+        if (change & ControlChange.Touched) {
           flags |= this.updateTouched(child.touched || this.touched);
         }
         this.runChange(flags);
@@ -328,7 +354,7 @@ export abstract class ParentNode extends BaseNode {
   /**
    * @internal
    */
-  protected controlFromDef<N extends BaseNode>(cdef: () => N): N {
+  protected controlFromDef<N extends BaseControl>(cdef: () => N): N {
     const l = this.parentListener();
     var child = cdef();
     child.addChangeListener(l[1], l[0]);
@@ -357,7 +383,7 @@ export abstract class ParentNode extends BaseNode {
    * Run validation listeners for this and any children.
    */
   validate(): this {
-    this.updateAll(() => NodeChange.Validate);
+    this.updateAll(() => ControlChange.Validate);
     return this;
   }
 
@@ -375,14 +401,14 @@ export abstract class ParentNode extends BaseNode {
    * or an index number for ArrayControl.
    * @param path
    */
-  lookupControl(path: (string | number)[]): BaseNode | null {
+  lookupControl(path: (string | number)[]): BaseControl | null {
     var base = this;
     var index = 0;
     while (index < path.length && base) {
       const childId = path[index];
-      if (base instanceof GroupNode) {
+      if (base instanceof GroupControl) {
         base = base.fields[childId];
-      } else if (base instanceof ArrayNode && typeof childId == "number") {
+      } else if (base instanceof ArrayControl && typeof childId == "number") {
         base = base.elems[childId];
       } else {
         return null;
@@ -393,11 +419,9 @@ export abstract class ParentNode extends BaseNode {
   }
 }
 
-export type ValueNodeFields<R> = { [K in keyof R]-?: Node<R[K]> };
+export type FormControlFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
-export type GroupNodeForType<R> = GroupNode<ValueNodeFields<R>>;
-
-export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
+export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   elems: FIELD[] = [];
   initialFields: FIELD[] = [];
 
@@ -406,17 +430,17 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
   }
 
   /**
-   * Set the child values. Underlying nodes will be
+   * Set the child values. Underlying controls will be
    * added/deleted if the size of the array changes.
-   * @param value The values to set on child nodes
+   * @param value The values to set on child controls
    * @param initial If true reset the dirty flag
    */
-  setValue(value: ValueTypeForNode<FIELD>[], initial?: boolean): this {
+  setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     return this.groupedChanges(() => {
-      var flags: NodeChange = 0;
+      var flags: ControlChange = 0;
       const childElems = [...this.elems];
       if (childElems.length !== value.length) {
-        flags |= NodeChange.Value;
+        flags |= ControlChange.Value;
       }
       value.map((v, i) => {
         if (childElems.length <= i) {
@@ -441,12 +465,12 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
     });
   }
 
-  toArray(): NodeValueTypeOut<FIELD>[] {
+  toArray(): ControlValueTypeOut<FIELD>[] {
     return this.elems.map((e) => toValueUnsafe(e));
   }
 
   visitChildren(
-    visit: (c: BaseNode) => boolean,
+    visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean {
@@ -464,18 +488,17 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
 
   /**
    * Add a new element to the array
-   * @param value The value for the child control
+   * @param index Optional insertion index
    */
-  addFormElement(value: ValueTypeForNode<FIELD>, index?: number): FIELD {
+  add(index?: number): FIELD {
     const newCtrl = this.controlFromDef(this.childDefinition);
-    setValueUnsafe(newCtrl, value, true);
     this.elems = [...this.elems];
     if (index !== undefined) {
       this.elems.splice(index, 0, newCtrl);
     } else {
       this.elems.push(newCtrl);
     }
-    this.runChange(NodeChange.Value | this.updateArrayFlags());
+    this.runChange(ControlChange.Value | this.updateArrayFlags());
     return newCtrl;
   }
 
@@ -484,10 +507,10 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
    * @param f A function which takes the array of form elements and a function which
    * can create new elements and returns a new array.
    */
-  updateFormElements(
+  update(
     f: (
       fields: FIELD[],
-      makeChild: (value: ValueTypeForNode<FIELD>) => FIELD
+      makeChild: (value: ValueTypeForControl<FIELD>) => FIELD
     ) => FIELD[]
   ): void {
     const newElems = f(this.elems, (v) => {
@@ -497,7 +520,7 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
     });
     if (this.elems !== newElems) {
       this.elems = newElems;
-      this.runChange(NodeChange.Value | this.updateArrayFlags());
+      this.runChange(ControlChange.Value | this.updateArrayFlags());
     }
   }
 
@@ -505,9 +528,9 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
    * Remove an element in the array by index
    * @param index The index of the form element to remove
    */
-  removeFormElement(index: number): void {
+  remove(index: number): this {
     this.elems = this.elems.filter((e, i) => i !== index);
-    this.runChange(NodeChange.Value | this.updateArrayFlags());
+    return this.runChange(ControlChange.Value | this.updateArrayFlags());
   }
 
   private shallowEquals<A>(a: A[], b: A[]) {
@@ -528,18 +551,26 @@ export class ArrayNode<FIELD extends BaseNode> extends ParentNode {
   }
 }
 
-export class GroupNode<
-  FIELDS extends { [k: string]: BaseNode }
-> extends ParentNode {
+export class GroupControl<
+  FIELDS extends { [k: string]: BaseControl }
+> extends ParentControl {
   fields: FIELDS;
 
   constructor(children: FIELDS) {
     super();
     this.fields = children;
+    const l = this.parentListener();
+    for (const c in children) {
+      children[c].addChangeListener(l[1], l[0]);
+    }
+    this.setFlag(
+      ControlFlags.Valid,
+      this.visitChildren((c) => c.valid)
+    );
   }
 
   visitChildren(
-    visit: (c: BaseNode) => boolean,
+    visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean {
@@ -559,12 +590,12 @@ export class GroupNode<
   }
 
   /**
-   * Set the value of all child nodes.
+   * Set the value of all child controls.
    * If the child type contains `undefined` the fields is optional.
-   * @param value The value for all child nodes
+   * @param value The value for all child controls
    * @param initial If true reset the dirty flag
    */
-  setValue(value: ValueTypeForNode<this>, initial?: boolean): this {
+  setValue(value: ValueTypeForControl<this>, initial?: boolean): this {
     return this.groupedChanges(() => {
       const fields = this.fields;
       for (const k in fields) {
@@ -573,7 +604,7 @@ export class GroupNode<
     });
   }
 
-  toObject(): NodeValueTypeOut<this> {
+  toObject(): ControlValueTypeOut<this> {
     const rec: Record<string, any> = {};
     for (const k in this.fields) {
       const bctrl = this.fields[k];
@@ -583,72 +614,57 @@ export class GroupNode<
   }
 }
 
-export type ValueTypeForDefintion<DEF> = ValueTypeForNode<
-  NodeTypeForDefinition<DEF>
->;
+type ControlDefType<T> = T extends ControlCreator<infer X> ? X : FormControl<T>;
 
-export type NodeTypeForDefinition<T> = T extends NodeCreator<infer X>
-  ? X
-  : Node<T>;
+export type ControlCreator<V extends BaseControl> = () => V;
 
-export type AnyNodeDefinition = NodeCreator<any> | any;
-
-export type NodeCreator<V extends BaseNode> = () => V;
-
-export type NodeTypeForFieldDefinitions<DEF> = {
-  [K in keyof DEF]: NodeTypeForDefinition<DEF[K]>;
-};
-
-export type ValueTypeForFields<DEF extends object> = ValueTypeForNode<
-  GroupNode<NodeTypeForFieldDefinitions<DEF>>
->;
-
-export type AllowedDef<V> =
+export type AllowedDefinition<V> =
   | V
-  | (() => Node<V>)
+  | (() => FormControl<V>)
   | (V extends (infer X)[]
-      ? () => ArrayNode<NodeTypeForDefinition<AllowedDef<X>>>
+      ? () => ArrayControl<ControlDefType<AllowedDefinition<X>>>
       : V extends object
-      ? () => GroupNode<
+      ? () => GroupControl<
           {
-            [K in keyof V]-?: NodeTypeForDefinition<AllowedDef<V[K]>>;
+            [K in keyof V]-?: ControlDefType<AllowedDefinition<V[K]>>;
           }
         >
       : never);
 
 /**
- * Define a leaf node containing values of type V
+ * Define a form control containing values of type V
+ * @param value Initial value for control
  * @param validator An optional synchronous validator
  */
-export function node<V>(
+export function control<V>(
   value: V,
   validator?: ((v: V) => string | undefined) | null
-): () => Node<V> {
-  return () => new Node(value, validator);
+): () => FormControl<V> {
+  return () => new FormControl(value, validator);
 }
 
-function makeCreator(v: any): NodeCreator<any> {
+function makeCreator(v: any): ControlCreator<any> {
   if (typeof v === "function") {
     return v;
   }
-  return () => new Node(v);
+  return () => new FormControl(v);
 }
 
-export function formArray<CHILD>(
+export function arrayControl<CHILD>(
   child: CHILD
-): () => ArrayNode<NodeTypeForDefinition<CHILD>> {
-  return () => new ArrayNode(makeCreator(child));
+): () => ArrayControl<ControlDefType<CHILD>> {
+  return () => new ArrayControl(makeCreator(child));
 }
 
 /**
  *
  * @param children
  */
-export function formGroup<DEF extends { [t: string]: any }>(
+export function groupControl<DEF extends { [t: string]: any }>(
   children: DEF
-): () => GroupNode<
+): () => GroupControl<
   {
-    [K in keyof DEF]: NodeTypeForDefinition<DEF[K]>;
+    [K in keyof DEF]: ControlDefType<DEF[K]>;
   }
 > {
   return () => {
@@ -656,7 +672,7 @@ export function formGroup<DEF extends { [t: string]: any }>(
     for (const k in children) {
       fields[k] = makeCreator(children[k])();
     }
-    return new GroupNode(fields);
+    return new GroupControl(fields);
   };
 }
 
@@ -664,10 +680,10 @@ type FieldType<T, K> = K extends keyof Exclude<T, undefined>
   ? Exclude<T, undefined>[K]
   : never;
 
-type Correlate<V, D> = D extends Node<any>
-  ? Node<V>
-  : D extends GroupNode<infer FIELDS>
-  ? GroupNode<
+type Correlate<V, D> = D extends FormControl<any>
+  ? FormControl<V>
+  : D extends GroupControl<infer FIELDS>
+  ? GroupControl<
       {
         [CK in keyof FIELDS]: Correlate<FieldType<V, CK>, FIELDS[CK]>;
       }
@@ -679,9 +695,18 @@ type Correlate<V, D> = D extends Node<any>
  * valid definitions that will produce values of given type T.
  */
 export function buildGroup<T>(): <
-  DEF extends { [K in keyof T]-?: AllowedDef<T[K]> }
+  DEF extends { [K in keyof T]-?: AllowedDefinition<T[K]> }
 >(
   children: DEF
-) => () => Correlate<T, GroupNode<NodeTypeForFieldDefinitions<DEF>>> {
-  return formGroup as any;
+) => () => Correlate<
+  T,
+  GroupControl<
+    {
+      [K in keyof DEF]: ControlDefType<DEF[K]>;
+    }
+  >
+> {
+  return groupControl as any;
 }
+
+export type ControlType<T extends ControlCreator<any>> = ReturnType<T>;

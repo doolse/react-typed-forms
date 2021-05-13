@@ -6,51 +6,63 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  ChangeEvent,
+  PropsWithChildren,
 } from "react";
-import { BaseNode, NodeChange, Node, ArrayNode } from "./nodes";
+import { BaseControl, ControlChange, FormControl, ArrayControl } from "./nodes";
 
-export function useNodeChangeEffect<Node extends BaseNode>(
-  node: Node,
-  changeEffect: (node: Node, change: NodeChange) => void,
-  mask?: NodeChange,
+export function useControlChangeEffect<Control extends BaseControl>(
+  control: Control,
+  changeEffect: (control: Control, change: ControlChange) => void,
+  mask?: ControlChange,
   deps?: any[]
 ) {
-  const updater = useMemo(() => changeEffect, deps ?? [node]);
+  const updater = useMemo(() => changeEffect, deps ?? [control]);
   useEffect(() => {
-    node.addChangeListener(updater, mask);
-    return () => node.removeChangeListener(updater);
+    control.addChangeListener(updater, mask);
+    return () => control.removeChangeListener(updater);
   }, [updater]);
 }
 
-export function useNodeState<N extends BaseNode, S>(
-  node: N,
+export function useControlState<N extends BaseControl, S>(
+  control: N,
   toState: (state: N) => S,
-  mask?: NodeChange
+  mask?: ControlChange
 ): S {
-  const [state, setState] = useState(() => toState(node));
+  const [state, setState] = useState(() => toState(control));
   useEffect(() => {
-    setState(toState(node));
-  }, [node]);
-  useNodeChangeEffect(node, (node) => setState(toState(node)), mask);
+    setState(toState(control));
+  }, [control]);
+  useControlChangeEffect(
+    control,
+    (control) => setState(toState(control)),
+    mask
+  );
   return state;
 }
 
-export function useNodeValue<A>(node: Node<A>, mask?: NodeChange) {
-  return useNodeState(node, (n) => n.value, mask);
+export function useControlValue<A>(
+  control: FormControl<A>,
+  mask?: ControlChange
+) {
+  return useControlState(control, (n) => n.value, mask);
 }
 
-export function useNodeStateVersion(control: BaseNode, mask?: NodeChange) {
-  return useNodeState(control, (c) => c.stateVersion, mask);
+export function useControlStateVersion(
+  control: BaseControl,
+  mask?: ControlChange
+) {
+  return useControlState(control, (c) => c.stateVersion, mask);
 }
 
-export function useNodeStateComponent<S, C extends BaseNode>(
+export function useControlStateComponent<S, C extends BaseControl>(
   control: C,
   toState: (state: C) => S,
-  mask?: NodeChange
+  mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
     () => ({ children }) => {
-      const state = useNodeState(control, toState, mask);
+      const state = useControlState(control, toState, mask);
       return children(state);
     },
     []
@@ -58,50 +70,50 @@ export function useNodeStateComponent<S, C extends BaseNode>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: BaseNode;
+  state: BaseControl;
   children: (validForm: boolean) => ReactElement;
 }
 
 export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
-  const validForm = useNodeState(
+  const validForm = useControlState(
     state,
     (c) => c.valid && c.dirty,
-    NodeChange.Valid | NodeChange.Dirty
+    ControlChange.Valid | ControlChange.Dirty
   );
   return children(validForm);
 }
 
-export interface FormArrayProps<C extends BaseNode> {
-  state: ArrayNode<C>;
+export interface FormArrayProps<C extends BaseControl> {
+  state: ArrayControl<C>;
   children: (elems: C[]) => ReactNode;
 }
 
-export function FormArray<C extends BaseNode>({
+export function FormArray<C extends BaseControl>({
   state,
   children,
 }: FormArrayProps<C>) {
-  useNodeState(state, (c) => c.elems, NodeChange.Value);
+  useControlState(state, (c) => c.elems, ControlChange.Value);
   return <>{children(state.elems)}</>;
 }
 
-function defaultValidCheck(n: BaseNode) {
-  return n instanceof Node ? n.value : n.stateVersion;
+function defaultValidCheck(n: BaseControl) {
+  return n instanceof FormControl ? n.value : n.stateVersion;
 }
 
-export function useAsyncValidator<C extends BaseNode>(
-  node: C,
+export function useAsyncValidator<C extends BaseControl>(
+  control: C,
   validator: (
-    node: C,
+    control: C,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue?: (node: C) => any
+  validCheckValue?: (control: C) => any
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
   const validCheck = validCheckValue ?? defaultValidCheck;
-  useNodeChangeEffect(
-    node,
+  useControlChangeEffect(
+    control,
     (n) => {
       if (handler.current) {
         window.clearTimeout(handler.current);
@@ -129,36 +141,71 @@ export function useAsyncValidator<C extends BaseNode>(
           });
       }, delay);
     },
-    NodeChange.Value | NodeChange.Validate
+    ControlChange.Value | ControlChange.Validate
   );
+}
+
+export interface FormControlProps<V, E extends HTMLElement> {
+  value: V;
+  onChange: (e: ChangeEvent<E & { value: any }>) => void;
+  onBlur: () => void;
+  disabled: boolean;
+  errorText?: string | null;
+  ref: (elem: HTMLElement | null) => void;
+}
+
+export function genericProps<V, E extends HTMLElement>(
+  state: FormControl<V>
+): FormControlProps<V, E> {
+  return {
+    ref: (elem) => {
+      state.element = elem;
+    },
+    value: state.value,
+    disabled: state.disabled,
+    errorText: state.touched && !state.valid ? state.error : undefined,
+    onBlur: () => state.setTouched(true),
+    onChange: (e) => state.setValue(e.target.value),
+  };
 }
 
 // Only allow strings and numbers
 export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: Node<string | number>;
+  state: FormControl<string | number>;
 };
+
+export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
+  render: (
+    props: PropsWithChildren<P & { state: FormControl<V> }>,
+    genProps: FormControlProps<V, E>
+  ) => ReactElement,
+  mask?: ControlChange
+): FC<P & { state: FormControl<V> }> {
+  return (props) => {
+    useControlStateVersion(props.state, mask);
+    return render(props, genericProps(props.state));
+  };
+}
 
 export function Finput({ state, ...others }: FinputProps) {
   // Re-render on value or disabled state change
-  useNodeStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
 
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useNodeChangeEffect(
+  useControlChangeEffect(
     state,
     (s) =>
       (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
-    NodeChange.Error
+    ControlChange.Error
   );
+  const theseProps = genericProps(state);
   return (
     <input
+      {...theseProps}
       ref={(r) => {
         state.element = r;
         if (r) r.setCustomValidity(state.error ?? "");
       }}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
       {...others}
     />
   );
@@ -166,30 +213,28 @@ export function Finput({ state, ...others }: FinputProps) {
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  state: Node<string | number>;
+  state: FormControl<string | number>;
 };
 
 export function Fselect({ state, children, ...others }: FselectProps) {
   // Re-render on value or disabled state change
-  useNodeStateVersion(state, NodeChange.Value | NodeChange.Disabled);
+  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
 
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useNodeChangeEffect(
+  useControlChangeEffect(
     state,
     (s) =>
       (s.element as HTMLSelectElement)?.setCustomValidity(state.error ?? ""),
-    NodeChange.Error
+    ControlChange.Error
   );
+  const theseProps = genericProps(state);
   return (
     <select
+      {...theseProps}
       ref={(r) => {
         state.element = r;
         if (r) r.setCustomValidity(state.error ?? "");
       }}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
       {...others}
     >
       {children}

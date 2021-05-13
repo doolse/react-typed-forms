@@ -1,34 +1,27 @@
 import { TextField, TextFieldProps } from "@material-ui/core";
 import React, { ReactElement, useEffect, useState } from "react";
 
-import { useNodeStateVersion, Node } from "@react-typed-forms/core";
+import {
+  useControlStateVersion,
+  FormControl,
+  createRenderer,
+} from "@react-typed-forms/core";
 
-export type FTextFieldProps = {
-  state: Node<string | undefined>;
-} & TextFieldProps;
-
-export function FTextField({
-  state,
-  ...others
-}: FTextFieldProps): ReactElement {
-  useNodeStateVersion(state);
-  const showError = state.touched && !state.valid && Boolean(state.error);
-  return (
-    <TextField
-      {...others}
-      ref={(e) => (state.element = e)}
-      value={state.value || ""}
-      error={showError}
-      disabled={state.disabled}
-      helperText={showError ? state.error : others.helperText}
-      onBlur={() => state.setTouched(true)}
-      onChange={(e) => state.setValue(e.target.value)}
-    />
-  );
-}
+export const FTextField = createRenderer<
+  string | undefined | null,
+  TextFieldProps,
+  HTMLInputElement | HTMLTextAreaElement
+>((props, formProps) => (
+  <TextField
+    {...formProps}
+    error={Boolean(formProps.errorText)}
+    {...props}
+    helperText={formProps.errorText ?? props.helperText}
+  />
+));
 
 export type FNumberFieldProps = {
-  state: Node<number | null | undefined>;
+  state: FormControl<number | null | undefined>;
   invalidError?: string | undefined;
   blankError?: string | undefined;
 } & TextFieldProps;
@@ -39,7 +32,7 @@ export function FNumberField({
   blankError,
   ...others
 }: FNumberFieldProps): ReactElement {
-  useNodeStateVersion(state);
+  useControlStateVersion(state);
   const showError = state.touched && !state.valid && Boolean(state.error);
   const [text, setText] = useState(state.value?.toString() ?? "");
   useEffect(() => {

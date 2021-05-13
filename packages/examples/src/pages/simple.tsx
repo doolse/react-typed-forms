@@ -1,4 +1,4 @@
-import { Finput, buildGroup, node } from "@react-typed-forms/core";
+import { Finput, buildGroup, control } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
@@ -9,7 +9,7 @@ type SimpleForm = {
 
 const FormDef = buildGroup<SimpleForm>()({
   firstName: "",
-  lastName: node("", (v) => (!v ? "Required field" : undefined)),
+  lastName: control("", (v) => (!v ? "Required field" : undefined)),
 });
 
 export default function SimpleExample() {

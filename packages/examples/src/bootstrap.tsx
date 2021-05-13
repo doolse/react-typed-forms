@@ -1,4 +1,4 @@
-import { useNodeStateVersion, ValueNode } from "@react-typed-forms/core";
+import { FormControl, useControlStateVersion } from "@react-typed-forms/core";
 import React, { ReactNode } from "react";
 
 export function FormInput({
@@ -8,11 +8,11 @@ export function FormInput({
   id,
   ...others
 }: React.InputHTMLAttributes<HTMLInputElement> & {
-  state: ValueNode<string | number>;
+  state: FormControl<string | number>;
   label: ReactNode;
   showValid?: boolean;
 }) {
-  useNodeStateVersion(state);
+  useControlStateVersion(state);
   return (
     <div className="form-group" id={id}>
       {label && <label>{label}</label>}
