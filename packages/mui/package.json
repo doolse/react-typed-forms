@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/mui",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "material-ui"
   ],
   "dependencies": {
-    "@react-typed-forms/core": "^2.0.1"
+    "@react-typed-forms/core": "^2.0.2"
   },
   "peerDependencies": {
     "@date-io/date-fns": "^1.3.13",
