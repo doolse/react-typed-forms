@@ -24,12 +24,7 @@ npm install @react-typed-forms/core
 ## Simple example
 
 ```tsx
-import {
-  control,
-  useFormState,
-  Finput,
-  buildGroup,
-} from "@react-typed-forms/core";
+import { Finput, buildGroup, control } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
@@ -39,12 +34,12 @@ type SimpleForm = {
 };
 
 const FormDef = buildGroup<SimpleForm>()({
-  firstName: control(),
-  lastName: control((v) => (!v ? "Required field" : undefined)),
+  firstName: "",
+  lastName: control("", (v) => (!v ? "Required field" : undefined)),
 });
 
-export function SimpleExample() {
-  const formState = useFormState(FormDef, { firstName: "", lastName: "" });
+export default function SimpleExample() {
+  const [formState] = useState(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (
@@ -55,11 +50,11 @@ export function SimpleExample() {
       }}
     >
       <label>First Name</label>
-      <Finput type="text" state={fields.firstName} />
+      <Finput id="firstName" type="text" state={fields.firstName} />
       <label>Last Name *</label>
-      <Finput type="text" state={fields.lastName} />
+      <Finput id="lastName" type="text" state={fields.lastName} />
       <div>
-        <button>Validate and toObject()</button>
+        <button id="submit">Validate and toObject()</button>
       </div>
       {formData && (
         <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>
