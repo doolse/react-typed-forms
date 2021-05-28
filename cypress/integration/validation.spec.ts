@@ -20,11 +20,17 @@ describe("Validation", () => {
     cy.get("#async > .invalid-feedback").should("have.text", "");
     cy.get("#submit").click();
 
+    cy.contains("#validFlag", "true");
+
     cy.get("pre").should(
       compareJson({
         email: "doolse@gmail.com",
         async: "OK",
+        array: [],
       })
     );
+
+    cy.get("#add").click();
+    cy.contains("#validFlag", "false");
   });
 });

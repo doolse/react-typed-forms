@@ -358,6 +358,7 @@ export abstract class ParentControl extends BaseControl {
     const l = this.parentListener();
     var child = cdef();
     child.addChangeListener(l[1], l[0]);
+    l[1](child, ControlChange.All);
     return child;
   }
 

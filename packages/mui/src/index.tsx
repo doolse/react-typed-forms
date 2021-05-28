@@ -11,12 +11,12 @@ export const FTextField = createRenderer<
   string | undefined | null,
   TextFieldProps,
   HTMLInputElement | HTMLTextAreaElement
->((props, formProps) => (
+>(({ state, ...props }, { errorText, ...formProps }) => (
   <TextField
     {...formProps}
-    error={Boolean(formProps.errorText)}
+    error={Boolean(errorText)}
     {...props}
-    helperText={formProps.errorText ?? props.helperText}
+    helperText={errorText ?? props.helperText}
   />
 ));
 
