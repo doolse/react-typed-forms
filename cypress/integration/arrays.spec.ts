@@ -71,5 +71,9 @@ describe("Arrays", () => {
         ],
       })
     );
+    cy.get("#addObj").click();
+    cy.contains("#validFlag", "false");
+    cy.get("#obj-3 .remove").click();
+    cy.contains("#validFlag", "true");
   });
 });

@@ -2,6 +2,7 @@ import {
   ArrayControl,
   arrayControl,
   buildGroup,
+  control,
   groupControl,
   useControlStateComponent,
 } from "@react-typed-forms/core";
@@ -23,7 +24,7 @@ const FormDef = buildGroup<MainForm>()({
   strings: arrayControl(""),
   structured: arrayControl(
     groupControl({
-      id: "",
+      id: control("", (v) => (!v ? "Not blank" : undefined)),
       name: "",
     })
   ),
@@ -42,6 +43,7 @@ export default function ArraysExample() {
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useControlStateComponent(fields.structured, (c) => c.dirty);
+  const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
   function moveUp(fa: ArrayControl<any>, index: number) {
     if (index > 0 && index < fa.elems.length)
@@ -188,7 +190,14 @@ export default function ArraysExample() {
                 Dirty: <span id="dirtyFlag">{dirty.toString()}</span>
               </span>
             )}
-          </Dirty>
+          </Dirty>{" "}
+          <Valid>
+            {(valid) => (
+              <span>
+                Valid: <span id="validFlag">{valid.toString()}</span>
+              </span>
+            )}
+          </Valid>
         </div>
       </div>
       <div>

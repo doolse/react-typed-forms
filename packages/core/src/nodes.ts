@@ -547,7 +547,8 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       this.updateDirty(
         !this.shallowEquals(this.elems, this.initialFields) ||
           !this.visitChildren((c) => !c.dirty)
-      )
+      ) |
+      this.updateValid(this.visitChildren((c) => c.valid))
     );
   }
 }
