@@ -48,6 +48,8 @@ describe("Arrays", () => {
     cy.contains("#dirtyFlag", "false");
     cy.get("#obj-1 .idField").type("1");
     cy.contains("#dirtyFlag", "true");
+    cy.get("#clean").click();
+    cy.contains("#dirtyFlag", "false");
     cy.get("#setObj").click();
     cy.get("#obj-1 .down").click();
     cy.get("#submit").click();

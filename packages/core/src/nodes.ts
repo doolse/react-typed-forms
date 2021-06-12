@@ -53,6 +53,7 @@ export abstract class BaseControl {
   ): boolean;
 
   abstract setTouched(showValidation: boolean): void;
+  abstract markAsClean(): void;
 
   /**
    * @internal
@@ -280,6 +281,11 @@ export class FormControl<V> extends BaseControl {
     return this;
   }
 
+  markAsClean() {
+    this.initialValue = this.value;
+    this.runChange(this.updateDirty(false));
+  }
+
   visitChildren(
     visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
@@ -466,6 +472,14 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     });
   }
 
+  markAsClean() {
+    return this.groupedChanges(() => {
+      this.runChange(this.updateDirty(false));
+      this.initialFields = this.elems;
+      this.elems.forEach((c) => c.markAsClean());
+    });
+  }
+
   toArray(): ControlValueTypeOut<FIELD>[] {
     return this.elems.map((e) => toValueUnsafe(e));
   }
@@ -602,6 +616,16 @@ export class GroupControl<
       const fields = this.fields;
       for (const k in fields) {
         setValueUnsafe(fields[k], (value as any)[k], initial);
+      }
+    });
+  }
+
+  markAsClean() {
+    return this.groupedChanges(() => {
+      this.runChange(this.updateDirty(false));
+      const fields = this.fields;
+      for (const k in fields) {
+        fields[k].markAsClean();
       }
     });
   }

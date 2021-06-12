@@ -214,6 +214,13 @@ export default function ArraysExample() {
           onClick={() => setFormData(formState.toObject())}
         >
           toObject()
+        </button>{" "}
+        <button
+          id="clean"
+          className="btn btn-primary"
+          onClick={() => formState.markAsClean()}
+        >
+          Mark Clean
         </button>
       </div>
       {formData && (
