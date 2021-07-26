@@ -51,6 +51,10 @@ describe("Arrays", () => {
     cy.get("#clean").click();
     cy.contains("#dirtyFlag", "false");
     cy.get("#setObj").click();
+    cy.contains("#dirtyFlag", "false");
+    cy.get("#setDifferent").click();
+    cy.contains("#dirtyFlag", "true");
+    cy.get("#setObj").click();
     cy.get("#obj-1 .down").click();
     cy.get("#submit").click();
     cy.get("pre").should(

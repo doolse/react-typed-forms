@@ -436,6 +436,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     super();
   }
 
+  get dirty() {
+    return Boolean(this.flags & ControlFlags.Dirty || this.elems.length !== this.initialFields.length);
+  }
+
   /**
    * Set the child values. Underlying controls will be
    * added/deleted if the size of the array changes.
@@ -444,10 +448,11 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
    */
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     return this.groupedChanges(() => {
-      var flags: ControlChange = 0;
+      let flags: ControlChange = 0;
       const childElems = [...this.elems];
       if (childElems.length !== value.length) {
         flags |= ControlChange.Value;
+        if (!initial) flags |= this.updateDirty(true);
       }
       value.map((v, i) => {
         if (childElems.length <= i) {
