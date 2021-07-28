@@ -566,10 +566,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   }
   
   protected selfDirty(): boolean {
-    const sd = !this.shallowEquals(this.elems, this.initialFields);
-    debugger;
-    console.log("SelfDirty", sd, this.elems, this.initialFields);
-    return sd;
+    return !this.shallowEquals(this.elems, this.initialFields);
   }
 
   private updateArrayFlags() {
