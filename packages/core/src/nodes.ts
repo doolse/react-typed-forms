@@ -346,7 +346,7 @@ export abstract class ParentControl extends BaseControl {
         }
         if (change & ControlChange.Dirty) {
           const dirty =
-            child.dirty || (this.dirty && !this.visitChildren((c) => !c.dirty));
+            child.dirty || this.selfDirty() || (this.dirty && !this.visitChildren((c) => !c.dirty));
           flags |= this.updateDirty(dirty);
         }
         if (change & ControlChange.Touched) {
@@ -355,6 +355,10 @@ export abstract class ParentControl extends BaseControl {
         this.runChange(flags);
       },
     ];
+  }
+  
+  protected selfDirty(): boolean {
+    return false;
   }
 
   /**
@@ -435,11 +439,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   constructor(private childDefinition: () => FIELD) {
     super();
   }
-
-  get dirty() {
-    return Boolean(this.flags & ControlFlags.Dirty || this.elems.length !== this.initialFields.length);
-  }
-
+  
   /**
    * Set the child values. Underlying controls will be
    * added/deleted if the size of the array changes.
@@ -452,7 +452,6 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       const childElems = [...this.elems];
       if (childElems.length !== value.length) {
         flags |= ControlChange.Value;
-        if (!initial) flags |= this.updateDirty(true);
       }
       value.map((v, i) => {
         if (childElems.length <= i) {
@@ -472,6 +471,12 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       if (initial) {
         this.initialFields = childElems;
         flags |= this.updateDirty(false);
+      }
+      else {
+        flags |= this.updateDirty(
+            this.selfDirty() ||
+            !this.visitChildren((c) => !c.dirty)
+        )
       }
       this.runChange(flags);
     });
@@ -559,12 +564,19 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     }
     return !a.some((v, i) => v !== b[i]);
   }
+  
+  protected selfDirty(): boolean {
+    const sd = !this.shallowEquals(this.elems, this.initialFields);
+    debugger;
+    console.log("SelfDirty", sd, this.elems, this.initialFields);
+    return sd;
+  }
 
   private updateArrayFlags() {
     return (
       this.updateTouched(true) |
       this.updateDirty(
-        !this.shallowEquals(this.elems, this.initialFields) ||
+        this.selfDirty() ||
           !this.visitChildren((c) => !c.dirty)
       ) |
       this.updateValid(this.visitChildren((c) => c.valid))
