@@ -1,3 +1,5 @@
+import {toArray} from "typedoc/dist/lib/utils/array";
+
 export enum ControlFlags {
   Valid = 1,
   Touched = 2,
@@ -54,6 +56,7 @@ export abstract class BaseControl {
 
   abstract setTouched(showValidation: boolean): void;
   abstract markAsClean(): void;
+  abstract toValue(): any;
 
   /**
    * @internal
@@ -200,16 +203,6 @@ function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
   (ctrl as any).setValue(v, initial);
 }
 
-function toValueUnsafe(ctrl: BaseControl): any {
-  return ctrl instanceof FormControl
-    ? ctrl.value
-    : ctrl instanceof ArrayControl
-    ? ctrl.toArray()
-    : ctrl instanceof GroupControl
-    ? ctrl.toObject()
-    : undefined;
-}
-
 type IsOptionalField<K, C> = C extends FormControl<infer V>
   ? undefined extends V
     ? K
@@ -255,6 +248,10 @@ export class FormControl<V> extends BaseControl {
         this.runChange(this.updateError(error));
       }, ControlChange.Value | ControlChange.Validate);
     }
+  }
+
+  toValue(): any {
+    return this.value;
   }
 
   /**
@@ -491,7 +488,12 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   }
 
   toArray(): ControlValueTypeOut<FIELD>[] {
-    return this.elems.map((e) => toValueUnsafe(e));
+    return this.elems.map((e) => e.toValue());
+  }
+  
+  toValue()
+  {
+    return this.toArray();
   }
 
   visitChildren(
@@ -648,9 +650,14 @@ export class GroupControl<
     const rec: Record<string, any> = {};
     for (const k in this.fields) {
       const bctrl = this.fields[k];
-      rec[k] = toValueUnsafe(bctrl);
+      rec[k] = bctrl.toValue();
     }
     return rec as any;
+  }
+  
+  toValue()
+  {
+    return this.toObject();
   }
 }
 
