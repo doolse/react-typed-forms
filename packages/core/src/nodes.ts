@@ -444,6 +444,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
    * @param initial If true reset the dirty flag
    */
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
+    value = value ?? [];
     return this.groupedChanges(() => {
       let flags: ControlChange = 0;
       const childElems = [...this.elems];
@@ -628,6 +629,7 @@ export class GroupControl<
    * @param initial If true reset the dirty flag
    */
   setValue(value: ValueTypeForControl<this>, initial?: boolean): this {
+    value = value ?? {};
     return this.groupedChanges(() => {
       const fields = this.fields;
       for (const k in fields) {
