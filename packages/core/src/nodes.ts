@@ -591,15 +591,22 @@ export class GroupControl<
 
   constructor(children: FIELDS) {
     super();
-    this.fields = children;
+    this.fields = {} as FIELDS;
+    this.addFields(children);
+  }
+  
+  addFields<MORE extends { [k: string]: BaseControl }>(moreChildren: MORE): GroupControl<FIELDS & MORE>
+  {
+    this.fields = {...this.fields, ...moreChildren};
     const l = this.parentListener();
-    for (const c in children) {
-      children[c].addChangeListener(l[1], l[0]);
+    for (const c in moreChildren) {
+      moreChildren[c].addChangeListener(l[1], l[0]);
     }
     this.setFlag(
-      ControlFlags.Valid,
-      this.visitChildren((c) => c.valid)
+        ControlFlags.Valid,
+        this.visitChildren((c) => c.valid)
     );
+    return this as any;
   }
 
   visitChildren(
@@ -759,3 +766,5 @@ export function buildGroup<T>(): <
 }
 
 export type ControlType<T extends ControlCreator<any>> = ReturnType<T>;
+
+export type GroupControlFields<T> = T extends GroupControl<infer FIELDS> ? FIELDS : never;
