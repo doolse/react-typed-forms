@@ -1,4 +1,11 @@
-import {ArrayControl, arrayControl, buildGroup, GroupControl, GroupControlFields} from "@react-typed-forms/core";
+import {
+  ArrayControl,
+  arrayControl,
+  buildGroup,
+  ControlType,
+  GroupControl,
+  GroupControlFields
+} from "@react-typed-forms/core";
 
 interface Recursive
 {
@@ -11,11 +18,11 @@ const k = buildGroup<Omit<Recursive, "children">>()({
   // children: arrayControl(k)
 })
 
-type WithRecursion = GroupControl<GroupControlFields<typeof k> & {children: ArrayControl<WithRecursion>}>
+type WithRecursion = GroupControl<GroupControlFields<ControlType<typeof k>> & {children: ArrayControl<WithRecursion>}>
 
 const defWithRecursion: () => WithRecursion = () => {
   return k()
-      .addFields({children: new ArrayControl<WithRecursion>(defWithRecursion)}) as WithRecursion;
+      .addFields({children: new ArrayControl<WithRecursion>(defWithRecursion)});
 }
 
 

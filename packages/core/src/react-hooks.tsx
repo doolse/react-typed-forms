@@ -26,16 +26,16 @@ export function useControlChangeEffect<Control extends BaseControl>(
 
 export function useControlState<N extends BaseControl, S>(
   control: N,
-  toState: (state: N) => S,
+  toState: (state: N, previous?: S) => S,
   mask?: ControlChange
 ): S {
   const [state, setState] = useState(() => toState(control));
   useEffect(() => {
-    setState(toState(control));
+    setState(p => toState(control, p));
   }, [control]);
   useControlChangeEffect(
     control,
-    (control) => setState(toState(control)),
+    (control) => setState(p => toState(control, p)),
     mask
   );
   return state;
