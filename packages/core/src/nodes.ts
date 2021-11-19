@@ -159,10 +159,7 @@ export abstract class BaseControl {
     return this;
   }
 
-  /**
-   * @internal
-   */
-  protected groupedChanges(run: () => void): this {
+  groupedChanges(run: () => void): this {
     this.freeze(true);
     run();
     this.unfreeze(true);
