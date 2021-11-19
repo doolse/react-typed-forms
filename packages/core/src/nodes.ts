@@ -626,11 +626,9 @@ export class GroupControl<
   ): GroupControl<OTHER> {
     const subGroup = new GroupControl<OTHER>(selectFields(this.fields));
     this.addChangeListener((c) => {
-      console.log("Parent group frozen", c.freezeCount);
       c.freezeCount === 0 ? subGroup.unfreeze() : subGroup.freeze();
     }, ControlChange.Freeze);
     subGroup.addChangeListener((c) => {
-      console.log("Subgroup frozen", c.freezeCount);
       c.freezeCount === 0 ? this.unfreeze() : this.freeze();
     }, ControlChange.Freeze);
     return subGroup;
