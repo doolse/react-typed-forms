@@ -1,4 +1,4 @@
-import {toArray} from "typedoc/dist/lib/utils/array";
+import { toArray } from "typedoc/dist/lib/utils/array";
 
 export enum ControlFlags {
   Valid = 1,
@@ -16,6 +16,7 @@ export enum ControlChange {
   Error = 32,
   All = Value | Valid | Touched | Disabled | Error | Dirty,
   Validate = 64,
+  Freeze = 128,
 }
 
 export type ChangeListener<C extends BaseControl> = [
@@ -162,13 +163,28 @@ export abstract class BaseControl {
    * @internal
    */
   protected groupedChanges(run: () => void): this {
-    this.freezeCount++;
+    this.freeze(true);
     run();
-    this.freezeCount--;
-    if (this.freezeCount === 0 && this.frozenChanges) {
-      this.runListeners(this.frozenChanges);
-    }
+    this.unfreeze(true);
     return this;
+  }
+
+  unfreeze(notify?: boolean) {
+    this.freezeCount--;
+    if (this.freezeCount === 0) {
+      this.runListeners(
+        this.frozenChanges | (notify ? ControlChange.Freeze : 0)
+      );
+    }
+  }
+
+  freeze(notify?: boolean) {
+    this.freezeCount++;
+    if (notify && this.freezeCount === 1) {
+      this.listeners.forEach(([m, cb]) => {
+        if ((m & ControlChange.Freeze) !== 0) cb(this, ControlChange.Freeze);
+      });
+    }
   }
 
   addChangeListener(
@@ -343,7 +359,9 @@ export abstract class ParentControl extends BaseControl {
         }
         if (change & ControlChange.Dirty) {
           const dirty =
-            child.dirty || this.selfDirty() || (this.dirty && !this.visitChildren((c) => !c.dirty));
+            child.dirty ||
+            this.selfDirty() ||
+            (this.dirty && !this.visitChildren((c) => !c.dirty));
           flags |= this.updateDirty(dirty);
         }
         if (change & ControlChange.Touched) {
@@ -353,7 +371,7 @@ export abstract class ParentControl extends BaseControl {
       },
     ];
   }
-  
+
   protected selfDirty(): boolean {
     return false;
   }
@@ -436,7 +454,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   constructor(private childDefinition: () => FIELD) {
     super();
   }
-  
+
   /**
    * Set the child values. Underlying controls will be
    * added/deleted if the size of the array changes.
@@ -469,12 +487,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
       if (initial) {
         this.initialFields = childElems;
         flags |= this.updateDirty(false);
-      }
-      else {
+      } else {
         flags |= this.updateDirty(
-            this.selfDirty() ||
-            !this.visitChildren((c) => !c.dirty)
-        )
+          this.selfDirty() || !this.visitChildren((c) => !c.dirty)
+        );
       }
       this.runChange(flags);
     });
@@ -491,9 +507,8 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   toArray(): ControlValueTypeOut<FIELD>[] {
     return this.elems.map((e) => e.toValue());
   }
-  
-  toValue()
-  {
+
+  toValue() {
     return this.toArray();
   }
 
@@ -567,7 +582,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     }
     return !a.some((v, i) => v !== b[i]);
   }
-  
+
   protected selfDirty(): boolean {
     return !this.shallowEquals(this.elems, this.initialFields);
   }
@@ -576,8 +591,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     return (
       this.updateTouched(true) |
       this.updateDirty(
-        this.selfDirty() ||
-          !this.visitChildren((c) => !c.dirty)
+        this.selfDirty() || !this.visitChildren((c) => !c.dirty)
       ) |
       this.updateValid(this.visitChildren((c) => c.valid))
     );
@@ -594,19 +608,35 @@ export class GroupControl<
     this.fields = {} as FIELDS;
     this.addFields(children);
   }
-  
-  addFields<MORE extends { [k: string]: BaseControl }>(moreChildren: MORE): GroupControl<FIELDS & MORE>
-  {
-    this.fields = {...this.fields, ...moreChildren};
+
+  addFields<MORE extends { [k: string]: BaseControl }>(
+    moreChildren: MORE
+  ): GroupControl<FIELDS & MORE> {
+    this.fields = { ...this.fields, ...moreChildren };
     const l = this.parentListener();
     for (const c in moreChildren) {
       moreChildren[c].addChangeListener(l[1], l[0]);
     }
     this.setFlag(
-        ControlFlags.Valid,
-        this.visitChildren((c) => c.valid)
+      ControlFlags.Valid,
+      this.visitChildren((c) => c.valid)
     );
     return this as any;
+  }
+
+  subGroup<OTHER extends { [k: string]: BaseControl }>(
+    selectFields: (f: FIELDS) => OTHER
+  ): GroupControl<OTHER> {
+    const subGroup = new GroupControl<OTHER>(selectFields(this.fields));
+    this.addChangeListener((c) => {
+      console.log("Parent group frozen", c.freezeCount);
+      c.freezeCount === 0 ? subGroup.unfreeze() : subGroup.freeze();
+    }, ControlChange.Freeze);
+    subGroup.addChangeListener((c) => {
+      console.log("Subgroup frozen", c.freezeCount);
+      c.freezeCount === 0 ? this.unfreeze() : this.freeze();
+    }, ControlChange.Freeze);
+    return subGroup;
   }
 
   visitChildren(
@@ -663,9 +693,8 @@ export class GroupControl<
     }
     return rec as any;
   }
-  
-  toValue()
-  {
+
+  toValue() {
     return this.toObject();
   }
 }
@@ -767,4 +796,6 @@ export function buildGroup<T>(): <
 
 export type ControlType<T extends ControlCreator<any>> = ReturnType<T>;
 
-export type GroupControlFields<T> = T extends GroupControl<infer FIELDS> ? FIELDS : never;
+export type GroupControlFields<T> = T extends GroupControl<infer FIELDS>
+  ? FIELDS
+  : never;
