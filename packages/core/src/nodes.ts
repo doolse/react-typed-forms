@@ -247,13 +247,16 @@ export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
 
 export class FormControl<V> extends BaseControl {
   initialValue: V;
+  equals: (a: any, b: any) => boolean;
 
   constructor(
     public value: V,
-    validator?: ((v: V) => string | undefined | null) | null
+    validator?: ((v: V) => string | undefined | null) | null,
+    equals?: (a: V, b: V) => boolean
   ) {
     super();
     this.initialValue = value;
+    this.equals = equals ?? ((a: V, b: V) => a === b);
     if (validator !== null) {
       this.setError(validator?.(value));
       this.addChangeListener(() => {
@@ -276,13 +279,14 @@ export class FormControl<V> extends BaseControl {
    * on any future updates.
    */
   setValue(value: V, initial?: boolean): this {
-    if (value !== this.value) {
+    if (!this.equals(value, this.value)) {
       this.value = value;
       if (initial) {
         this.initialValue = value;
       }
       this.runChange(
-        ControlChange.Value | this.updateDirty(value !== this.initialValue)
+        ControlChange.Value |
+          this.updateDirty(!this.equals(value, this.initialValue))
       );
     } else if (initial) {
       this.initialValue = value;
@@ -715,12 +719,14 @@ export type AllowedDefinition<V> =
  * Define a form control containing values of type V
  * @param value Initial value for control
  * @param validator An optional synchronous validator
+ * @param equals An optional equality function
  */
 export function control<V>(
   value: V,
-  validator?: ((v: V) => string | undefined) | null
+  validator?: ((v: V) => string | undefined) | null,
+  equals?: (a: V, b: V) => boolean
 ): () => FormControl<V> {
-  return () => new FormControl(value, validator);
+  return () => new FormControl(value, validator, equals);
 }
 
 function makeCreator(v: any): ControlCreator<any> {
