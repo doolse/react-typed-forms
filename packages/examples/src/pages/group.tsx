@@ -3,6 +3,7 @@ import {
   ControlChange,
   GroupControl,
   useControlChangeEffect,
+  useValueChangeEffect,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useMemo, useState } from "react";
@@ -32,6 +33,7 @@ export default function GroupTest() {
   );
   const [parentUpdates, setParentUpdates] = useState(0);
   const [valueUpdates, setValueUpdates] = useState(0);
+  const [debouncedUpdates, setDebouncedUpdates] = useState(0);
 
   useControlChangeEffect(
     subForm,
@@ -43,6 +45,7 @@ export default function GroupTest() {
     () => setParentUpdates((x) => x + 1),
     ControlChange.Value
   );
+  useValueChangeEffect(subForm, () => setDebouncedUpdates((x) => x + 1), 1000);
 
   return (
     <div className="container">
@@ -69,6 +72,10 @@ export default function GroupTest() {
       </div>
       <div>
         Parent updates: <span id="updateParentCount">{parentUpdates}</span>
+      </div>
+      <div>
+        Debounced subgroup updates:{" "}
+        <span id="updateDebouncedCount">{debouncedUpdates}</span>
       </div>
       <div>
         <button

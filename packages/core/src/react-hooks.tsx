@@ -1,15 +1,21 @@
 import React, {
-  ReactElement,
-  FC,
-  useRef,
-  useMemo,
-  useState,
-  useEffect,
-  ReactNode,
   ChangeEvent,
+  FC,
   PropsWithChildren,
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { BaseControl, ControlChange, FormControl, ArrayControl } from "./nodes";
+import {
+  ArrayControl,
+  BaseControl,
+  ControlChange,
+  ControlValueTypeOut,
+  FormControl,
+} from "./nodes";
 
 export function useControlChangeEffect<Control extends BaseControl>(
   control: Control,
@@ -24,6 +30,34 @@ export function useControlChangeEffect<Control extends BaseControl>(
   }, [updater]);
 }
 
+export function useValueChangeEffect<Control extends BaseControl>(
+  control: Control,
+  changeEffect: (control: ControlValueTypeOut<Control>) => void,
+  debounce?: number
+) {
+  const effectRef = useRef<
+    [(control: ControlValueTypeOut<Control>) => void, any]
+  >([changeEffect, undefined]);
+  effectRef.current[0] = changeEffect;
+  const updater = useMemo(
+    () => (c: Control) => {
+      if (debounce) {
+        if (effectRef.current[1]) clearTimeout(effectRef.current[1]);
+        effectRef.current[1] = setTimeout(() => {
+          effectRef.current[0](c.toValue());
+        }, debounce);
+      } else {
+        effectRef.current[0](c.toValue());
+      }
+    },
+    [effectRef]
+  );
+  useEffect(() => {
+    control.addChangeListener(updater, ControlChange.Value);
+    return () => control.removeChangeListener(updater);
+  }, [control]);
+}
+
 export function useControlState<N extends BaseControl, S>(
   control: N,
   toState: (state: N, previous?: S) => S,
@@ -31,11 +65,11 @@ export function useControlState<N extends BaseControl, S>(
 ): S {
   const [state, setState] = useState(() => toState(control));
   useEffect(() => {
-    setState(p => toState(control, p));
+    setState((p) => toState(control, p));
   }, [control]);
   useControlChangeEffect(
     control,
-    (control) => setState(p => toState(control, p)),
+    (control) => setState((p) => toState(control, p)),
     mask
   );
   return state;
@@ -61,10 +95,11 @@ export function useControlStateComponent<S, C extends BaseControl>(
   mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
-    () => ({ children }) => {
-      const state = useControlState(control, toState, mask);
-      return children(state);
-    },
+    () =>
+      ({ children }) => {
+        const state = useControlState(control, toState, mask);
+        return children(state);
+      },
     []
   );
 }

@@ -13,5 +13,6 @@ describe("Groups", () => {
     cy.get("#updateCount").should("have.text", "9");
     cy.get("#resetSubData").click();
     cy.get("#updateParentCount").should("have.text", "12");
+    cy.get("#updateDebouncedCount").should("have.text", "1");
   });
 });
