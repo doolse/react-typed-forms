@@ -1,10 +1,9 @@
-import { toArray } from "typedoc/dist/lib/utils/array";
-
 export enum ControlFlags {
   Valid = 1,
   Touched = 2,
   Dirty = 4,
   Disabled = 8,
+  Excluded = 16,
 }
 
 export enum ControlChange {
@@ -12,9 +11,10 @@ export enum ControlChange {
   Touched = 2,
   Dirty = 4,
   Disabled = 8,
+  Excluded = 256,
   Value = 16,
   Error = 32,
-  All = Value | Valid | Touched | Disabled | Error | Dirty,
+  All = Value | Valid | Touched | Disabled | Error | Dirty | Excluded,
   Validate = 64,
   Freeze = 128,
 }
@@ -86,6 +86,10 @@ export abstract class BaseControl {
     return Boolean(this.flags & ControlFlags.Touched);
   }
 
+  get excluded() {
+    return Boolean(this.flags & ControlFlags.Excluded);
+  }
+
   setFlag(flag: ControlFlags, b: boolean) {
     this.flags = b ? this.flags | flag : this.flags & ~flag;
   }
@@ -97,6 +101,17 @@ export abstract class BaseControl {
     if (this.valid !== valid) {
       this.setFlag(ControlFlags.Valid, valid);
       return ControlChange.Valid;
+    }
+    return 0;
+  }
+
+  /**
+   * @internal
+   */
+  updateExcluded(excluded: boolean): ControlChange {
+    if (this.excluded !== excluded) {
+      this.setFlag(ControlFlags.Excluded, excluded);
+      return ControlChange.Excluded;
     }
     return 0;
   }
@@ -202,6 +217,10 @@ export abstract class BaseControl {
 
   setError(error?: string | null): this {
     return this.runChange(this.updateError(error));
+  }
+
+  setExcluded(exclude: boolean): this {
+    return this.runChange(this.updateExcluded(exclude));
   }
 
   /**
@@ -350,9 +369,15 @@ export abstract class ParentControl extends BaseControl {
       ControlChange.Value |
         ControlChange.Valid |
         ControlChange.Touched |
-        ControlChange.Dirty,
+        ControlChange.Dirty |
+        ControlChange.Excluded,
       (child, change) => {
-        var flags: ControlChange = change & ControlChange.Value;
+        let flags: ControlChange = !child.excluded
+          ? change & ControlChange.Value
+          : 0;
+        if (change & ControlChange.Excluded) {
+          flags |= ControlChange.Value;
+        }
         if (change & ControlChange.Valid) {
           const valid =
             child.valid && (this.valid || this.visitChildren((c) => c.valid));
@@ -380,9 +405,13 @@ export abstract class ParentControl extends BaseControl {
   /**
    * @internal
    */
-  protected controlFromDef<N extends BaseControl>(cdef: () => N): N {
+  protected controlFromDef<N extends BaseControl>(
+    cdef: () => N,
+    beforeListener?: (c: N) => void
+  ): N {
     const l = this.parentListener();
-    var child = cdef();
+    const child = cdef();
+    beforeListener?.(child);
     child.addChangeListener(l[1], l[0]);
     l[1](child, ControlChange.All);
     return child;
@@ -506,7 +535,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   }
 
   toArray(): ControlValueTypeOut<FIELD>[] {
-    return this.elems.map((e) => e.toValue());
+    return this.elems.filter((e) => !e.excluded).map((e) => e.toValue());
   }
 
   toValue() {
@@ -533,17 +562,39 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   /**
    * Add a new element to the array
    * @param index Optional insertion index
+   * @param init Initialise element before parent
    */
-  add(index?: number): FIELD {
-    const newCtrl = this.controlFromDef(this.childDefinition);
+  add(index?: number, init?: (c: FIELD) => void): FIELD {
+    const newCtrl = this.controlFromDef(this.childDefinition, init);
     this.elems = [...this.elems];
     if (index !== undefined) {
       this.elems.splice(index, 0, newCtrl);
     } else {
       this.elems.push(newCtrl);
     }
-    this.runChange(ControlChange.Value | this.updateArrayFlags());
+    this.runChange(
+      (!newCtrl.excluded ? ControlChange.Value : 0) | this.updateArrayFlags()
+    );
     return newCtrl;
+  }
+
+  /**
+   *
+   * @param f
+   * @param create
+   */
+  findOrAdd(
+    f: (f: FIELD) => boolean,
+    create?: (newField: FIELD) => void
+  ): FIELD {
+    const existing = this.elems.find(f);
+    if (existing) {
+      return existing;
+    }
+    return this.add(undefined, (x) => {
+      x.updateExcluded(true);
+      create?.(x);
+    });
   }
 
   /**
@@ -577,15 +628,35 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     return this.runChange(ControlChange.Value | this.updateArrayFlags());
   }
 
-  private shallowEquals<A>(a: A[], b: A[]) {
-    if (a.length !== b.length) {
+  protected selfDirty(): boolean {
+    if (this.initialFields === this.elems) {
       return false;
     }
-    return !a.some((v, i) => v !== b[i]);
-  }
+    let eState = skipExcluded([0, undefined], this.elems);
+    let iState = skipExcluded([0, undefined], this.initialFields);
+    while (eState[1] && iState[1]) {
+      if (eState[1] !== iState[1]) {
+        return true;
+      }
+      skipExcluded(eState, this.elems);
+      skipExcluded(iState, this.initialFields);
+    }
+    return Boolean(eState[1] || iState[1]);
 
-  protected selfDirty(): boolean {
-    return !this.shallowEquals(this.elems, this.initialFields);
+    function skipExcluded(s: [number, FIELD | undefined], fields: FIELD[]) {
+      let i = s[0];
+      s[1] = undefined;
+      while (i < fields.length) {
+        if (!fields[i].excluded) {
+          s[1] = fields[i];
+          s[0] = i + 1;
+          return s;
+        }
+        i++;
+      }
+      s[0] = i;
+      return s;
+    }
   }
 
   private updateArrayFlags() {
@@ -688,7 +759,9 @@ export class GroupControl<
     const rec: Record<string, any> = {};
     for (const k in this.fields) {
       const bctrl = this.fields[k];
-      rec[k] = bctrl.toValue();
+      if (!bctrl.excluded) {
+        rec[k] = bctrl.toValue();
+      }
     }
     return rec as any;
   }

@@ -17,7 +17,8 @@ type ValidationForm = {
   array: { notBlank: string }[];
 };
 
-const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+const emailRegExp =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
 const FormDef = buildGroup<ValidationForm>()({
   email: control("", (v) =>
@@ -68,7 +69,11 @@ export default function ValidationExample() {
       <FormArray state={fields.array}>
         {(elems) =>
           elems.map((s) => (
-            <FormInput state={s.fields.notBlank} label="Not blank" />
+            <FormInput
+              key={s.uniqueId}
+              state={s.fields.notBlank}
+              label="Not blank"
+            />
           ))
         }
       </FormArray>
