@@ -128,7 +128,11 @@ export function FormArray<C extends BaseControl>({
   state,
   children,
 }: FormArrayProps<C>) {
-  useControlState(state, (c) => c.elems, ControlChange.Value);
+  useControlState(
+    state,
+    (c) => c.elems,
+    ControlChange.Value | ControlChange.Children
+  );
   return <>{children(state.elems)}</>;
 }
 

@@ -17,6 +17,7 @@ export enum ControlChange {
   All = Value | Valid | Touched | Disabled | Error | Dirty | Excluded,
   Validate = 64,
   Freeze = 128,
+  Children = 256,
 }
 
 export type ChangeListener<C extends BaseControl> = [
@@ -572,10 +573,14 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     } else {
       this.elems.push(newCtrl);
     }
-    this.runChange(
-      (!newCtrl.excluded ? ControlChange.Value : 0) | this.updateArrayFlags()
-    );
+    this.runChange(ArrayControl.childChange(newCtrl) | this.updateArrayFlags());
     return newCtrl;
+  }
+
+  private static childChange(ctrl: BaseControl) {
+    return !ctrl.excluded
+      ? ControlChange.Value | ControlChange.Children
+      : ControlChange.Children;
   }
 
   /**
@@ -615,7 +620,9 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     });
     if (this.elems !== newElems) {
       this.elems = newElems;
-      this.runChange(ControlChange.Value | this.updateArrayFlags());
+      this.runChange(
+        ControlChange.Value | ControlChange.Children | this.updateArrayFlags()
+      );
     }
   }
 
@@ -624,8 +631,14 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
    * @param index The index of the form element to remove
    */
   remove(index: number): this {
+    if (index < 0 || index >= this.elems.length) {
+      return this;
+    }
+    const toRemove = this.elems[index];
     this.elems = this.elems.filter((e, i) => i !== index);
-    return this.runChange(ControlChange.Value | this.updateArrayFlags());
+    return this.runChange(
+      ArrayControl.childChange(toRemove) | this.updateArrayFlags()
+    );
   }
 
   protected selfDirty(): boolean {
