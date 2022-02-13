@@ -599,6 +599,87 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   }
 }
 
+export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
+  enabled: FormControl<boolean>;
+  value: ELEM;
+}>;
+
+export class ArraySelectionControl<
+  FIELD extends BaseControl
+> extends ParentControl {
+  underlying: ArrayControl<SelectionGroup<FIELD>>;
+
+  get elems() {
+    return this.underlying.elems;
+  }
+
+  constructor(
+    childDefinition: () => FIELD,
+    private match: (v: ValueTypeForControl<FIELD>, elem: FIELD) => boolean
+  ) {
+    super();
+    this.underlying = new ArrayControl(
+      () =>
+        new GroupControl({
+          enabled: new FormControl(false),
+          value: childDefinition(),
+        })
+    );
+  }
+
+  markAsClean(): void {
+    this.underlying.markAsClean();
+  }
+
+  setValue(vals: ValueTypeForControl<FIELD>[], initial?: boolean): this {
+    this.underlying.groupedChanges(() => {
+      const selected: SelectionGroup<FIELD>[] = [];
+      vals.forEach((v) => {
+        const matchedValue = this.underlying.elems.find((x) =>
+          this.match(v, x.fields.value)
+        );
+        const matchOrNew = matchedValue ?? this.underlying.add();
+        matchOrNew.setValue({ enabled: true, value: v } as any, initial);
+        selected.push(matchOrNew);
+      });
+      this.underlying.elems.forEach((x) => {
+        if (!selected.includes(x)) {
+          x.fields.enabled.setValue(false, initial);
+        }
+      });
+    });
+    return this;
+  }
+
+  setSelectionValue(
+    v: ValueTypeForControl<SelectionGroup<FIELD>>[],
+    initial?: boolean
+  ): this {
+    this.underlying.setValue(v, initial);
+    return this;
+  }
+
+  toArray(): ControlValueTypeOut<FIELD>[] {
+    const res: ControlValueTypeOut<FIELD>[] = [];
+    this.underlying.elems.forEach((g) => {
+      if (g.fields.enabled.value) {
+        res.push(g.fields.value.toValue());
+      }
+    });
+    return res;
+  }
+
+  toValue(): any {}
+
+  visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean {
+    return this.underlying.visitChildren(visit, doSelf, recurse);
+  }
+}
+
 export class GroupControl<
   FIELDS extends { [k: string]: BaseControl }
 > extends ParentControl {
@@ -740,6 +821,13 @@ export function arrayControl<CHILD>(
   child: CHILD
 ): () => ArrayControl<ControlDefType<CHILD>> {
   return () => new ArrayControl(makeCreator(child));
+}
+
+export function arraySelectionControl<CHILD extends BaseControl>(
+  child: () => CHILD,
+  match: (v: ValueTypeForControl<CHILD>, ctrl: CHILD) => boolean
+): () => ArraySelectionControl<CHILD> {
+  return () => new ArraySelectionControl(child, match);
 }
 
 /**

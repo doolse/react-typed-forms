@@ -12,6 +12,7 @@ import React, {
 import {
   ArrayControl,
   BaseControl,
+  control,
   ControlChange,
   ControlValueTypeOut,
   FormControl,
@@ -119,7 +120,7 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
 }
 
 export interface FormArrayProps<C extends BaseControl> {
-  state: ArrayControl<C>;
+  state: BaseControl & { elems: C[] };
   children: (elems: C[]) => ReactNode;
 }
 
@@ -209,6 +210,11 @@ export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   state: FormControl<string | number>;
 };
 
+export type FcheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  state: FormControl<boolean>;
+  type?: "checkbox" | "radio";
+};
+
 export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   render: (
     props: PropsWithChildren<P & { state: FormControl<V> }>,
@@ -233,7 +239,7 @@ export function Finput({ state, ...others }: FinputProps) {
       (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
     ControlChange.Error
   );
-  const theseProps = genericProps(state);
+  const { errorText, ...theseProps } = genericProps(state);
   return (
     <input
       {...theseProps}
@@ -262,7 +268,7 @@ export function Fselect({ state, children, ...others }: FselectProps) {
       (s.element as HTMLSelectElement)?.setCustomValidity(state.error ?? ""),
     ControlChange.Error
   );
-  const theseProps = genericProps(state);
+  const { errorText, ...theseProps } = genericProps(state);
   return (
     <select
       {...theseProps}
@@ -274,5 +280,36 @@ export function Fselect({ state, children, ...others }: FselectProps) {
     >
       {children}
     </select>
+  );
+}
+
+export function Fcheckbox({
+  state,
+  type = "checkbox",
+  ...others
+}: FcheckboxProps) {
+  // Re-render on value or disabled state change
+  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
+
+  // Update the HTML5 custom validity whenever the error message is changed/cleared
+  useControlChangeEffect(
+    state,
+    (s) =>
+      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
+    ControlChange.Error
+  );
+  const { value, onChange, errorText, ...theseProps } = genericProps(state);
+  return (
+    <input
+      {...theseProps}
+      checked={value}
+      ref={(r) => {
+        state.element = r;
+        if (r) r.setCustomValidity(state.error ?? "");
+      }}
+      onChange={(e) => state.setValue(!value)}
+      type={type}
+      {...others}
+    />
   );
 }
