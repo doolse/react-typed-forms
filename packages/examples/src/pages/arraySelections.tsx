@@ -39,7 +39,7 @@ const FormDef = buildGroup<FormData>()({
 
 let renders = 0;
 
-export default function ExclusionsExample() {
+export default function ArraySelectionsExample() {
   renders++;
   const [allFormState] = useState(() =>
     FormDef().setValue({ other: "HI", people: selected }, true)
@@ -53,7 +53,7 @@ export default function ExclusionsExample() {
 
   return (
     <div className="container">
-      <h2>Exclusions Example - {renders} render(s)</h2>
+      <h2>Array Selections Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Structured elements</h5>
         <FormArray state={formState}>

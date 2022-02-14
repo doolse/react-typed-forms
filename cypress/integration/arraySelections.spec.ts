@@ -1,9 +1,9 @@
 import { valMessage, compareJson } from "../lib";
 
-describe("Arrays", () => {
+describe("Array Selections", () => {
   it("Works", () => {
-    cy.visit("/exclusions");
-    cy.contains("Exclusions Example");
+    cy.visit("/arraySelections");
+    cy.contains("Array Selections Example");
     cy.get("#submit").click();
     cy.get("pre").should(compareJson([{ first: "Jolse", last: "Maginnis" }]));
     cy.get(".row_0 .enabled").click();
@@ -21,6 +21,13 @@ describe("Arrays", () => {
     cy.get(".row_1 .enabled").click();
     cy.get(".row_2 .enabled").click();
     cy.get(".row_0 .enabled").click();
+    cy.contains("#dirtyFlag", "false");
+    cy.get("#setValue").click();
+    cy.contains("#dirtyFlag", "true");
+    cy.get("#submit").click();
+    cy.get("pre").should(compareJson([{ first: "Thomas", last: "" }]));
+    cy.get("#clean").click();
+    cy.get(".row_0 .lastField").type("This won't matter");
     cy.contains("#dirtyFlag", "false");
   });
 });

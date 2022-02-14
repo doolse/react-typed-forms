@@ -1,5 +1,3 @@
-import { toArray } from "typedoc/dist/lib/utils/array";
-
 export enum ControlFlags {
   Valid = 1,
   Touched = 2,
