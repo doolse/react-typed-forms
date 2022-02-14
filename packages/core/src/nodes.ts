@@ -235,6 +235,8 @@ export type ValueTypeForControl<C> = C extends GroupControl<infer F>
   ? V
   : C extends ArrayControl<infer AC>
   ? ValueTypeForControl<AC>[]
+  : C extends ArraySelectionControl<infer AC>
+  ? ValueTypeForControl<AC>[]
   : never;
 
 export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
@@ -242,6 +244,8 @@ export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
   : C extends FormControl<infer V>
   ? V
   : C extends ArrayControl<infer AC>
+  ? ControlValueTypeOut<AC>[]
+  : C extends ArraySelectionControl<infer AC>
   ? ControlValueTypeOut<AC>[]
   : never;
 
@@ -328,6 +332,15 @@ export class FormControl<V> extends BaseControl {
 }
 
 export abstract class ParentControl extends BaseControl {
+  parentListener: ChangeListener<BaseControl>;
+
+  constructor(
+    mkListener: (parent: ParentControl) => ChangeListener<BaseControl>
+  ) {
+    super();
+    this.parentListener = mkListener(this);
+  }
+
   /**
    * @internal
    */
@@ -342,47 +355,16 @@ export abstract class ParentControl extends BaseControl {
     );
   }
 
-  /**
-   * @internal
-   */
-  protected parentListener(): ChangeListener<BaseControl> {
-    return [
-      ControlChange.Value |
-        ControlChange.Valid |
-        ControlChange.Touched |
-        ControlChange.Dirty,
-      (child, change) => {
-        var flags: ControlChange = change & ControlChange.Value;
-        if (change & ControlChange.Valid) {
-          const valid =
-            child.valid && (this.valid || this.visitChildren((c) => c.valid));
-          flags |= this.updateValid(valid);
-        }
-        if (change & ControlChange.Dirty) {
-          const dirty =
-            child.dirty ||
-            this.selfDirty() ||
-            (this.dirty && !this.visitChildren((c) => !c.dirty));
-          flags |= this.updateDirty(dirty);
-        }
-        if (change & ControlChange.Touched) {
-          flags |= this.updateTouched(child.touched || this.touched);
-        }
-        this.runChange(flags);
-      },
-    ];
-  }
-
-  protected selfDirty(): boolean {
-    return false;
+  public isAnyChildDirty(): boolean {
+    return !this.visitChildren((c) => !c.dirty);
   }
 
   /**
    * @internal
    */
-  protected controlFromDef<N extends BaseControl>(cdef: () => N): N {
-    const l = this.parentListener();
-    var child = cdef();
+  protected controlFromDef<N extends BaseControl>(create: () => N): N {
+    const l = this.parentListener;
+    let child = create();
     child.addChangeListener(l[1], l[0]);
     l[1](child, ControlChange.All);
     return child;
@@ -429,14 +411,20 @@ export abstract class ParentControl extends BaseControl {
    * @param path
    */
   lookupControl(path: (string | number)[]): BaseControl | null {
-    var base = this;
-    var index = 0;
+    let base = this;
+    let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
       if (base instanceof GroupControl) {
         base = base.fields[childId];
       } else if (base instanceof ArrayControl && typeof childId == "number") {
         base = base.elems[childId];
+      } else if (
+        base instanceof ArraySelectionControl &&
+        typeof childId == "number"
+      ) {
+        base = base.elems.filter((x) => x.fields.selected.value)[childId]
+          ?.fields.value;
       } else {
         return null;
       }
@@ -452,8 +440,11 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
   elems: FIELD[] = [];
   initialFields: FIELD[] = [];
 
-  constructor(private childDefinition: () => FIELD) {
-    super();
+  constructor(
+    private childDefinition: () => FIELD,
+    parentListener?: (parent: ParentControl) => ChangeListener<BaseControl>
+  ) {
+    super(parentListener ?? createParentListener);
   }
 
   /**
@@ -489,9 +480,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
         this.initialFields = childElems;
         flags |= this.updateDirty(false);
       } else {
-        flags |= this.updateDirty(
-          this.selfDirty() || !this.visitChildren((c) => !c.dirty)
-        );
+        flags |= this.updateDirty(this.isAnyChildDirty());
       }
       this.runChange(flags);
     });
@@ -577,30 +566,27 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
     return this.runChange(ControlChange.Value | this.updateArrayFlags());
   }
 
-  private shallowEquals<A>(a: A[], b: A[]) {
-    if (a.length !== b.length) {
-      return false;
+  isAnyChildDirty(): boolean {
+    const elems = this.elems;
+    const initial = this.initialFields;
+    if (elems === initial) return super.isAnyChildDirty();
+    if (elems.length !== initial.length) {
+      return true;
     }
-    return !a.some((v, i) => v !== b[i]);
-  }
-
-  protected selfDirty(): boolean {
-    return !this.shallowEquals(this.elems, this.initialFields);
+    return elems.some((v, i) => v !== initial[i] || v.dirty);
   }
 
   private updateArrayFlags() {
     return (
       this.updateTouched(true) |
-      this.updateDirty(
-        this.selfDirty() || !this.visitChildren((c) => !c.dirty)
-      ) |
+      this.updateDirty(this.isAnyChildDirty()) |
       this.updateValid(this.visitChildren((c) => c.valid))
     );
   }
 }
 
 export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
-  enabled: FormControl<boolean>;
+  selected: FormControl<boolean>;
   value: ELEM;
 }>;
 
@@ -617,13 +603,17 @@ export class ArraySelectionControl<
     childDefinition: () => FIELD,
     private match: (v: ValueTypeForControl<FIELD>, elem: FIELD) => boolean
   ) {
-    super();
+    super(createParentListener);
     this.underlying = new ArrayControl(
       () =>
-        new GroupControl({
-          enabled: new FormControl(false),
-          value: childDefinition(),
-        })
+        new GroupControl(
+          {
+            selected: new FormControl(false),
+            value: childDefinition(),
+          },
+          (p) => selectionGroupParentListener(p as SelectionGroup<FIELD>)
+        ),
+      (p) => this.parentListener
     );
   }
 
@@ -632,26 +622,41 @@ export class ArraySelectionControl<
   }
 
   setValue(vals: ValueTypeForControl<FIELD>[], initial?: boolean): this {
-    this.underlying.groupedChanges(() => {
+    const under = this.underlying;
+    under.groupedChanges(() => {
       const selected: SelectionGroup<FIELD>[] = [];
       vals.forEach((v) => {
-        const matchedValue = this.underlying.elems.find((x) =>
+        const matchedValue = under.elems.find((x) =>
           this.match(v, x.fields.value)
         );
-        const matchOrNew = matchedValue ?? this.underlying.add();
-        matchOrNew.setValue({ enabled: true, value: v } as any, initial);
+        const matchOrNew: SelectionGroup<any> = matchedValue ?? under.add();
+        matchOrNew.setValue({ selected: true, value: v }, initial);
         selected.push(matchOrNew);
       });
-      this.underlying.elems.forEach((x) => {
+      under.elems.forEach((x) => {
         if (!selected.includes(x)) {
-          x.fields.enabled.setValue(false, initial);
+          x.fields.selected.setValue(false, initial);
         }
       });
     });
     return this;
   }
 
-  setSelectionValue(
+  /**
+   * Set the available values.
+   *
+   * @param v
+   * @param initial
+   */
+  setAvailableValues(v: ValueTypeForControl<FIELD>[], initial?: boolean): this {
+    this.underlying.setValue(
+      v.map((x) => ({ selected: false, value: x })),
+      initial
+    );
+    return this;
+  }
+
+  setSelectionValues(
     v: ValueTypeForControl<SelectionGroup<FIELD>>[],
     initial?: boolean
   ): this {
@@ -662,20 +667,25 @@ export class ArraySelectionControl<
   toArray(): ControlValueTypeOut<FIELD>[] {
     const res: ControlValueTypeOut<FIELD>[] = [];
     this.underlying.elems.forEach((g) => {
-      if (g.fields.enabled.value) {
+      if (g.fields.selected.value) {
         res.push(g.fields.value.toValue());
       }
     });
     return res;
   }
 
-  toValue(): any {}
+  toValue(): any {
+    return this.toArray();
+  }
 
   visitChildren(
     visit: (c: BaseControl) => boolean,
     doSelf?: boolean,
     recurse?: boolean
   ): boolean {
+    if (doSelf && !visit(this)) {
+      return false;
+    }
     return this.underlying.visitChildren(visit, doSelf, recurse);
   }
 }
@@ -685,8 +695,11 @@ export class GroupControl<
 > extends ParentControl {
   fields: FIELDS;
 
-  constructor(children: FIELDS) {
-    super();
+  constructor(
+    children: FIELDS,
+    parentListener?: (parent: ParentControl) => ChangeListener<BaseControl>
+  ) {
+    super(parentListener ?? createParentListener);
     this.fields = {} as FIELDS;
     this.addFields(children);
   }
@@ -695,7 +708,7 @@ export class GroupControl<
     moreChildren: MORE
   ): GroupControl<FIELDS & MORE> {
     this.fields = { ...this.fields, ...moreChildren };
-    const l = this.parentListener();
+    const l = this.parentListener;
     for (const c in moreChildren) {
       moreChildren[c].addChangeListener(l[1], l[0]);
     }
@@ -787,7 +800,9 @@ export type AllowedDefinition<V> =
   | V
   | (() => FormControl<V>)
   | (V extends (infer X)[]
-      ? () => ArrayControl<ControlDefType<AllowedDefinition<X>>>
+      ? () =>
+          | ArrayControl<ControlDefType<AllowedDefinition<X>>>
+          | ArraySelectionControl<ControlDefType<AllowedDefinition<X>>>
       : V extends object
       ? () => GroupControl<
           {
@@ -888,3 +903,61 @@ export type ControlType<T extends ControlCreator<any>> = ReturnType<T>;
 export type GroupControlFields<T> = T extends GroupControl<infer FIELDS>
   ? FIELDS
   : never;
+
+/**
+ * @internal
+ */
+function createParentListener(
+  parent: ParentControl
+): ChangeListener<BaseControl> {
+  return [
+    ControlChange.Value |
+      ControlChange.Valid |
+      ControlChange.Touched |
+      ControlChange.Dirty,
+    (child, change) => {
+      let flags: ControlChange = change & ControlChange.Value;
+      if (change & ControlChange.Valid) {
+        const valid =
+          child.valid && (parent.valid || parent.visitChildren((c) => c.valid));
+        flags |= parent.updateValid(valid);
+      }
+      if (change & ControlChange.Dirty) {
+        const dirty = child.dirty || (parent.dirty && parent.isAnyChildDirty());
+        flags |= parent.updateDirty(dirty);
+      }
+      if (change & ControlChange.Touched) {
+        flags |= parent.updateTouched(child.touched || parent.touched);
+      }
+      parent.runChange(flags);
+    },
+  ];
+}
+
+function selectionGroupParentListener<FIELD extends BaseControl>(
+  parent: SelectionGroup<FIELD>
+): ChangeListener<BaseControl> {
+  return [
+    ControlChange.Value |
+      ControlChange.Valid |
+      ControlChange.Touched |
+      ControlChange.Dirty,
+    (child, change) => {
+      let flags: ControlChange = change & ControlChange.Value;
+      if (change & ControlChange.Valid) {
+        const valid =
+          child.valid && (parent.valid || parent.visitChildren((c) => c.valid));
+        flags |= parent.updateValid(valid);
+      }
+      if (change & ControlChange.Dirty) {
+        const { selected, value } = parent.fields;
+        const dirty = selected.dirty || (selected.value && value.dirty);
+        flags |= parent.updateDirty(dirty);
+      }
+      if (change & ControlChange.Touched) {
+        flags |= parent.updateTouched(child.touched || parent.touched);
+      }
+      parent.runChange(flags);
+    },
+  ];
+}

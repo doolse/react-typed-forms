@@ -1,16 +1,20 @@
 import {
-  arrayControl,
+  arraySelectionControl,
   buildGroup,
   control,
   ControlType,
   Fcheckbox,
   Finput,
   FormArray,
-  useControlStateComponent,
-  arraySelectionControl,
   SelectionGroup,
+  useControlStateComponent,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
+
+interface FormData {
+  people: RowForm[];
+  other: string;
+}
 
 type RowForm = {
   first: string;
@@ -21,24 +25,26 @@ const RowFormDef = buildGroup<RowForm>()({
   last: "",
 });
 
+const FormDef = buildGroup<FormData>()({
+  other: "",
+  people: () =>
+    arraySelectionControl(
+      RowFormDef,
+      (v, g) => g.fields.first.value === v.first
+    )().setAvailableValues(
+      allIds.map((x) => ({ first: x, last: "" })),
+      true
+    ),
+});
+
 let renders = 0;
 
 export default function ExclusionsExample() {
   renders++;
-  const [formState] = useState(() =>
-    arraySelectionControl(
-      RowFormDef,
-      (v, g) => g.fields.first.value === v.first
-    )()
-      .setSelectionValue(
-        allIds.map((x) => ({
-          enabled: false,
-          value: { first: x, last: "" },
-        })),
-        true
-      )
-      .setValue(selected, true)
+  const [allFormState] = useState(() =>
+    FormDef().setValue({ other: "HI", people: selected }, true)
   );
+  const formState = allFormState.fields.people;
   const [formData, setFormData] = useState<RowForm[]>();
   const Dirty = useControlStateComponent(formState, (c) => {
     return c.dirty;
@@ -123,7 +129,7 @@ function StructuredRow({
     <div className={`form-inline row_${index}`}>
       <div className="form-group mb-2">
         <label className="mx-2">Enabled:</label>
-        <Fcheckbox state={state.fields.enabled} className="enabled" />
+        <Fcheckbox state={state.fields.selected} className="enabled" />
       </div>
       <div className="form-group mb-2">
         <label className="mx-2">First:</label>
