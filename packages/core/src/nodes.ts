@@ -490,6 +490,11 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
     });
   }
 
+  markArrayClean() {
+    this.initialFields = this.elems;
+    this.runChange(this.updateDirty(this.isAnyChildDirty()));
+  }
+
   toArray(): ControlValueTypeOut<FIELD>[] {
     return this.elems.map((e) => e.toValue());
   }
