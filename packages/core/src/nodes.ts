@@ -17,6 +17,8 @@ export enum ControlChange {
   Freeze = 128,
 }
 
+export type BaseControl = Control<any>;
+
 export type ChangeListener<C extends BaseControl> = [
   ControlChange,
   (control: C, cb: ControlChange) => void
@@ -24,7 +26,7 @@ export type ChangeListener<C extends BaseControl> = [
 
 let controlCount = 0;
 
-export abstract class BaseControl {
+export abstract class Control<V> {
   flags: ControlFlags = ControlFlags.Valid;
   error: string | undefined | null;
   uniqueId = ++controlCount;
@@ -55,7 +57,7 @@ export abstract class BaseControl {
 
   abstract setTouched(showValidation: boolean): void;
   abstract markAsClean(): void;
-  abstract toValue(): any;
+  abstract toValue(): V;
 
   /**
    * @internal
@@ -237,17 +239,9 @@ export type ValueTypeForControl<C> = C extends GroupControl<infer F>
   ? ValueTypeForControl<AC>[]
   : never;
 
-export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
-  ? { [K in keyof F]: ControlValueTypeOut<F[K]> }
-  : C extends FormControl<infer V>
-  ? V
-  : C extends ArrayControl<infer AC>
-  ? ControlValueTypeOut<AC>[]
-  : C extends ArraySelectionControl<infer AC>
-  ? ControlValueTypeOut<AC>[]
-  : never;
+export type ControlValueTypeOut<C> = C extends Control<infer F> ? F : never;
 
-export class FormControl<V> extends BaseControl {
+export class FormControl<V> extends Control<V> {
   initialValue: V;
   equals: (a: any, b: any) => boolean;
 
@@ -329,11 +323,11 @@ export class FormControl<V> extends BaseControl {
   }
 }
 
-export abstract class ParentControl extends BaseControl {
+export abstract class ParentControl<V> extends Control<V> {
   parentListener: ChangeListener<BaseControl>;
 
   constructor(
-    mkListener: (parent: ParentControl) => ChangeListener<BaseControl>
+    mkListener: (parent: ParentControl<V>) => ChangeListener<BaseControl>
   ) {
     super();
     this.parentListener = mkListener(this);
@@ -434,13 +428,17 @@ export abstract class ParentControl extends BaseControl {
 
 export type FormControlFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
-export class ArrayControl<FIELD extends BaseControl> extends ParentControl {
+export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
+  ControlValueTypeOut<FIELD>[]
+> {
   elems: FIELD[] = [];
   initialFields: FIELD[] = [];
 
   constructor(
     private childDefinition: () => FIELD,
-    parentListener?: (parent: ParentControl) => ChangeListener<BaseControl>
+    parentListener?: (
+      parent: ParentControl<ControlValueTypeOut<FIELD>[]>
+    ) => ChangeListener<BaseControl>
   ) {
     super(parentListener ?? createParentListener);
   }
@@ -590,7 +588,7 @@ export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
 
 export class ArraySelectionControl<
   FIELD extends BaseControl
-> extends ParentControl {
+> extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
 
   get elems() {
@@ -690,12 +688,14 @@ export class ArraySelectionControl<
 
 export class GroupControl<
   FIELDS extends { [k: string]: BaseControl }
-> extends ParentControl {
+> extends ParentControl<
+  { [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]> }
+> {
   fields: FIELDS;
 
   constructor(
     children: FIELDS,
-    parentListener?: (parent: ParentControl) => ChangeListener<BaseControl>
+    parentListener?: (parent: ParentControl<any>) => ChangeListener<BaseControl>
   ) {
     super(parentListener ?? createParentListener);
     this.fields = {} as FIELDS;
@@ -776,7 +776,7 @@ export class GroupControl<
     });
   }
 
-  toObject(): ControlValueTypeOut<this> {
+  toObject(): { [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]> } {
     const rec: Record<string, any> = {};
     for (const k in this.fields) {
       const bctrl = this.fields[k];
@@ -794,20 +794,7 @@ type ControlDefType<T> = T extends ControlCreator<infer X> ? X : FormControl<T>;
 
 export type ControlCreator<V extends BaseControl> = () => V;
 
-export type AllowedDefinition<V> =
-  | V
-  | (() => FormControl<V>)
-  | (V extends (infer X)[]
-      ? () =>
-          | ArrayControl<ControlDefType<AllowedDefinition<X>>>
-          | ArraySelectionControl<ControlDefType<AllowedDefinition<X>>>
-      : V extends object
-      ? () => GroupControl<
-          {
-            [K in keyof V]-?: ControlDefType<AllowedDefinition<V[K]>>;
-          }
-        >
-      : never);
+export type AllowedDefinition<V> = V | (() => Control<V>);
 
 /**
  * Define a form control containing values of type V
@@ -906,7 +893,7 @@ export type GroupControlFields<T> = T extends GroupControl<infer FIELDS>
  * @internal
  */
 function createParentListener(
-  parent: ParentControl
+  parent: ParentControl<any>
 ): ChangeListener<BaseControl> {
   return [
     ControlChange.Value |
