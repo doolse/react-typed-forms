@@ -92,16 +92,15 @@ const FormDef = buildGroup<SimpleForm>()({
 
 Instead of starting with a datatype and checking the form structure, you can also go with a form first approach:
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=8-14) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=12-18) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/examples.tsx -->
 ```tsx
-  ValueTypeForControl,
-} from "@react-typed-forms/core";
-import React, { useState } from "react";
-
 const FormDef = groupControl({
   firstName: "",
   lastName: control("", (v) => (!v ? "Required field" : undefined)),
+});
+
+type SimpleForm = ValueTypeForControl<ControlType<typeof FormDef>>;
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -120,15 +119,15 @@ This will return an instance of `GroupControl` which has a `fields` property whi
 
 The core library contains an `<input>` renderer for `FormControl` called `Finput` which uses html5's custom validation feature to show errors.
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=20-25) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=23-28) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/examples.tsx -->
 ```tsx
-  const [formState] = useState(FormDef);
-  const { fields } = formState;
-
   return (
     <div>
       <Finput type="text" state={formState.fields.firstName} />
+      <Finput type="text" state={formState.fields.lastName} />
+    </div>
+  );
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -217,7 +216,7 @@ import {useControlChangeEffect} from "@react-typed-forms/core";
 const [formValid, setFormValid] = useState(formState.valid);
 useControlChangeEffect(formState, () => setFormValid(formState.valid), ControlChange.Valid);
 
-...render form...
+//...render form...
 <button disabled={!formValid} onClick={() => save()}>Save</button>
 ```
 
