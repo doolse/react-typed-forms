@@ -8,10 +8,10 @@ To take advantage of Typescript's advanced type system (v4.1) to give you more s
 
 Other reasons to use this library:
 
-- [Zero re-rendering](packages/examples/src/basic.tsx) of parent components
-- Easy validation including [async validators](packages/examples/src/validation.tsx)
+- [Zero re-rendering](packages/examples/src/pages/basic.tsx) of parent components
+- Easy validation including [async validators](packages/examples/src/pages/validation.tsx)
 - Standard form related state (valid, disabled, dirty, touched, error string)
-- [Arrays](packages/example/src/arrays.tsx) and nested forms
+- [Arrays](packages/examples/src/pages/arrays.tsx) and nested forms
 - Zero dependencies besides React
 - [MUI](https://material-ui.com/) TextField binding
 
