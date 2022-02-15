@@ -247,7 +247,3 @@ const FormValid = useControlStateComponent(formState, (c) => c.valid, ControlCha
     )}
 </FormValid>
 ```
-
-## API Docs
-
-Typedoc API [docs](docs/README.md)
