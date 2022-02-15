@@ -2,10 +2,10 @@ import { Finput, buildGroup, control } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
-type SimpleForm = {
+interface SimpleForm {
   firstName: string;
   lastName: string;
-};
+}
 
 const FormDef = buildGroup<SimpleForm>()({
   firstName: "",

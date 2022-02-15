@@ -9,6 +9,7 @@
   "main": "index.js",
   "scripts": {
     "docs": "typedoc --stripInternal --out docs",
+    "readme": "md-magic --path '**/*.md' --ignore 'node_modules'",
     "prepack": "lerna run clean && lerna run build",
     "build": "lerna run build",
     "dev": "npm run build && lerna run dev --stream",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "cypress": "^8.0.0",
     "lerna": "^3.20.2",
+    "markdown-magic": "^2.6.0",
     "next": "10.2",
     "next-transpile-modules": "^6.3.0",
     "prettier": "^2.3.2",

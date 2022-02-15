@@ -8,15 +8,17 @@ See the documentation [here](https://github.com/doolse/react-typed-forms#readme)
 npm install @react-typed-forms/core
 ```
 
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=../examples/src/pages/simple.tsx) -->
+<!-- The below code snippet is automatically added from ../examples/src/pages/simple.tsx -->
 ```tsx
 import { Finput, buildGroup, control } from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
-type SimpleForm = {
+interface SimpleForm {
   firstName: string;
   lastName: string;
-};
+}
 
 const FormDef = buildGroup<SimpleForm>()({
   firstName: "",
@@ -48,3 +50,4 @@ export default function SimpleExample() {
   );
 }
 ```
+<!-- AUTO-GENERATED-CONTENT:END -->
