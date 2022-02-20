@@ -19,6 +19,13 @@ export enum ControlChange {
 
 export type BaseControl = Control<any>;
 
+export type AnyControl =
+  | FormControl<any>
+  | ArrayControl<any>
+  | Control<any>
+  | ArraySelectionControl<any>
+  | GroupControl<any>;
+
 export type ChangeListener<C extends BaseControl> = [
   ControlChange,
   (control: C, cb: ControlChange) => void
@@ -705,9 +712,11 @@ export class ArraySelectionControl<
   }
 }
 
-export class GroupControl<
-  FIELDS extends { [k: string]: Control<any> }
-> extends ParentControl<
+type GroupFields = {
+  [k: string]: AnyControl;
+};
+
+export class GroupControl<FIELDS extends GroupFields> extends ParentControl<
   { [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]> }
 > {
   fields: FIELDS;
@@ -721,7 +730,7 @@ export class GroupControl<
     this.addFields(children);
   }
 
-  addFields<MORE extends { [k: string]: Control<any> }>(
+  addFields<MORE extends GroupFields>(
     moreChildren: MORE
   ): GroupControl<FIELDS & MORE> {
     this.fields = { ...this.fields, ...moreChildren };
@@ -736,7 +745,7 @@ export class GroupControl<
     return this as any;
   }
 
-  subGroup<OTHER extends { [k: string]: Control<any> }>(
+  subGroup<OTHER extends GroupFields>(
     selectFields: (f: FIELDS) => OTHER
   ): GroupControl<OTHER> {
     const subGroup = new GroupControl<OTHER>(selectFields(this.fields));
