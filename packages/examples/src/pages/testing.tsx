@@ -1,5 +1,6 @@
 import {
   ArrayControl,
+  arraySelectionControl,
   buildGroup,
   ControlType,
   ControlValueTypeOut,
@@ -54,3 +55,5 @@ const letsCheck = buildGroup<TopLevel>()({
 const howabout: GroupControl<{ one: FormControl<string> }> =
   letsCheck().subGroup(({ one }) => ({ one }));
 const bal: TopLevel = letsCheck().toObject();
+
+const ok = arraySelectionControl(1, (v, c) => v === c.value);

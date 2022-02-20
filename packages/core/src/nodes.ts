@@ -436,7 +436,7 @@ export abstract class ParentControl<V> extends Control<V> {
 
 export type FormControlFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
-export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
+export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
   ControlValueTypeOut<FIELD>[]
 > {
   elems: FIELD[] = [];
@@ -594,7 +594,7 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
   }
 }
 
-export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
+export type SelectionGroup<ELEM extends Control<any>> = GroupControl<{
   selected: FormControl<boolean>;
   value: ELEM;
 }>;
@@ -842,11 +842,14 @@ export function arrayControl<CHILD>(
   return () => new ArrayControl(makeCreator(child));
 }
 
-export function arraySelectionControl<CHILD extends BaseControl>(
-  child: () => CHILD,
-  match: (v: ValueTypeForControl<CHILD>, ctrl: CHILD) => boolean
-): () => ArraySelectionControl<CHILD> {
-  return () => new ArraySelectionControl(child, match);
+export function arraySelectionControl<CHILD>(
+  child: CHILD,
+  match: (
+    v: ValueTypeForControl<ControlDefType<CHILD>>,
+    ctrl: ControlDefType<CHILD>
+  ) => boolean
+): () => ArraySelectionControl<ControlDefType<CHILD>> {
+  return () => new ArraySelectionControl(makeCreator(child), match as any);
 }
 
 /**
@@ -938,7 +941,7 @@ function createParentListener(
   ];
 }
 
-function selectionGroupParentListener<FIELD extends BaseControl>(
+function selectionGroupParentListener<FIELD extends Control<any>>(
   parent: SelectionGroup<FIELD>
 ): ChangeListener<BaseControl> {
   return [
