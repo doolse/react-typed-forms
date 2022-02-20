@@ -239,7 +239,15 @@ export type ValueTypeForControl<C> = C extends GroupControl<infer F>
   ? ValueTypeForControl<AC>[]
   : never;
 
-export type ControlValueTypeOut<C> = C extends Control<infer F> ? F : never;
+export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
+  ? { [K in keyof F]: ControlValueTypeOut<F[K]> }
+  : C extends FormControl<infer V>
+  ? V
+  : C extends ArrayControl<infer AC>
+  ? ControlValueTypeOut<AC>[]
+  : C extends ArraySelectionControl<infer AC>
+  ? ControlValueTypeOut<AC>[]
+  : never;
 
 export class FormControl<V> extends Control<V> {
   initialValue: V;
@@ -592,11 +600,11 @@ export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
 }>;
 
 export class ArraySelectionControl<
-  FIELD extends BaseControl
+  FIELD extends Control<any>
 > extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
 
-  get elems() {
+  get elems(): SelectionGroup<FIELD>[] {
     return this.underlying.elems;
   }
 
@@ -616,6 +624,12 @@ export class ArraySelectionControl<
         ),
       (p) => this.parentListener
     );
+  }
+
+  add(selected?: boolean) {
+    const c = this.underlying.add();
+    c.fields.selected.setValue(selected ?? false);
+    return c;
   }
 
   markAsClean(): void {
@@ -692,7 +706,7 @@ export class ArraySelectionControl<
 }
 
 export class GroupControl<
-  FIELDS extends { [k: string]: BaseControl }
+  FIELDS extends { [k: string]: Control<any> }
 > extends ParentControl<
   { [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]> }
 > {

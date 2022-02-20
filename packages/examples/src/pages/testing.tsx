@@ -2,6 +2,8 @@ import {
   ArrayControl,
   buildGroup,
   ControlType,
+  ControlValueTypeOut,
+  FormControl,
   groupControl,
   GroupControl,
   GroupControlFields,
@@ -44,8 +46,10 @@ interface SecondLevel {
   wow: number;
 }
 
-buildGroup<TopLevel>()({
+const letsCheck = buildGroup<TopLevel>()({
   one: "",
   two: true,
   second: groupControl({ ok: "", wow: 1 }),
 });
+
+const bal: TopLevel = letsCheck().toObject();
