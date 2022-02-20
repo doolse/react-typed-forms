@@ -22,7 +22,6 @@ export type BaseControl = Control<any>;
 export type AnyControl =
   | FormControl<any>
   | ArrayControl<any>
-  | Control<any>
   | ArraySelectionControl<any>
   | GroupControl<any>;
 
@@ -601,13 +600,13 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
   }
 }
 
-export type SelectionGroup<ELEM extends Control<any>> = GroupControl<{
+export type SelectionGroup<ELEM extends AnyControl> = GroupControl<{
   selected: FormControl<boolean>;
   value: ELEM;
 }>;
 
 export class ArraySelectionControl<
-  FIELD extends Control<any>
+  FIELD extends AnyControl
 > extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
 
@@ -820,7 +819,7 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<
 
 type ControlDefType<T> = T extends ControlCreator<infer X> ? X : FormControl<T>;
 
-export type ControlCreator<V extends BaseControl> = () => V;
+export type ControlCreator<V extends AnyControl> = () => V;
 
 export type AllowedDefinition<V> = V | (() => Control<V>);
 
@@ -950,7 +949,7 @@ function createParentListener(
   ];
 }
 
-function selectionGroupParentListener<FIELD extends Control<any>>(
+function selectionGroupParentListener<FIELD extends AnyControl>(
   parent: SelectionGroup<FIELD>
 ): ChangeListener<BaseControl> {
   return [
