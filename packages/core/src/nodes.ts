@@ -721,7 +721,7 @@ export class GroupControl<
     this.addFields(children);
   }
 
-  addFields<MORE extends { [k: string]: BaseControl }>(
+  addFields<MORE extends { [k: string]: Control<any> }>(
     moreChildren: MORE
   ): GroupControl<FIELDS & MORE> {
     this.fields = { ...this.fields, ...moreChildren };
@@ -736,7 +736,7 @@ export class GroupControl<
     return this as any;
   }
 
-  subGroup<OTHER extends { [k: string]: BaseControl }>(
+  subGroup<OTHER extends { [k: string]: Control<any> }>(
     selectFields: (f: FIELDS) => OTHER
   ): GroupControl<OTHER> {
     const subGroup = new GroupControl<OTHER>(selectFields(this.fields));

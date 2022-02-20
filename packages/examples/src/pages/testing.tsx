@@ -51,5 +51,6 @@ const letsCheck = buildGroup<TopLevel>()({
   two: true,
   second: groupControl({ ok: "", wow: 1 }),
 });
-
+const howabout: GroupControl<{ one: FormControl<string> }> =
+  letsCheck().subGroup(({ one }) => ({ one }));
 const bal: TopLevel = letsCheck().toObject();
