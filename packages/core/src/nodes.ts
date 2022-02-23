@@ -478,7 +478,6 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
    */
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     value = value ?? [];
-    console.log(value);
     return this.groupedChanges(() => {
       let flags: ControlChange = 0;
       const childElems = value.map((v, i) => {
