@@ -450,7 +450,8 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
   findExisting: (
     elems: FIELD[],
     i: number,
-    v: ValueTypeForControl<FIELD>
+    v: ValueTypeForControl<FIELD>,
+    initial: boolean
   ) => FIELD | undefined;
 
   constructor(
@@ -461,7 +462,8 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
     findExisting?: (
       elems: FIELD[],
       i: number,
-      v: ValueTypeForControl<FIELD>
+      v: ValueTypeForControl<FIELD>,
+      initial: boolean
     ) => FIELD | undefined
   ) {
     super(parentListener ?? createParentListener);
@@ -481,14 +483,14 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
     return this.groupedChanges(() => {
       let flags: ControlChange = 0;
       const childElems = value.map((v, i) => {
-        const existing = this.findExisting(this.elems, i, v);
+        const existing = this.findExisting(this.elems, i, v, Boolean(initial));
         if (!existing) {
           flags |= ControlChange.Value;
           const newControl = this.controlFromDef(this.childDefinition);
           setValueUnsafe(newControl, v, true);
           return newControl;
         } else {
-          if (this.elems[i] !== existing) {
+          if (i >= this.elems.length || this.elems[i] !== existing) {
             flags |= ControlChange.Value;
           }
           setValueUnsafe(existing, v, initial);
@@ -633,19 +635,28 @@ export class ArraySelectionControl<
   ) {
     super(createParentListener);
     this.defaultValues = defaultValues ?? [];
+    const makeSelectionGroup = () =>
+      new GroupControl(
+        {
+          selected: new FormControl(false),
+          value: childDefinition(),
+        },
+        (p) => selectionGroupParentListener(p as SelectionGroup<FIELD>)
+      );
     this.underlying = new ArrayControl<SelectionGroup<FIELD>>(
-      () =>
-        new GroupControl(
-          {
-            selected: new FormControl(false),
-            value: childDefinition(),
-          },
-          (p) => selectionGroupParentListener(p as SelectionGroup<FIELD>)
-        ),
+      makeSelectionGroup,
       (p) => this.parentListener,
-      (e, i, v) => {
+      (e, i, v, initial) => {
         const key = getKey((v as any).value);
-        return e.find((x) => getElemKey(x.fields.value) === key);
+        const existing = e.find((x) => getElemKey(x.fields.value) === key);
+        if (existing || initial) return existing;
+        const newControl = this.controlFromDef(makeSelectionGroup);
+        setValueUnsafe(
+          newControl,
+          { selected: false, value: (v as any).value },
+          true
+        );
+        return newControl;
       }
     );
   }
