@@ -27,7 +27,7 @@ describe("Array Selections", () => {
     cy.get("#submit").click();
     cy.get("pre").should(compareJson([{ first: "Thomas", last: "" }]));
     cy.get("#clean").click();
-    cy.get(".row_0 .lastField").type("This won't matter");
+    cy.get(".row_1 .lastField").type("This won't matter");
     cy.contains("#dirtyFlag", "false");
   });
 });

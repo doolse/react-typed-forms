@@ -56,4 +56,8 @@ const howabout: GroupControl<{ one: FormControl<string> }> =
   letsCheck().subGroup(({ one }) => ({ one }));
 const bal: TopLevel = letsCheck().toObject();
 
-const ok = arraySelectionControl(1, (v, c) => v === c.value);
+const ok = arraySelectionControl(
+  1,
+  (v) => v,
+  (c) => c.value
+);

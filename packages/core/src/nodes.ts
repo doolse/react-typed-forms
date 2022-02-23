@@ -447,14 +447,27 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
 > {
   elems: FIELD[] = [];
   initialFields: FIELD[] = [];
+  findExisting: (
+    elems: FIELD[],
+    i: number,
+    v: ValueTypeForControl<FIELD>
+  ) => FIELD | undefined;
 
   constructor(
     private childDefinition: () => FIELD,
     parentListener?: (
       parent: ParentControl<ControlValueTypeOut<FIELD>[]>
-    ) => ChangeListener<BaseControl>
+    ) => ChangeListener<BaseControl>,
+    findExisting?: (
+      elems: FIELD[],
+      i: number,
+      v: ValueTypeForControl<FIELD>
+    ) => FIELD | undefined
   ) {
     super(parentListener ?? createParentListener);
+    this.findExisting =
+      findExisting ??
+      ((elems1, i) => (i < elems1.length ? elems1[i] : undefined));
   }
 
   /**
@@ -465,26 +478,24 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
    */
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     value = value ?? [];
+    console.log(value);
     return this.groupedChanges(() => {
       let flags: ControlChange = 0;
-      const childElems = [...this.elems];
-      if (childElems.length !== value.length) {
-        flags |= ControlChange.Value;
-      }
-      value.map((v, i) => {
-        if (childElems.length <= i) {
+      const childElems = value.map((v, i) => {
+        const existing = this.findExisting(this.elems, i, v);
+        if (!existing) {
+          flags |= ControlChange.Value;
           const newControl = this.controlFromDef(this.childDefinition);
           setValueUnsafe(newControl, v, true);
-          childElems.push(newControl as FIELD);
+          return newControl;
         } else {
-          setValueUnsafe(childElems[i], v, initial);
+          if (this.elems[i] !== existing) {
+            flags |= ControlChange.Value;
+          }
+          setValueUnsafe(existing, v, initial);
+          return existing;
         }
       });
-      const targetLength = value.length;
-      const actualLength = childElems.length;
-      if (targetLength !== actualLength) {
-        childElems.splice(targetLength, actualLength - targetLength);
-      }
       this.elems = childElems;
       if (initial) {
         this.initialFields = childElems;
@@ -609,6 +620,7 @@ export class ArraySelectionControl<
   FIELD extends AnyControl
 > extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
+  defaultValues: ValueTypeForControl<FIELD>[];
 
   get elems(): SelectionGroup<FIELD>[] {
     return this.underlying.elems;
@@ -616,10 +628,13 @@ export class ArraySelectionControl<
 
   constructor(
     childDefinition: () => FIELD,
-    private match: (v: ValueTypeForControl<FIELD>, elem: FIELD) => boolean
+    private getKey: (v: ValueTypeForControl<FIELD>) => any,
+    private getElemKey: (elem: FIELD) => any,
+    defaultValues?: ValueTypeForControl<FIELD>[]
   ) {
     super(createParentListener);
-    this.underlying = new ArrayControl(
+    this.defaultValues = defaultValues ?? [];
+    this.underlying = new ArrayControl<SelectionGroup<FIELD>>(
       () =>
         new GroupControl(
           {
@@ -628,14 +643,23 @@ export class ArraySelectionControl<
           },
           (p) => selectionGroupParentListener(p as SelectionGroup<FIELD>)
         ),
-      (p) => this.parentListener
+      (p) => this.parentListener,
+      (e, i, v) => {
+        const key = getKey((v as any).value);
+        return e.find((x) => getElemKey(x.fields.value) === key);
+      }
     );
   }
 
   add(selected?: boolean) {
     const c = this.underlying.add();
-    c.fields.selected.setValue(selected ?? false);
+    c.fields.selected.setValue(selected ?? true);
     return c;
+  }
+
+  setDefaultValues(defaults: ValueTypeForControl<FIELD>[]): this {
+    this.defaultValues = defaults;
+    return this;
   }
 
   markAsClean(): void {
@@ -643,45 +667,37 @@ export class ArraySelectionControl<
   }
 
   setValue(vals: ValueTypeForControl<FIELD>[], initial?: boolean): this {
-    const under = this.underlying;
-    under.groupedChanges(() => {
-      const selected: SelectionGroup<FIELD>[] = [];
+    if (initial) {
+      const fullValues = this.defaultValues.map((x) => ({
+        selected: false,
+        value: x,
+      }));
       vals.forEach((v) => {
-        const matchedValue = under.elems.find((x) =>
-          this.match(v, x.fields.value)
+        const existing = fullValues.find(
+          (x) => this.getKey(x.value) === this.getKey(v)
         );
-        const matchOrNew: SelectionGroup<any> = matchedValue ?? under.add();
-        matchOrNew.setValue({ selected: true, value: v }, initial);
-        selected.push(matchOrNew);
-      });
-      under.elems.forEach((x) => {
-        if (!selected.includes(x)) {
-          x.fields.selected.setValue(false, initial);
+        if (existing) {
+          existing.selected = true;
+          existing.value = v;
+        } else {
+          fullValues.push({ selected: true, value: v });
         }
       });
-    });
-    return this;
-  }
-
-  /**
-   * Set the available values.
-   *
-   * @param v
-   * @param initial
-   */
-  setAvailableValues(v: ValueTypeForControl<FIELD>[], initial?: boolean): this {
-    this.underlying.setValue(
-      v.map((x) => ({ selected: false, value: x })),
-      initial
-    );
-    return this;
-  }
-
-  setSelectionValues(
-    v: ValueTypeForControl<SelectionGroup<FIELD>>[],
-    initial?: boolean
-  ): this {
-    this.underlying.setValue(v, initial);
+      this.underlying.setValue(fullValues, true);
+    } else {
+      const unselected = this.elems.filter((x) =>
+        vals.every(
+          (newVal) => this.getElemKey(x.fields.value) !== this.getKey(newVal)
+        )
+      );
+      this.underlying.setValue([
+        ...vals.map((v) => ({ selected: true, value: v })),
+        ...unselected.map((f) => ({
+          selected: false,
+          value: f.fields.value.toValue(),
+        })),
+      ]);
+    }
     return this;
   }
 
@@ -852,12 +868,17 @@ export function arrayControl<CHILD>(
 
 export function arraySelectionControl<CHILD>(
   child: CHILD,
-  match: (
-    v: ValueTypeForControl<ControlDefType<CHILD>>,
-    ctrl: ControlDefType<CHILD>
-  ) => boolean
+  getKey: (v: ValueTypeForControl<ControlDefType<CHILD>>) => any,
+  getElemKey: (elem: ControlDefType<CHILD>) => any,
+  defaultValues?: ValueTypeForControl<ControlDefType<CHILD>>[]
 ): () => ArraySelectionControl<ControlDefType<CHILD>> {
-  return () => new ArraySelectionControl(makeCreator(child), match as any);
+  return () =>
+    new ArraySelectionControl(
+      makeCreator(child),
+      getKey,
+      getElemKey,
+      defaultValues
+    );
 }
 
 /**

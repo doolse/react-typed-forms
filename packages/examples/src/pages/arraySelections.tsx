@@ -20,6 +20,11 @@ type RowForm = {
   first: string;
   last: string;
 };
+
+const selected: RowForm[] = [{ first: "Jolse", last: "Maginnis" }];
+
+const allIds = ["Jolse", "Thomas", "Nicholas"];
+
 const RowFormDef = buildGroup<RowForm>()({
   first: control("", (v) => (!v ? "Not blank" : undefined)),
   last: "",
@@ -27,14 +32,12 @@ const RowFormDef = buildGroup<RowForm>()({
 
 const FormDef = buildGroup<FormData>()({
   other: "",
-  people: () =>
-    arraySelectionControl(
-      RowFormDef,
-      (v, g) => g.fields.first.value === v.first
-    )().setAvailableValues(
-      allIds.map((x) => ({ first: x, last: "" })),
-      true
-    ),
+  people: arraySelectionControl(
+    RowFormDef,
+    (v) => v.first,
+    (e) => e.fields.first.value,
+    allIds.map((first) => ({ first, last: "" }))
+  ),
 });
 
 let renders = 0;
@@ -146,7 +149,3 @@ function StructuredRow({
     </div>
   );
 }
-
-const selected: RowForm[] = [{ first: "Jolse", last: "Maginnis" }];
-
-const allIds = ["Jolse", "Thomas", "Nicholas"];
