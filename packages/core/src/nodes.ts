@@ -481,7 +481,8 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     value = value ?? [];
     return this.groupedChanges(() => {
-      let flags: ControlChange = 0;
+      let flags: ControlChange =
+        value.length !== this.elems.length ? ControlChange.Value : 0;
       const childElems = value.map((v, i) => {
         const existing = this.findExisting(this.elems, i, v, Boolean(initial));
         if (!existing) {
