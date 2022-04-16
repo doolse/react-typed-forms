@@ -5,8 +5,7 @@
   "description": "",
   "scripts": {
     "dev": "next dev",
-    "clean": "rm -rf .next",
-    "build": "next build"
+    "cypress": "next dev"
   },
   "repository": {
     "type": "git",
@@ -20,9 +19,19 @@
   "homepage": "https://github.com/doolse/react-typed-forms#readme",
   "dependencies": {
     "@react-typed-forms/core": "^2.5.10",
-    "@react-typed-forms/mui": "^2.5.10"
+    "@react-typed-forms/mui": "^2.5.10",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "next": "^12.1.5",
+    "@date-io/date-fns": "^1.3.13",
+    "@material-ui/core": "^4.9.12",
+    "@material-ui/pickers": "^3.2.10"
   },
   "devDependencies": {
-    "@types/react": "17.0.1"
+    "@types/react": "^17.0.39",
+    "@types/react-dom": "^17.0.11",
+    "@types/node": "^16.11.27",
+    "typescript": "^4.6.3",
+    "next-transpile-modules": "^9.0.0"
   }
 }

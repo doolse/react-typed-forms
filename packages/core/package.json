@@ -2,12 +2,10 @@
   "name": "@react-typed-forms/core",
   "version": "2.5.10",
   "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "clean": "rm -rf dist"
+    "build": "rimraf ./lib/ && tsc"
   },
   "repository": {
     "type": "git",
@@ -30,6 +28,11 @@
   "peerDependencies": {
     "react": "^16.8.0 || ^17",
     "react-dom": "^16.8.0 || ^17"
+  },
+  "devDependencies": {
+    "typescript": "^4.6.3",
+    "@types/react": "^17.0.39",
+    "rimraf": "^3.0.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6"
 }
