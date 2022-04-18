@@ -16,6 +16,10 @@ export default function FormApp({ Component, pageProps }: AppProps) {
         <title>Examples</title>
         <link
           rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"
+        />
+        <link
+          rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         />
       </Head>
