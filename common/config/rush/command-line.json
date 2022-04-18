@@ -23,7 +23,14 @@
       "name": "build-docs",
       "summary": "Build the docs site",
       "shellCommand": "rm -rf docs && cd packages/examples && rushx build && rushx export && mv out ../../docs && touch ../../docs/.nojekyll"
+    },
+    {
+      "commandKind": "global",
+      "name": "start",
+      "summary": "Start the docs/test site",
+      "shellCommand": "cd packages/examples && rushx dev"
     }
+
     // {
     //   /**
     //    * (Required) Determines the type of custom command.
