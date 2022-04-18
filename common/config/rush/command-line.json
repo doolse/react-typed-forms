@@ -17,6 +17,12 @@
       "name": "cypress",
       "enableParallelism": true,
       "summary": "Run cypress test"
+    },
+    {
+      "commandKind": "global",
+      "name": "build-docs",
+      "summary": "Build the docs site",
+      "shellCommand": "rm -rf docs && cd packages/examples && rushx build && rushx export && mv out ../../docs"
     }
     // {
     //   /**

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "cypress": "next dev",
-    "build": "next build"
+    "build": "next build",
+    "export": "next export"
   },
   "repository": {
     "type": "git",
