@@ -22,7 +22,7 @@
       "commandKind": "global",
       "name": "build-docs",
       "summary": "Build the docs site",
-      "shellCommand": "rm -rf docs && cd packages/examples && rushx build && rushx export && mv out ../../docs"
+      "shellCommand": "rm -rf docs && cd packages/examples && rushx build && rushx export && mv out ../../docs && touch ../../docs/.nojekyll"
     }
     // {
     //   /**
