@@ -3,16 +3,16 @@ import {
   arrayControl,
   buildGroup,
   control,
+  Finput,
+  FormArray,
   groupControl,
   useControlStateComponent,
 } from "@react-typed-forms/core";
-import { Finput } from "@react-typed-forms/core";
-import { FormArray } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
 type RowForm = {
   id: string;
-  name: string; 
+  name: string;
 };
 
 type MainForm = {
@@ -42,10 +42,10 @@ export default function ArraysExample() {
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
-  const Dirty = useControlStateComponent(fields.structured, 
-      (c) => {
-      console.log(c, c.dirty);
-      return c.dirty; });
+  const Dirty = useControlStateComponent(fields.structured, (c) => {
+    console.log(c, c.dirty);
+    return c.dirty;
+  });
   const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
   function moveUp(fa: ArrayControl<any>, index: number) {
@@ -188,17 +188,15 @@ export default function ArraysExample() {
             Reset
           </button>{" "}
           <button
-              id="setDifferent"
-              className="btn"
-              onClick={() =>
-                  fields.structured.setValue(
-                      [
-                        { name: "Reset", id: "reset" },
-                        { id: "id", name: "Name" },
-                        { id:"Another", name: "Righto"}
-                      ]
-                  )
-              }
+            id="setDifferent"
+            className="btn"
+            onClick={() =>
+              fields.structured.setValue([
+                { name: "Reset", id: "reset" },
+                { id: "id", name: "Name" },
+                { id: "Another", name: "Righto" },
+              ])
+            }
           >
             Set different
           </button>{" "}

@@ -10,6 +10,7 @@ import {
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "../bootstrap";
+import { useRouter } from "next/router";
 
 type ValidationForm = {
   email: string;
@@ -17,7 +18,8 @@ type ValidationForm = {
   array: { notBlank: string }[];
 };
 
-const emailRegExp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+const emailRegExp =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
 const FormDef = buildGroup<ValidationForm>()({
   email: control("", (v) =>
@@ -34,6 +36,7 @@ let renders = 0;
 export default function ValidationExample() {
   renders++;
 
+  const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
   const [formState] = useState(FormDef);
   const { fields } = formState;
@@ -42,7 +45,7 @@ export default function ValidationExample() {
   useAsyncValidator(
     fields.async,
     (n, signal) =>
-      fetch("/api/validate", {
+      fetch(basePath + "/api/validate", {
         method: "POST",
         signal,
         headers: {

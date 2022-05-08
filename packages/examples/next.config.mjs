@@ -7,6 +7,6 @@ const withMDX = mdx({
   },
 });
 export default withMDX({
-  pageExtensions: ["tsx", "mdx"],
+  pageExtensions: ["tsx", "mdx", "ts"],
   basePath: "/react-typed-forms"
 });

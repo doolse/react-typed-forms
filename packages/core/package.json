@@ -4,8 +4,16 @@
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./html": {
+      "default": "./lib/html/index.js",
+      "types": "./lib/html/indx.d.ts"
+    }
+  },
   "scripts": {
-    "build": "rimraf ./lib/ && tsc"
+    "build": "rimraf ./lib/ && tsc",
+    "watch": "tsc -w"
   },
   "repository": {
     "type": "git",

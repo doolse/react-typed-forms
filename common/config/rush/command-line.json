@@ -29,6 +29,12 @@
       "name": "start",
       "summary": "Start the docs/test site",
       "shellCommand": "cd packages/examples && rushx dev"
+    },
+    {
+      "commandKind": "global",
+      "name": "watch",
+      "summary": "build in watch mode",
+      "shellCommand": "(cd packages/core && rushx watch) & (cd packages/mui && rushx watch)"
     }
 
     // {

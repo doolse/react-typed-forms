@@ -235,8 +235,11 @@ type IsRequiredField<K, C> = C extends FormControl<infer V>
   : K;
 
 export type ValueTypeForControl<C> = C extends GroupControl<infer F>
-  ? { [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForControl<F[K]> } &
-      { [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForControl<F[K]> }
+  ? {
+      [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForControl<F[K]>;
+    } & {
+      [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForControl<F[K]>;
+    }
   : C extends FormControl<infer V>
   ? V
   : C extends ArrayControl<infer AC>
@@ -276,7 +279,7 @@ export class FormControl<V> extends Control<V> {
     }
   }
 
-  toValue(): any {
+  toValue(): V {
     return this.value;
   }
 
@@ -613,13 +616,13 @@ export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
   }
 }
 
-export type SelectionGroup<ELEM extends AnyControl> = GroupControl<{
+export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
   selected: FormControl<boolean>;
   value: ELEM;
 }>;
 
 export class ArraySelectionControl<
-  FIELD extends AnyControl
+  FIELD extends Control<any>
 > extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
   defaultValues: ValueTypeForControl<FIELD>[];
@@ -739,12 +742,12 @@ export class ArraySelectionControl<
 }
 
 type GroupFields = {
-  [k: string]: AnyControl;
+  [k: string]: BaseControl;
 };
 
-export class GroupControl<FIELDS extends GroupFields> extends ParentControl<
-  { [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]> }
-> {
+export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
+  [K in keyof FIELDS]: ControlValueTypeOut<FIELDS[K]>;
+}> {
   fields: FIELDS;
 
   constructor(
@@ -844,11 +847,11 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<
   }
 }
 
-type ControlDefType<T> = T extends ControlCreator<infer X> ? X : FormControl<T>;
+type ControlDefType<T> = T extends () => Control<any>
+  ? ReturnType<T>
+  : FormControl<T>;
 
-export type ControlCreator<V extends AnyControl> = () => V;
-
-export type AllowedDefinition<V> = V | (() => Control<V>);
+export type ControlCreator<V extends Control<any>> = () => V;
 
 /**
  * Define a form control containing values of type V
@@ -873,7 +876,9 @@ function makeCreator(v: any): ControlCreator<any> {
 
 export function arrayControl<CHILD>(
   child: CHILD
-): () => ArrayControl<ControlDefType<CHILD>> {
+): () => ArrayControl<
+  CHILD extends ControlCreator<infer X> ? X : FormControl<CHILD>
+> {
   return () => new ArrayControl(makeCreator(child));
 }
 
@@ -887,8 +892,8 @@ export function arraySelectionControl<CHILD>(
     new ArraySelectionControl(
       makeCreator(child),
       getKey,
-      getElemKey,
-      defaultValues
+      getElemKey as any,
+      defaultValues as any
     );
 }
 
@@ -898,11 +903,11 @@ export function arraySelectionControl<CHILD>(
  */
 export function groupControl<DEF extends { [t: string]: any }>(
   children: DEF
-): () => GroupControl<
-  {
-    [K in keyof DEF]: ControlDefType<DEF[K]>;
-  }
-> {
+): () => GroupControl<{
+  [K in keyof DEF]: DEF[K] extends ControlCreator<infer X>
+    ? X
+    : FormControl<DEF[K]>;
+}> {
   return () => {
     const fields: any = {};
     for (const k in children) {
@@ -912,36 +917,21 @@ export function groupControl<DEF extends { [t: string]: any }>(
   };
 }
 
-type FieldType<T, K> = K extends keyof Exclude<T, undefined>
-  ? Exclude<T, undefined>[K]
-  : never;
-
-type Correlate<V, D> = D extends FormControl<any>
-  ? FormControl<V>
-  : D extends GroupControl<infer FIELDS>
-  ? GroupControl<
-      {
-        [CK in keyof FIELDS]: Correlate<FieldType<V, CK>, FIELDS[CK]>;
-      }
-    >
-  : D;
-
 /**
  * Create a form group function which only accepts
  * valid definitions that will produce values of given type T.
  */
 export function buildGroup<T>(): <
-  DEF extends { [K in keyof T]-?: AllowedDefinition<T[K]> }
+  DEF extends { [K in keyof T]-?: T[K] | (() => Control<T[K]>) }
 >(
   children: DEF
-) => () => Correlate<
-  T,
-  GroupControl<
-    {
-      [K in keyof DEF]: ControlDefType<DEF[K]>;
-    }
-  >
-> {
+) => () => GroupControl<{
+  [K in keyof T]-?: DEF[K] extends ControlCreator<infer X>
+    ? X extends FormControl<any>
+      ? FormControl<T[K]>
+      : X
+    : FormControl<T[K]>;
+}> {
   return groupControl as any;
 }
 
@@ -981,7 +971,7 @@ function createParentListener(
   ];
 }
 
-function selectionGroupParentListener<FIELD extends AnyControl>(
+function selectionGroupParentListener<FIELD extends BaseControl>(
   parent: SelectionGroup<FIELD>
 ): ChangeListener<BaseControl> {
   return [

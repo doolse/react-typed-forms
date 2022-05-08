@@ -38,8 +38,8 @@ importers:
       '@material-ui/pickers': ^3.2.10
       '@mdx-js/loader': ^2.1.1
       '@next/mdx': ^12.1.5
-      '@react-typed-forms/core': ^2.5.10
-      '@react-typed-forms/mui': ^2.5.10
+      '@react-typed-forms/core': workspace:*
+      '@react-typed-forms/mui': workspace:*
       '@types/node': ^16.11.27
       '@types/react': ^17.0.39
       '@types/react-dom': ^17.0.11
@@ -56,8 +56,8 @@ importers:
       '@material-ui/pickers': 3.3.10_79d614a7508073848cb9a266c5db6272
       '@mdx-js/loader': 2.1.1
       '@next/mdx': 12.1.5_@mdx-js+loader@2.1.1
-      '@react-typed-forms/core': 2.5.10_react-dom@17.0.2+react@17.0.2
-      '@react-typed-forms/mui': 2.5.10_c5ce9072bc6afbec899f8588a5b10350
+      '@react-typed-forms/core': link:../core
+      '@react-typed-forms/mui': link:../mui
       next: 12.1.5_react-dom@17.0.2+react@17.0.2
       prism-react-renderer: 1.3.1_react@17.0.2
       raw-loader: 4.0.2
@@ -75,11 +75,11 @@ importers:
       '@date-io/date-fns': ^1.3.13
       '@material-ui/core': ^4.9.12
       '@material-ui/pickers': ^3.2.10
-      '@react-typed-forms/core': ^2.5.10
+      '@react-typed-forms/core': workspace:*
       '@types/react': ^17.0.39
       rimraf: ^3.0.2
     dependencies:
-      '@react-typed-forms/core': 2.5.10
+      '@react-typed-forms/core': link:../core
     devDependencies:
       '@date-io/date-fns': 1.3.13
       '@material-ui/core': 4.12.4_@types+react@17.0.44
@@ -536,39 +536,6 @@ packages:
       fastq: 1.13.0
     dev: true
 
-  /@react-typed-forms/core/2.5.10:
-    resolution: {integrity: sha512-ZNfw0hefC+YFmj+/Btpy4gnkw9prEsU0mxfV80Tb+yvqIrPEYVOzmm4SvdKWZQdm5/gOq08QH2aGlWDHrBw1JQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17
-      react-dom: ^16.8.0 || ^17
-    dev: false
-
-  /@react-typed-forms/core/2.5.10_react-dom@17.0.2+react@17.0.2:
-    resolution: {integrity: sha512-ZNfw0hefC+YFmj+/Btpy4gnkw9prEsU0mxfV80Tb+yvqIrPEYVOzmm4SvdKWZQdm5/gOq08QH2aGlWDHrBw1JQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17
-      react-dom: ^16.8.0 || ^17
-    dependencies:
-      react: 17.0.2
-      react-dom: 17.0.2_react@17.0.2
-    dev: false
-
-  /@react-typed-forms/mui/2.5.10_c5ce9072bc6afbec899f8588a5b10350:
-    resolution: {integrity: sha512-oJwx12NvtKP4hA7Q/Rw3BFM+5XNda4xD1p3VgERA9pYh6TgDxiAI2RKCjZxTSIoqlkdQNlQDWRajTNuKCwjnRg==}
-    peerDependencies:
-      '@date-io/date-fns': ^1.3.13
-      '@material-ui/core': ^4.9.12
-      '@material-ui/pickers': ^3.2.10
-    dependencies:
-      '@date-io/date-fns': 1.3.13
-      '@material-ui/core': 4.12.4_b49bddbe4b905ced4713cb857cca91fa
-      '@material-ui/pickers': 3.3.10_79d614a7508073848cb9a266c5db6272
-      '@react-typed-forms/core': 2.5.10_react-dom@17.0.2+react@17.0.2
-    transitivePeerDependencies:
-      - react
-      - react-dom
-    dev: false
-
   /@technote-space/anchor-markdown-header/1.1.36:
     resolution: {integrity: sha512-FPsBs+iN3j2UtXKPUtOVHgaw1OV0pQwH0Iwy9BB7nr8sAuIFQ5fioTWd1wUzLQ3uhRiOyQXwt6pOdggmpAaxMg==}
     dependencies:
@@ -631,10 +598,6 @@ packages:
 
   /@types/estree/0.0.46:
     resolution: {integrity: sha512-laIjwTQaD+5DukBZaygQ79K1Z0jb1bPEMRrkXSLjtCcZm+abyp5YbrqpSLzD42FwWW6gK/aS4NYpJ804nG2brg==}
-    dev: false
-
-  /@types/estree/0.0.50:
-    resolution: {integrity: sha512-C6N5s2ZFtuZRj54k2/zyRhNDjJwwcViAM3Nbm8zjBpbqAdZ00mr0CFxvSKeO8Y/e03WVFLpQMdHYVfUd6SB+Hw==}
     dev: false
 
   /@types/estree/0.0.51:
@@ -2413,7 +2376,7 @@ packages:
       micromark-factory-mdx-expression: 1.0.6
       micromark-factory-space: 1.0.0
       micromark-util-character: 1.1.0
-      micromark-util-events-to-acorn: 1.0.4
+      micromark-util-events-to-acorn: 1.0.5
       micromark-util-symbol: 1.0.1
       micromark-util-types: 1.0.2
       uvu: 0.5.3
@@ -2444,7 +2407,7 @@ packages:
     dependencies:
       micromark-core-commonmark: 1.0.6
       micromark-util-character: 1.1.0
-      micromark-util-events-to-acorn: 1.0.4
+      micromark-util-events-to-acorn: 1.0.5
       micromark-util-symbol: 1.0.1
       micromark-util-types: 1.0.2
       unist-util-position-from-estree: 1.1.1
@@ -2487,7 +2450,7 @@ packages:
     dependencies:
       micromark-factory-space: 1.0.0
       micromark-util-character: 1.1.0
-      micromark-util-events-to-acorn: 1.0.4
+      micromark-util-events-to-acorn: 1.0.5
       micromark-util-symbol: 1.0.1
       micromark-util-types: 1.0.2
       unist-util-position-from-estree: 1.1.1
@@ -2568,14 +2531,15 @@ packages:
     resolution: {integrity: sha512-U2s5YdnAYexjKDel31SVMPbfi+eF8y1U4pfiRW/Y8EFVCy/vgxk/2wWTxzcqE71LHtCuCzlBDRU2a5CQ5j+mQA==}
     dev: false
 
-  /micromark-util-events-to-acorn/1.0.4:
-    resolution: {integrity: sha512-dpo8ecREK5s/KMph7jJ46RLM6g7N21CMc9LAJQbDLdbQnTpijigkSJPTIfLXZ+h5wdXlcsQ+b6ufAE9v76AdgA==}
+  /micromark-util-events-to-acorn/1.0.5:
+    resolution: {integrity: sha512-RSKYkkaLcGbK/IPGmB6H9xRbBxQ1jWY7mcy2O9cXH/pnwpv4nQTX/xT5eYZ3QWxpTXxMtm/UiZDqJYkMYYcMDg==}
     dependencies:
       '@types/acorn': 4.0.6
-      '@types/estree': 0.0.50
+      '@types/estree': 0.0.51
       estree-util-visit: 1.1.0
       micromark-util-types: 1.0.2
       uvu: 0.5.3
+      vfile-location: 4.0.1
       vfile-message: 3.1.2
     dev: false
 
@@ -2713,8 +2677,8 @@ packages:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
     dev: true
 
-  /nanoid/3.3.2:
-    resolution: {integrity: sha512-CuHBogktKwpm5g2sRgv83jEy2ijFzBwMoYA60orPDR7ynsLijJDqgsi4RDGj3OJpy3Ieb+LYwiRmIOGyytgITA==}
+  /nanoid/3.3.3:
+    resolution: {integrity: sha512-p1sjXuopFs0xg+fPASzQ28agW1oHD7xDsd9Xkf3T15H3c/cifrFHVwrh74PdoklAPi+i7MdRsE47vm2r6JoB+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
     dev: false
@@ -2909,7 +2873,7 @@ packages:
     resolution: {integrity: sha512-jBDboWM8qpaqwkMwItqTQTiFikhs/67OYVvblFFTM7MrZjt6yMKd6r2kgXizEbTTljacm4NldIlZnhbjr84QYg==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
-      nanoid: 3.3.2
+      nanoid: 3.3.3
       picocolors: 1.0.0
       source-map-js: 1.0.2
     dev: false
@@ -3698,6 +3662,13 @@ packages:
       core-util-is: 1.0.2
       extsprintf: 1.3.0
     dev: true
+
+  /vfile-location/4.0.1:
+    resolution: {integrity: sha512-JDxPlTbZrZCQXogGheBHjbRWjESSPEak770XwWPfw5mTc1v1nWGLB/apzZxsx8a0SJVfF8HK8ql8RD308vXRUw==}
+    dependencies:
+      '@types/unist': 2.0.6
+      vfile: 5.3.2
+    dev: false
 
   /vfile-message/2.0.4:
     resolution: {integrity: sha512-DjssxRGkMvifUOJre00juHoP9DPWuzjxKuMDrhNbk2TdaYYBNMStsNhEOt3idrtI12VQYM/1+iM0KOzXi4pxwQ==}
