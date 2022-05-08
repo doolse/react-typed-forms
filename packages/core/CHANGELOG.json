@@ -1,0 +1,17 @@
+{
+  "name": "@react-typed-forms/core",
+  "entries": [
+    {
+      "version": "2.6.0",
+      "tag": "@react-typed-forms/core_v2.6.0",
+      "date": "Sun, 08 May 2022 10:00:40 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Simplify types, add FormArraySelection"
+          }
+        ]
+      }
+    }
+  ]
+}

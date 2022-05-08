@@ -1,0 +1,17 @@
+{
+  "name": "@react-typed-forms/mui",
+  "entries": [
+    {
+      "version": "2.5.11",
+      "tag": "@react-typed-forms/mui_v2.5.11",
+      "date": "Sun, 08 May 2022 10:00:40 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@react-typed-forms/core\" to `2.6.0`"
+          }
+        ]
+      }
+    }
+  ]
+}
