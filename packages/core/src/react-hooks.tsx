@@ -36,7 +36,8 @@ export function useControlChangeEffect<Control extends BaseControl>(
 export function useValueChangeEffect<Control extends BaseControl>(
   control: Control,
   changeEffect: (control: ControlValueTypeOut<Control>) => void,
-  debounce?: number
+  debounce?: number,
+  runInitial?: boolean
 ) {
   const effectRef = useRef<
     [(control: ControlValueTypeOut<Control>) => void, any]
@@ -56,6 +57,7 @@ export function useValueChangeEffect<Control extends BaseControl>(
     [effectRef]
   );
   useEffect(() => {
+    runInitial ? updater(control) : undefined;
     control.addChangeListener(updater, ControlChange.Value);
     return () => control.removeChangeListener(updater);
   }, [control]);
@@ -228,4 +230,41 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
     useControlStateVersion(props.state, mask);
     return render(props, genericProps(props.state));
   };
+}
+
+export function useEntryControls<A extends string | number>(
+  state: FormControl<A[] | undefined>
+): (entry: A) => FormControl<boolean> {
+  const entryMap: { [key: string | number]: FormControl<boolean> } = useMemo(
+    () => ({}),
+    [state]
+  );
+  return (e) => {
+    let b = entryMap[e];
+    if (!b) {
+      b = new FormControl(false);
+      updateState(e, b);
+      entryMap[e] = b;
+    }
+    useValueChangeEffect(state, () => updateState(e, b));
+    useValueChangeEffect(b, () => {
+      const current = Boolean(state.value?.includes(e));
+      if (current !== b.value) {
+        if (!state.value) {
+          state.setValue(b.value ? [e] : []);
+        } else {
+          state.setValue(
+            b.value ? [...state.value, e] : state.value.filter((x) => x !== e)
+          );
+        }
+      }
+    });
+    return b;
+  };
+
+  function updateState(v: A, fc: FormControl<boolean>) {
+    const initial = Boolean(state.initialValue?.includes(v));
+    const current = Boolean(state.value?.includes(v));
+    fc.setValue(current, current === initial);
+  }
 }

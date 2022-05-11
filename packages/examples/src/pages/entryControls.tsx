@@ -1,0 +1,99 @@
+import {
+  ArrayControl,
+  arrayControl,
+  buildGroup,
+  control,
+  Fcheckbox,
+  Finput,
+  FormArray,
+  FormControl,
+  groupControl,
+  useControlStateComponent,
+  useEntryControls,
+  useValueChangeEffect,
+} from "@react-typed-forms/core";
+import React, { useState } from "react";
+
+interface MainForm {
+  primary: string[];
+  secondary: string[];
+}
+
+const FormDef = buildGroup<MainForm>()({ primary: [], secondary: [] });
+
+export default function EntryControls() {
+  const [formState] = useState(FormDef);
+  const { primary, secondary } = formState.fields;
+  const [formData, setFormData] = useState<MainForm>();
+  const usePrimary = useEntryControls(primary);
+  const useSecondary = useEntryControls(secondary);
+  return (
+    <div className="container">
+      <h2>Array Entries Example</h2>
+      <div className="my-3">
+        <h5>Entries</h5>
+        {FixedEntries.map((e) => (
+          <CheckBoxes
+            key={e}
+            usePrimaryEntry={usePrimary}
+            useSecondaryEntry={useSecondary}
+            entry={e}
+          />
+        ))}
+      </div>
+      <div>
+        <button
+          id="toggleDisabled"
+          className="btn btn-secondary"
+          onClick={() => formState.setDisabled(!formState.disabled)}
+        >
+          Toggle disabled
+        </button>{" "}
+        <button
+          id="submit"
+          className="btn btn-primary"
+          onClick={() => setFormData(formState.toObject())}
+        >
+          toObject()
+        </button>{" "}
+        <button
+          id="clean"
+          className="btn btn-primary"
+          onClick={() => formState.markAsClean()}
+        >
+          Mark Clean
+        </button>
+      </div>
+      {formData && (
+        <pre className="my-2">{JSON.stringify(formData, undefined, 2)}</pre>
+      )}
+    </div>
+  );
+}
+
+const FixedEntries = ["Jolse", "Thomas", "Charles"];
+
+function CheckBoxes({
+  usePrimaryEntry,
+  useSecondaryEntry,
+  entry,
+}: {
+  usePrimaryEntry: (value: string) => FormControl<boolean>;
+  useSecondaryEntry: (value: string) => FormControl<boolean>;
+  entry: string;
+}) {
+  const primary = usePrimaryEntry(entry);
+  const secondary = useSecondaryEntry(entry);
+  useValueChangeEffect(
+    primary,
+    (c) => secondary.setDisabled(!primary.value),
+    undefined,
+    true
+  );
+  return (
+    <div>
+      <Fcheckbox state={primary} /> {entry} <Fcheckbox state={secondary} /> Is
+      Default{" "}
+    </div>
+  );
+}
