@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.0",
+      "tag": "@react-typed-forms/core_v2.7.0",
+      "date": "Wed, 11 May 2022 02:25:48 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": " Add useEntryControls, support running changeEffect first time"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.6.0",
       "tag": "@react-typed-forms/core_v2.6.0",
       "date": "Sun, 08 May 2022 10:00:40 GMT",
