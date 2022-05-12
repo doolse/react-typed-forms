@@ -233,7 +233,8 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
 }
 
 export function useEntryControls<A extends string | number>(
-  state: FormControl<A[] | undefined>
+  state: FormControl<A[] | undefined>,
+  single?: boolean
 ): (entry: A) => FormControl<boolean> {
   const entryMap: { [key: string | number]: FormControl<boolean> } = useMemo(
     () => ({}),
@@ -250,7 +251,7 @@ export function useEntryControls<A extends string | number>(
     useValueChangeEffect(b, () => {
       const current = Boolean(state.value?.includes(e));
       if (current !== b.value) {
-        if (!state.value) {
+        if (!state.value || single) {
           state.setValue(b.value ? [e] : []);
         } else {
           state.setValue(

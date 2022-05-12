@@ -17,16 +17,22 @@ import React, { useState } from "react";
 interface MainForm {
   primary: string[];
   secondary: string[];
+  single: string[];
 }
 
-const FormDef = buildGroup<MainForm>()({ primary: [], secondary: [] });
+const FormDef = buildGroup<MainForm>()({
+  primary: [],
+  secondary: [],
+  single: [],
+});
 
 export default function EntryControls() {
   const [formState] = useState(FormDef);
-  const { primary, secondary } = formState.fields;
+  const { primary, secondary, single } = formState.fields;
   const [formData, setFormData] = useState<MainForm>();
   const usePrimary = useEntryControls(primary);
   const useSecondary = useEntryControls(secondary);
+  const useSingle = useEntryControls(single, true);
   return (
     <div className="container">
       <h2>Array Entries Example</h2>
@@ -37,6 +43,7 @@ export default function EntryControls() {
             key={e}
             usePrimaryEntry={usePrimary}
             useSecondaryEntry={useSecondary}
+            useSingleEntry={useSingle}
             entry={e}
           />
         ))}
@@ -76,14 +83,17 @@ const FixedEntries = ["Jolse", "Thomas", "Charles"];
 function CheckBoxes({
   usePrimaryEntry,
   useSecondaryEntry,
+  useSingleEntry,
   entry,
 }: {
   usePrimaryEntry: (value: string) => FormControl<boolean>;
   useSecondaryEntry: (value: string) => FormControl<boolean>;
+  useSingleEntry: (value: string) => FormControl<boolean>;
   entry: string;
 }) {
   const primary = usePrimaryEntry(entry);
   const secondary = useSecondaryEntry(entry);
+  const single = useSingleEntry(entry);
   useValueChangeEffect(
     primary,
     (c) => secondary.setDisabled(!primary.value),
@@ -93,7 +103,7 @@ function CheckBoxes({
   return (
     <div>
       <Fcheckbox state={primary} /> {entry} <Fcheckbox state={secondary} /> Is
-      Default{" "}
+      Default <Fcheckbox state={single} /> One at a time
     </div>
   );
 }
