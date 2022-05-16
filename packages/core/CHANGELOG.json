@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.3",
+      "tag": "@react-typed-forms/core_v2.7.3",
+      "date": "Mon, 16 May 2022 10:03:17 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix types"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.2",
       "tag": "@react-typed-forms/core_v2.7.2",
       "date": "Mon, 16 May 2022 09:46:15 GMT",
