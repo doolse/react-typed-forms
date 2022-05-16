@@ -1,4 +1,4 @@
-import { buildGroup, groupControl } from "@react-typed-forms/core";
+import { buildGroup, control, groupControl } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState } from "react";
 
@@ -13,7 +13,7 @@ type Form = {
 const adef = {
   firstName: "",
   age: 0,
-  nested: groupControl({ optional: "" }),
+  nested: groupControl({ optional: control<string | undefined>("") }),
 };
 
 const FormDef = buildGroup<Form>()(adef);

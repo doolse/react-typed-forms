@@ -5,7 +5,7 @@ import {
   ControlType,
   Fcheckbox,
   Finput,
-  FormArray,
+  FormSelectionArray,
   SelectionGroup,
   useControlStateComponent,
 } from "@react-typed-forms/core";
@@ -59,13 +59,13 @@ export default function ArraySelectionsExample() {
       <h2>Array Selections Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormArray state={formState}>
+        <FormSelectionArray state={formState}>
           {(elems) =>
             elems.map((x, idx) => (
               <StructuredRow state={x} key={x.uniqueId} index={idx} />
             ))
           }
-        </FormArray>
+        </FormSelectionArray>
         <Dirty>
           {(dirty) => (
             <span>
