@@ -24,10 +24,12 @@ export function useControlChangeEffect<Control extends BaseControl>(
   control: Control,
   changeEffect: (control: Control, change: ControlChange) => void,
   mask?: ControlChange,
-  deps?: any[]
+  deps?: any[],
+  runInitial?: boolean
 ) {
   const updater = useMemo(() => changeEffect, deps ?? [control]);
   useEffect(() => {
+    if (runInitial) updater(control, 0);
     control.addChangeListener(updater, mask);
     return () => control.removeChangeListener(updater);
   }, [updater]);
