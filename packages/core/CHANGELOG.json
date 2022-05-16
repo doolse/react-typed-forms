@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.4",
+      "tag": "@react-typed-forms/core_v2.7.4",
+      "date": "Mon, 16 May 2022 12:59:53 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix recursive types"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.3",
       "tag": "@react-typed-forms/core_v2.7.3",
       "date": "Mon, 16 May 2022 10:03:17 GMT",

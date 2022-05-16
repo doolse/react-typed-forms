@@ -1,6 +1,13 @@
 # Change Log - @react-typed-forms/core
 
-This log was last generated on Mon, 16 May 2022 10:03:17 GMT and should not be manually modified.
+This log was last generated on Mon, 16 May 2022 12:59:53 GMT and should not be manually modified.
+
+## 2.7.4
+Mon, 16 May 2022 12:59:53 GMT
+
+### Patches
+
+- Fix recursive types
 
 ## 2.7.3
 Mon, 16 May 2022 10:03:17 GMT
