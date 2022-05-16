@@ -7,8 +7,9 @@ import {
   FormControl,
   groupControl,
   GroupControl,
-  GroupControlFields,
+  GroupControlFields, ValueTypeForControl,
 } from "@react-typed-forms/core";
+import {MeasurementFormValue, MeasurementValueForm} from "../typedefs";
 
 interface Recursive {
   id: string;
@@ -28,10 +29,17 @@ type WithRecursion = GroupControl<
 
 const defWithRecursion: () => WithRecursion = () => {
   return k().addFields({
-    children: new ArrayControl<WithRecursion>(defWithRecursion),
+    children: new ArrayControl(defWithRecursion),
   });
 };
 
+function mustCompile() {
+  const measureForm : MeasurementValueForm = undefined as any;
+  const measureValue: MeasurementFormValue = undefined as any;
+  measureForm.setValue(measureValue)
+}
+
+defWithRecursion().setValue({id: "", children: []});
 export default function Doit() {
   return <div>Hello</div>;
 }

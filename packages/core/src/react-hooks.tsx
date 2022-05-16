@@ -13,16 +13,16 @@ import {
   AnyControl,
   ArrayControl,
   ArraySelectionControl,
-  BaseControl,
+  BaseControl, Control,
   ControlChange,
   ControlValueTypeOut,
   FormControl,
   SelectionGroup,
 } from "./nodes";
 
-export function useControlChangeEffect<Control extends BaseControl>(
-  control: Control,
-  changeEffect: (control: Control, change: ControlChange) => void,
+export function useControlChangeEffect<C extends Control<any>>(
+  control: C,
+  changeEffect: (control: C, change: ControlChange) => void,
   mask?: ControlChange,
   deps?: any[],
   runInitial?: boolean
@@ -35,18 +35,18 @@ export function useControlChangeEffect<Control extends BaseControl>(
   }, [updater]);
 }
 
-export function useValueChangeEffect<Control extends BaseControl>(
-  control: Control,
-  changeEffect: (control: ControlValueTypeOut<Control>) => void,
+export function useValueChangeEffect<C extends Control<any>>(
+  control: C,
+  changeEffect: (control: ControlValueTypeOut<C>) => void,
   debounce?: number,
   runInitial?: boolean
 ) {
   const effectRef = useRef<
-    [(control: ControlValueTypeOut<Control>) => void, any]
+    [(control: ControlValueTypeOut<C>) => void, any]
   >([changeEffect, undefined]);
   effectRef.current[0] = changeEffect;
   const updater = useMemo(
-    () => (c: Control) => {
+    () => (c: C) => {
       if (debounce) {
         if (effectRef.current[1]) clearTimeout(effectRef.current[1]);
         effectRef.current[1] = setTimeout(() => {
@@ -65,7 +65,7 @@ export function useValueChangeEffect<Control extends BaseControl>(
   }, [control]);
 }
 
-export function useControlState<N extends BaseControl, S>(
+export function useControlState<N extends Control<any>, S>(
   control: N,
   toState: (state: N, previous?: S) => S,
   mask?: ControlChange
@@ -96,7 +96,7 @@ export function useControlStateVersion(
   return useControlState(control, (c) => c.stateVersion, mask);
 }
 
-export function useControlStateComponent<S, C extends BaseControl>(
+export function useControlStateComponent<S, C extends Control<any>>(
   control: C,
   toState: (state: C) => S,
   mask?: ControlChange
@@ -148,11 +148,11 @@ export function FormSelectionArray<C extends AnyControl>({
   useControlStateVersion(state.underlying);
   return <>{children(state.elems)}</>;
 }
-function defaultValidCheck(n: BaseControl) {
+function defaultValidCheck(n: Control<any>) {
   return n instanceof FormControl ? n.value : n.stateVersion;
 }
 
-export function useAsyncValidator<C extends BaseControl>(
+export function useAsyncValidator<C extends Control<any>>(
   control: C,
   validator: (
     control: C,

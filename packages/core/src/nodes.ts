@@ -17,7 +17,7 @@ export enum ControlChange {
   Freeze = 128,
 }
 
-export type BaseControl = Control<any>;
+export type BaseControl = AnyControl;
 
 export type AnyControl =
   | FormControl<any>
@@ -420,7 +420,7 @@ export abstract class ParentControl<V> extends Control<V> {
    * @param path
    */
   lookupControl(path: (string | number)[]): BaseControl | null {
-    let base = this;
+    let base = this as unknown as AnyControl;
     let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
@@ -445,7 +445,7 @@ export abstract class ParentControl<V> extends Control<V> {
 
 export type FormControlFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
-export class ArrayControl<FIELD extends Control<any>> extends ParentControl<
+export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
   ControlValueTypeOut<FIELD>[]
 > {
   elems: FIELD[] = [];
@@ -622,7 +622,7 @@ export type SelectionGroup<ELEM extends BaseControl> = GroupControl<{
 }>;
 
 export class ArraySelectionControl<
-  FIELD extends Control<any>
+  FIELD extends AnyControl
 > extends ParentControl<ControlValueTypeOut<FIELD>[]> {
   underlying: ArrayControl<SelectionGroup<FIELD>>;
   defaultValues: ValueTypeForControl<FIELD>[];
@@ -847,11 +847,11 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
   }
 }
 
-type ControlDefType<T> = T extends () => Control<any>
+type ControlDefType<T> = T extends () => AnyControl
   ? ReturnType<T>
   : FormControl<T>;
 
-export type ControlCreator<V extends Control<any>> = () => V;
+export type ControlCreator<V extends AnyControl> = () => V;
 
 /**
  * Define a form control containing values of type V
@@ -892,8 +892,8 @@ export function arraySelectionControl<CHILD>(
     new ArraySelectionControl(
       makeCreator(child),
       getKey,
-      getElemKey as any,
-      defaultValues as any
+      getElemKey,
+      defaultValues
     );
 }
 
