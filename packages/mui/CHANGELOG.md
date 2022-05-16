@@ -1,6 +1,11 @@
 # Change Log - @react-typed-forms/mui
 
-This log was last generated on Thu, 12 May 2022 03:38:44 GMT and should not be manually modified.
+This log was last generated on Mon, 16 May 2022 09:46:15 GMT and should not be manually modified.
+
+## 2.5.14
+Mon, 16 May 2022 09:46:15 GMT
+
+_Version update only_
 
 ## 2.5.13
 Thu, 12 May 2022 03:38:44 GMT

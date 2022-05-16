@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.2",
+      "tag": "@react-typed-forms/core_v2.7.2",
+      "date": "Mon, 16 May 2022 09:46:15 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Allow control change effect to run on add"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.1",
       "tag": "@react-typed-forms/core_v2.7.1",
       "date": "Thu, 12 May 2022 03:38:44 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @react-typed-forms/core
 
-This log was last generated on Thu, 12 May 2022 03:38:44 GMT and should not be manually modified.
+This log was last generated on Mon, 16 May 2022 09:46:15 GMT and should not be manually modified.
+
+## 2.7.2
+Mon, 16 May 2022 09:46:15 GMT
+
+### Patches
+
+- Allow control change effect to run on add
 
 ## 2.7.1
 Thu, 12 May 2022 03:38:44 GMT

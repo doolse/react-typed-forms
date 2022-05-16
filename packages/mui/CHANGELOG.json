@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/mui",
   "entries": [
     {
+      "version": "2.5.14",
+      "tag": "@react-typed-forms/mui_v2.5.14",
+      "date": "Mon, 16 May 2022 09:46:15 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@react-typed-forms/core\" to `2.7.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.5.13",
       "tag": "@react-typed-forms/mui_v2.5.13",
       "date": "Thu, 12 May 2022 03:38:44 GMT",
