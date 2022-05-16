@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@react-typed-forms/core",
+      "comment": "Fix recursive types",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@react-typed-forms/core"
+}
