@@ -767,10 +767,9 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
     for (const c in moreChildren) {
       moreChildren[c].addChangeListener(l[1], l[0]);
     }
-    this.setFlag(
-      ControlFlags.Valid,
-      this.visitChildren((c) => c.valid)
-    );
+    this.updateValid(this.visitChildren((c) => c.valid));
+    this.updateDirty(!this.visitChildren((c) => !c.dirty));
+    this.updateTouched(!this.visitChildren((c) => !c.touched));
     return this as any;
   }
 
