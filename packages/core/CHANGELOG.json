@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.5",
+      "tag": "@react-typed-forms/core_v2.7.5",
+      "date": "Thu, 09 Jun 2022 06:46:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Make sure subgroup flags are setup correctly"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.4",
       "tag": "@react-typed-forms/core_v2.7.4",
       "date": "Mon, 16 May 2022 12:59:53 GMT",
