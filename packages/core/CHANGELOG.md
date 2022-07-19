@@ -1,6 +1,13 @@
 # Change Log - @react-typed-forms/core
 
-This log was last generated on Thu, 09 Jun 2022 06:46:33 GMT and should not be manually modified.
+This log was last generated on Tue, 19 Jul 2022 00:50:49 GMT and should not be manually modified.
+
+## 2.7.6
+Tue, 19 Jul 2022 00:50:49 GMT
+
+### Patches
+
+- Add at index, remote/add by field
 
 ## 2.7.5
 Thu, 09 Jun 2022 06:46:33 GMT
