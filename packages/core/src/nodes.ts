@@ -554,10 +554,13 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
    * Add a new element to the array
    * @param index Optional insertion index
    */
-  add(index?: number): FIELD {
+  add(index?: number | FIELD): FIELD {
     const newCtrl = this.controlFromDef(this.childDefinition);
     this.elems = [...this.elems];
     if (index !== undefined) {
+      if (typeof index !== "number") {
+        index = this.elems.indexOf(index);
+      }
       this.elems.splice(index, 0, newCtrl);
     } else {
       this.elems.push(newCtrl);
@@ -592,8 +595,8 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
    * Remove an element in the array by index
    * @param index The index of the form element to remove
    */
-  remove(index: number): this {
-    this.elems = this.elems.filter((e, i) => i !== index);
+  remove(index: number | FIELD): this {
+    this.elems = this.elems.filter((e, i) => i !== index && e !== index);
     return this.runChange(ControlChange.Value | this.updateArrayFlags());
   }
 
@@ -665,8 +668,8 @@ export class ArraySelectionControl<
     );
   }
 
-  add(selected?: boolean) {
-    const c = this.underlying.add();
+  add(selected?: boolean, index?: number | SelectionGroup<FIELD>) {
+    const c = this.underlying.add(index);
     c.fields.selected.setValue(selected ?? true);
     return c;
   }

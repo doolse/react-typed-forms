@@ -62,7 +62,12 @@ export default function ArraySelectionsExample() {
         <FormSelectionArray state={formState}>
           {(elems) =>
             elems.map((x, idx) => (
-              <StructuredRow state={x} key={x.uniqueId} index={idx} />
+              <StructuredRow
+                state={x}
+                key={x.uniqueId}
+                index={idx}
+                onDelete={() => formState.underlying.remove(x)}
+              />
             ))
           }
         </FormSelectionArray>
@@ -123,9 +128,11 @@ export default function ArraySelectionsExample() {
 function StructuredRow({
   state,
   index,
+  onDelete,
 }: {
   state: SelectionGroup<ControlType<typeof RowFormDef>>;
   index: number;
+  onDelete: () => void;
 }) {
   const c = state.fields.value.fields;
   return (
@@ -145,6 +152,9 @@ function StructuredRow({
       <div className="form-group mb-2">
         <label className="mx-2">Last:</label>
         <Finput type="text" className="lastField form-control" state={c.last} />
+      </div>
+      <div className="form-group mb-2">
+        <button onClick={onDelete}>Delete</button>
       </div>
     </div>
   );
