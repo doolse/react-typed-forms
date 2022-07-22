@@ -13,7 +13,8 @@ import {
   AnyControl,
   ArrayControl,
   ArraySelectionControl,
-  BaseControl, Control,
+  BaseControl,
+  Control,
   ControlChange,
   ControlValueTypeOut,
   FormControl,
@@ -27,12 +28,16 @@ export function useControlChangeEffect<C extends Control<any>>(
   deps?: any[],
   runInitial?: boolean
 ) {
-  const updater = useMemo(() => changeEffect, deps ?? [control]);
+  const effectRef = useRef(changeEffect);
+  effectRef.current = changeEffect;
   useEffect(() => {
-    if (runInitial) updater(control, 0);
-    control.addChangeListener(updater, mask);
-    return () => control.removeChangeListener(updater);
-  }, [updater]);
+    if (runInitial) changeEffect(control, 0);
+    const changeListener = (c: C, m: ControlChange) => {
+      changeEffect(c, m);
+    };
+    control.addChangeListener(changeListener, mask);
+    return () => control.removeChangeListener(changeListener);
+  }, deps ?? [control, mask]);
 }
 
 export function useValueChangeEffect<C extends Control<any>>(
@@ -42,23 +47,22 @@ export function useValueChangeEffect<C extends Control<any>>(
   runInitial?: boolean
 ) {
   const effectRef = useRef<
-    [(control: ControlValueTypeOut<C>) => void, any]
-  >([changeEffect, undefined]);
+    [(control: ControlValueTypeOut<C>) => void, any, number?]
+  >([changeEffect, undefined, debounce]);
   effectRef.current[0] = changeEffect;
-  const updater = useMemo(
-    () => (c: C) => {
-      if (debounce) {
-        if (effectRef.current[1]) clearTimeout(effectRef.current[1]);
-        effectRef.current[1] = setTimeout(() => {
-          effectRef.current[0](c.toValue());
-        }, debounce);
-      } else {
-        effectRef.current[0](c.toValue());
-      }
-    },
-    [effectRef]
-  );
+  effectRef.current[2] = debounce;
   useEffect(() => {
+    const updater = (c: C) => {
+      const r = effectRef.current;
+      if (r[2]) {
+        if (r[1]) clearTimeout(r[1]);
+        r[1] = setTimeout(() => {
+          effectRef.current[0](c.toValue());
+        }, r[2]);
+      } else {
+        r[0](c.toValue());
+      }
+    };
     runInitial ? updater(control) : undefined;
     control.addChangeListener(updater, ControlChange.Value);
     return () => control.removeChangeListener(updater);
