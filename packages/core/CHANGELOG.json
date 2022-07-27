@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.8",
+      "tag": "@react-typed-forms/core_v2.7.8",
+      "date": "Wed, 27 Jul 2022 01:19:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Make the type of ValueTypeForControl more accurate"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.7",
       "tag": "@react-typed-forms/core_v2.7.7",
       "date": "Fri, 22 Jul 2022 00:29:38 GMT",
