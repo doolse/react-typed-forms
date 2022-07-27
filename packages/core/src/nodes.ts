@@ -222,30 +222,24 @@ function setValueUnsafe(ctrl: BaseControl, v: any, initial?: boolean) {
   (ctrl as any).setValue(v, initial);
 }
 
-type IsOptionalField<K, C> = C extends FormControl<infer V>
-  ? undefined extends V
-    ? K
-    : never
-  : never;
-
-type IsRequiredField<K, C> = C extends FormControl<infer V>
-  ? undefined extends V
-    ? never
-    : K
-  : K;
+type MakeOptionalFields<T> = {
+  [K in keyof T as undefined extends T[K] ? K : never]+?: T[K];
+} & {
+  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+};
 
 export type ValueTypeForControl<C> = C extends GroupControl<infer F>
-  ? {
-      [K in keyof F as IsRequiredField<K, F[K]>]: ValueTypeForControl<F[K]>;
-    } & {
-      [K in keyof F as IsOptionalField<K, F[K]>]?: ValueTypeForControl<F[K]>;
-    }
+  ?
+      | MakeOptionalFields<{
+          [K in keyof F]: ValueTypeForControl<F[K]>;
+        }>
+      | undefined
   : C extends FormControl<infer V>
   ? V
   : C extends ArrayControl<infer AC>
-  ? ValueTypeForControl<AC>[]
+  ? ValueTypeForControl<AC>[] | undefined
   : C extends ArraySelectionControl<infer AC>
-  ? ValueTypeForControl<AC>[]
+  ? ValueTypeForControl<AC>[] | undefined
   : never;
 
 export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
@@ -816,11 +810,11 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
    * @param initial If true reset the dirty flag
    */
   setValue(value: ValueTypeForControl<this>, initial?: boolean): this {
-    value = value ?? {};
+    const unsafeValue: any = value ?? {};
     return this.groupedChanges(() => {
       const fields = this.fields;
       for (const k in fields) {
-        setValueUnsafe(fields[k], (value as any)[k], initial);
+        setValueUnsafe(fields[k], unsafeValue[k], initial);
       }
     });
   }
