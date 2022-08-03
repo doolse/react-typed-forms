@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.9",
+      "tag": "@react-typed-forms/core_v2.7.9",
+      "date": "Wed, 03 Aug 2022 02:32:52 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Actually use the ref for the latest effect"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.8",
       "tag": "@react-typed-forms/core_v2.7.8",
       "date": "Wed, 27 Jul 2022 01:19:11 GMT",
