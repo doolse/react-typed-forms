@@ -31,9 +31,9 @@ export function useControlChangeEffect<C extends Control<any>>(
   const effectRef = useRef(changeEffect);
   effectRef.current = changeEffect;
   useEffect(() => {
-    if (runInitial) changeEffect(control, 0);
+    if (runInitial) effectRef.current(control, 0);
     const changeListener = (c: C, m: ControlChange) => {
-      changeEffect(c, m);
+      effectRef.current(c, m);
     };
     control.addChangeListener(changeListener, mask);
     return () => control.removeChangeListener(changeListener);
