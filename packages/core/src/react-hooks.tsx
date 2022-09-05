@@ -72,25 +72,22 @@ export function useValueChangeEffect<C extends Control<any>>(
 export function useControlState<N extends Control<any>, S>(
   control: N,
   toState: (state: N, previous?: S) => S,
-  mask?: ControlChange
+  mask?: ControlChange,
+  deps?: any[]
 ): S {
   const [state, setState] = useState(() => toState(control));
-  useEffect(() => {
-    setState((p) => toState(control, p));
-  }, [control]);
   useControlChangeEffect(
     control,
     (control) => setState((p) => toState(control, p)),
-    mask
+    mask,
+    deps,
+    true
   );
   return state;
 }
 
-export function useControlValue<A>(
-  control: FormControl<A>,
-  mask?: ControlChange
-) {
-  return useControlState(control, (n) => n.value, mask);
+export function useControlValue<A>(control: FormControl<A>) {
+  return useControlState(control, (n) => n.value, ControlChange.Value);
 }
 
 export function useControlStateVersion(
