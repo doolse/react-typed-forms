@@ -1,6 +1,13 @@
 # Change Log - @react-typed-forms/core
 
-This log was last generated on Wed, 03 Aug 2022 02:32:52 GMT and should not be manually modified.
+This log was last generated on Mon, 05 Sep 2022 02:11:26 GMT and should not be manually modified.
+
+## 2.7.10
+Mon, 05 Sep 2022 02:11:26 GMT
+
+### Patches
+
+- Use runInitial for useControlState
 
 ## 2.7.9
 Wed, 03 Aug 2022 02:32:52 GMT

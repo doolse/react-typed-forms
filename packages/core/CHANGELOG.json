@@ -2,6 +2,18 @@
   "name": "@react-typed-forms/core",
   "entries": [
     {
+      "version": "2.7.10",
+      "tag": "@react-typed-forms/core_v2.7.10",
+      "date": "Mon, 05 Sep 2022 02:11:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Use runInitial for useControlState"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.7.9",
       "tag": "@react-typed-forms/core_v2.7.9",
       "date": "Wed, 03 Aug 2022 02:32:52 GMT",
