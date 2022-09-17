@@ -19,7 +19,9 @@ const adef = {
 const FormDef = buildGroup<Form>()(adef);
 
 export default function OptionalsTest() {
-  const [formState] = useState(() => FormDef().setValue({ nested: {} }, true));
+  const [formState] = useState(() =>
+    FormDef().setValue({ nested: { optional: undefined } }, true)
+  );
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();
 
@@ -42,7 +44,7 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({ nested: {} });
+            formState.setValue({ nested: { optional: undefined } });
           }}
         >
           Reset data

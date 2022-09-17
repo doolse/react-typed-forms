@@ -10,20 +10,15 @@ import React, {
   useState,
 } from "react";
 import {
-  AnyControl,
-  ArrayControl,
-  ArraySelectionControl,
-  BaseControl,
-  Control,
   ControlChange,
   ControlValueTypeOut,
   FormControl,
-  SelectionGroup,
+  FormControlBuilder,
 } from "./nodes";
 
-export function useControlChangeEffect<C extends Control<any>>(
-  control: C,
-  changeEffect: (control: C, change: ControlChange) => void,
+export function useControlChangeEffect<V, M>(
+  control: FormControl<V, M>,
+  changeEffect: (control: FormControl<V, M>, change: ControlChange) => void,
   mask?: ControlChange,
   deps?: any[],
   runInitial?: boolean
@@ -32,7 +27,7 @@ export function useControlChangeEffect<C extends Control<any>>(
   effectRef.current = changeEffect;
   useEffect(() => {
     if (runInitial) effectRef.current(control, 0);
-    const changeListener = (c: C, m: ControlChange) => {
+    const changeListener = (c: FormControl<V, M>, m: ControlChange) => {
       effectRef.current(c, m);
     };
     control.addChangeListener(changeListener, mask);
@@ -40,27 +35,29 @@ export function useControlChangeEffect<C extends Control<any>>(
   }, deps ?? [control, mask]);
 }
 
-export function useValueChangeEffect<C extends Control<any>>(
-  control: C,
-  changeEffect: (control: ControlValueTypeOut<C>) => void,
+export function useValueChangeEffect<V, M>(
+  control: FormControl<V, M>,
+  changeEffect: (control: V) => void,
   debounce?: number,
   runInitial?: boolean
 ) {
-  const effectRef = useRef<
-    [(control: ControlValueTypeOut<C>) => void, any, number?]
-  >([changeEffect, undefined, debounce]);
+  const effectRef = useRef<[(control: V) => void, any, number?]>([
+    changeEffect,
+    undefined,
+    debounce,
+  ]);
   effectRef.current[0] = changeEffect;
   effectRef.current[2] = debounce;
   useEffect(() => {
-    const updater = (c: C) => {
+    const updater = (c: FormControl<V, M>) => {
       const r = effectRef.current;
       if (r[2]) {
         if (r[1]) clearTimeout(r[1]);
         r[1] = setTimeout(() => {
-          effectRef.current[0](c.toValue());
+          effectRef.current[0](c.value);
         }, r[2]);
       } else {
-        r[0](c.toValue());
+        r[0](c.value);
       }
     };
     runInitial ? updater(control) : undefined;
@@ -69,9 +66,9 @@ export function useValueChangeEffect<C extends Control<any>>(
   }, [control]);
 }
 
-export function useControlState<N extends Control<any>, S>(
-  control: N,
-  toState: (state: N, previous?: S) => S,
+export function useControlState<V, M, S>(
+  control: FormControl<V, M>,
+  toState: (state: FormControl<V, M>, previous?: S) => S,
   mask?: ControlChange,
   deps?: any[]
 ): S {
@@ -91,15 +88,15 @@ export function useControlValue<A>(control: FormControl<A>) {
 }
 
 export function useControlStateVersion(
-  control: BaseControl,
+  control: FormControl<any>,
   mask?: ControlChange
 ) {
   return useControlState(control, (c) => c.stateVersion, mask);
 }
 
-export function useControlStateComponent<S, C extends Control<any>>(
-  control: C,
-  toState: (state: C) => S,
+export function useControlStateComponent<V, M, S>(
+  control: FormControl<V, M>,
+  toState: (state: FormControl<V, M>) => S,
   mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
@@ -113,7 +110,7 @@ export function useControlStateComponent<S, C extends Control<any>>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: BaseControl;
+  state: FormControl<any>;
   children: (validForm: boolean) => ReactElement;
 }
 
@@ -126,45 +123,37 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
   return children(validForm);
 }
 
-export interface FormArrayProps<C extends BaseControl> {
-  state: ArrayControl<C>;
-  children: (elems: C[]) => ReactNode;
+export interface FormArrayProps<V, M> {
+  state: FormControl<V[], M>;
+  children: (elems: FormControl<V, M>[]) => ReactNode;
 }
 
-export function FormArray<C extends BaseControl>({
-  state,
-  children,
-}: FormArrayProps<C>) {
+export function FormArray<V, M>({ state, children }: FormArrayProps<V, M>) {
   useControlState(state, (c) => c.elems, ControlChange.Value);
   return <>{children(state.elems)}</>;
 }
 
-export function FormSelectionArray<C extends AnyControl>({
+export function FormSelectionArray<V, M>({
   state,
   children,
 }: {
-  state: ArraySelectionControl<C>;
-  children: (elems: SelectionGroup<C>[]) => ReactNode;
+  state: FormControl<V[], M>;
+  children: (elems: [FormControl<V>, FormControl<boolean>][]) => ReactNode;
 }) {
-  useControlStateVersion(state.underlying);
-  return <>{children(state.elems)}</>;
-}
-function defaultValidCheck(n: Control<any>) {
-  return n instanceof FormControl ? n.value : n.stateVersion;
+  throw "not yet";
 }
 
-export function useAsyncValidator<C extends Control<any>>(
-  control: C,
+export function useAsyncValidator<V, M>(
+  control: FormControl<V, M>,
   validator: (
-    control: C,
+    control: FormControl<V, M>,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue?: (control: C) => any
+  validCheckValue: (control: FormControl<V, M>) => any = (c) => control.value
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
-  const validCheck = validCheckValue ?? defaultValidCheck;
   useControlChangeEffect(
     control,
     (n) => {
@@ -174,13 +163,13 @@ export function useAsyncValidator<C extends Control<any>>(
       if (abortController.current) {
         abortController.current.abort();
       }
-      let currentVersion = validCheck(n);
+      let currentVersion = validCheckValue(n);
       handler.current = window.setTimeout(() => {
         const aborter = new AbortController();
         abortController.current = aborter;
         validator(n, aborter.signal)
           .then((error) => {
-            if (validCheck(n) === currentVersion) {
+            if (validCheckValue(n) === currentVersion) {
               n.setTouched(true);
               n.setError(error);
             }
@@ -235,40 +224,15 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   };
 }
 
+export function useFormState<V, M>(
+  builder: FormControlBuilder<V, M>
+): FormControl<V, M> {
+  return useState(() => builder.build())[0];
+}
+
 export function useEntryControls<A extends string | number>(
   state: FormControl<A[] | undefined>,
   single?: boolean
 ): (entry: A) => FormControl<boolean> {
-  const entryMap: { [key: string | number]: FormControl<boolean> } = useMemo(
-    () => ({}),
-    [state]
-  );
-  return (e) => {
-    let b = entryMap[e];
-    if (!b) {
-      b = new FormControl(false);
-      updateState(e, b);
-      entryMap[e] = b;
-    }
-    useValueChangeEffect(state, () => updateState(e, b));
-    useValueChangeEffect(b, () => {
-      const current = Boolean(state.value?.includes(e));
-      if (current !== b.value) {
-        if (!state.value || single) {
-          state.setValue(b.value ? [e] : []);
-        } else {
-          state.setValue(
-            b.value ? [...state.value, e] : state.value.filter((x) => x !== e)
-          );
-        }
-      }
-    });
-    return b;
-  };
-
-  function updateState(v: A, fc: FormControl<boolean>) {
-    const initial = Boolean(state.initialValue?.includes(v));
-    const current = Boolean(state.value?.includes(v));
-    fc.setValue(current, current === initial);
-  }
+  throw "Not yet";
 }

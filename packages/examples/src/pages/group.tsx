@@ -1,7 +1,7 @@
 import {
   buildGroup,
   ControlChange,
-  GroupControl,
+  groupFromControls,
   useControlChangeEffect,
   useValueChangeEffect,
 } from "@react-typed-forms/core";
@@ -24,11 +24,7 @@ export default function GroupTest() {
   const [formState] = useState(FormDef);
   const { fields } = formState;
   const subForm = useMemo(
-    () =>
-      formState.subGroup(({ age, firstName }) => ({
-        age,
-        firstName,
-      })),
+    () => groupFromControls({ age: fields.age, firstName: fields.firstName }),
     [formState]
   );
   const [parentUpdates, setParentUpdates] = useState(0);

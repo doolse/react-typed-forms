@@ -1,10 +1,10 @@
 import {
-  ArrayControl,
   arrayControl,
   buildGroup,
   control,
   Finput,
   FormArray,
+  FormControl,
   groupControl,
   useControlStateComponent,
 } from "@react-typed-forms/core";
@@ -19,6 +19,8 @@ type MainForm = {
   strings: string[];
   structured: RowForm[];
 };
+
+const defaultRow: RowForm = { id: "", name: "" };
 
 const FormDef = buildGroup<MainForm>()({
   strings: arrayControl(""),
@@ -48,7 +50,7 @@ export default function ArraysExample() {
   });
   const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
-  function moveUp(fa: ArrayControl<any>, index: number) {
+  function moveUp(fa: FormControl<any[]>, index: number) {
     if (index > 0 && index < fa.elems.length)
       fa.update((fields) =>
         fields.map((f, idx) =>
@@ -60,7 +62,7 @@ export default function ArraysExample() {
         )
       );
   }
-  function moveDown(fa: ArrayControl<any>, index: number) {
+  function moveDown(fa: FormControl<any[]>, index: number) {
     if (index >= 0 && index < fa.elems.length - 1)
       fa.update((fields) =>
         fields.map((f, idx) =>
@@ -105,14 +107,14 @@ export default function ArraysExample() {
           <button
             id="addString"
             className="btn"
-            onClick={() => fields.strings.add()}
+            onClick={() => fields.strings.add("")}
           >
             Add
           </button>{" "}
           <button
             id="addStartString"
             className="btn"
-            onClick={() => fields.strings.add(0)}
+            onClick={() => fields.strings.add("", 0)}
           >
             Add to start
           </button>{" "}
@@ -168,7 +170,7 @@ export default function ArraysExample() {
           <button
             id="addObj"
             className="btn"
-            onClick={() => fields.structured.add()}
+            onClick={() => fields.structured.add(defaultRow)}
           >
             Add
           </button>{" "}
