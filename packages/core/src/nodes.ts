@@ -23,7 +23,8 @@ export type AnyControl =
   | FormControl<any>
   | ArrayControl<any>
   | ArraySelectionControl<any>
-  | GroupControl<any>;
+  | GroupControl<any>
+  | OptionalControl<any>;
 
 export type ChangeListener<C extends BaseControl> = [
   ControlChange,
@@ -237,9 +238,11 @@ export type ValueTypeForControl<C> = C extends GroupControl<infer F>
   : C extends FormControl<infer V>
   ? V
   : C extends ArrayControl<infer AC>
-  ? ValueTypeForControl<AC>[] | undefined
+  ? undefined | ValueTypeForControl<AC>[]
   : C extends ArraySelectionControl<infer AC>
-  ? ValueTypeForControl<AC>[] | undefined
+  ? undefined | ValueTypeForControl<AC>[]
+  : C extends OptionalControl<infer AC>
+  ? undefined | ValueTypeForControl<AC>
   : never;
 
 export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
@@ -250,6 +253,8 @@ export type ControlValueTypeOut<C> = C extends GroupControl<infer F>
   ? ControlValueTypeOut<AC>[]
   : C extends ArraySelectionControl<infer AC>
   ? ControlValueTypeOut<AC>[]
+  : C extends OptionalControl<infer AC>
+  ? undefined | ControlValueTypeOut<AC>
   : never;
 
 export class FormControl<V> extends Control<V> {
@@ -399,6 +404,28 @@ export abstract class ParentControl<V> extends Control<V> {
     return this;
   }
 
+  visitChildren(
+    visit: (c: BaseControl) => boolean,
+    doSelf?: boolean,
+    recurse?: boolean
+  ): boolean {
+    if (doSelf && !visit(this as unknown as AnyControl)) {
+      return false;
+    }
+    const controls = this.getChildControls();
+    for (const c of controls) {
+      if (!visit(c)) {
+        return false;
+      }
+      if (recurse && !c.visitChildren(visit, false, true)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  abstract getChildControls(): BaseControl[];
+
   /**
    * Clear all error messages and mark controls as valid.
    */
@@ -439,6 +466,55 @@ export abstract class ParentControl<V> extends Control<V> {
 
 export type FormControlFields<R> = { [K in keyof R]-?: FormControl<R[K]> };
 
+export class OptionalControl<FIELD extends BaseControl> extends ParentControl<
+  ControlValueTypeOut<FIELD> | undefined
+> {
+  control?: FIELD;
+  initiallyUndefined: boolean = true;
+
+  constructor(
+    private childDefinition: () => FIELD,
+    parentListener?: (
+      parent: ParentControl<ControlValueTypeOut<FIELD> | undefined>
+    ) => ChangeListener<BaseControl>
+  ) {
+    super(parentListener ?? createParentListener);
+  }
+
+  markAsClean(): void {}
+
+  setValue(v: ValueTypeForControl<FIELD> | undefined, initial?: boolean) {
+    setArrayValueInternal(
+      this,
+      v ? [v] : [],
+      this.getChildControls(),
+      () => this.controlFromDef(this.childDefinition),
+      () => this.control,
+      (changed) => {
+        this.control = changed.length ? (changed[0] as FIELD) : undefined;
+        if (initial) this.initiallyUndefined = !changed.length;
+      },
+      Boolean(initial)
+    );
+    return this;
+  }
+
+  toValue(): ControlValueTypeOut<FIELD> | undefined {
+    return this.control?.toValue();
+  }
+
+  getChildControls(): BaseControl[] {
+    return this.control ? [this.control] : [];
+  }
+
+  isAnyChildDirty(): boolean {
+    return (
+      this.initiallyUndefined !== Boolean(this.control) ||
+      super.isAnyChildDirty()
+    );
+  }
+}
+
 export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
   ControlValueTypeOut<FIELD>[]
 > {
@@ -477,33 +553,19 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
    */
   setValue(value: ValueTypeForControl<FIELD>[], initial?: boolean): this {
     value = value ?? [];
-    return this.groupedChanges(() => {
-      let flags: ControlChange =
-        value.length !== this.elems.length ? ControlChange.Value : 0;
-      const childElems = value.map((v, i) => {
-        const existing = this.findExisting(this.elems, i, v, Boolean(initial));
-        if (!existing) {
-          flags |= ControlChange.Value;
-          const newControl = this.controlFromDef(this.childDefinition);
-          setValueUnsafe(newControl, v, true);
-          return newControl;
-        } else {
-          if (i >= this.elems.length || this.elems[i] !== existing) {
-            flags |= ControlChange.Value;
-          }
-          setValueUnsafe(existing, v, initial);
-          return existing;
-        }
-      });
-      this.elems = childElems;
-      if (initial) {
-        this.initialFields = childElems;
-        flags |= this.updateDirty(false);
-      } else {
-        flags |= this.updateDirty(this.isAnyChildDirty());
-      }
-      this.runChange(flags);
-    });
+    setArrayValueInternal(
+      this,
+      value,
+      this.elems,
+      () => this.controlFromDef(this.childDefinition),
+      this.findExisting,
+      (updated) => {
+        this.elems = updated;
+        if (initial) this.initialFields = updated;
+      },
+      Boolean(initial)
+    );
+    return this;
   }
 
   markAsClean() {
@@ -525,23 +587,6 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
 
   toValue() {
     return this.toArray();
-  }
-
-  visitChildren(
-    visit: (c: BaseControl) => boolean,
-    doSelf?: boolean,
-    recurse?: boolean
-  ): boolean {
-    if (doSelf && !visit(this)) {
-      return false;
-    }
-    if (!this.elems.every(visit)) {
-      return false;
-    }
-    if (recurse) {
-      return this.elems.every((c) => c.visitChildren(visit, false, true));
-    }
-    return true;
   }
 
   /**
@@ -610,6 +655,10 @@ export class ArrayControl<FIELD extends BaseControl> extends ParentControl<
       this.updateDirty(this.isAnyChildDirty()) |
       this.updateValid(this.visitChildren((c) => c.valid))
     );
+  }
+
+  getChildControls(): BaseControl[] {
+    return this.elems;
   }
 }
 
@@ -726,15 +775,8 @@ export class ArraySelectionControl<
     return this.toArray();
   }
 
-  visitChildren(
-    visit: (c: BaseControl) => boolean,
-    doSelf?: boolean,
-    recurse?: boolean
-  ): boolean {
-    if (doSelf && !visit(this)) {
-      return false;
-    }
-    return this.underlying.visitChildren(visit, doSelf, recurse);
+  getChildControls(): BaseControl[] {
+    return this.underlying.elems;
   }
 }
 
@@ -783,26 +825,6 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
     return subGroup;
   }
 
-  visitChildren(
-    visit: (c: BaseControl) => boolean,
-    doSelf?: boolean,
-    recurse?: boolean
-  ): boolean {
-    if (doSelf && !visit(this)) {
-      return false;
-    }
-    const fields = this.fields;
-    for (const k in fields) {
-      if (!visit(fields[k])) {
-        return false;
-      }
-      if (recurse && !fields[k].visitChildren(visit, false, true)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   /**
    * Set the value of all child controls.
    * If the child type contains `undefined` the fields is optional.
@@ -840,6 +862,10 @@ export class GroupControl<FIELDS extends GroupFields> extends ParentControl<{
 
   toValue() {
     return this.toObject();
+  }
+
+  getChildControls(): BaseControl[] {
+    return Object.values(this.fields);
   }
 }
 
@@ -993,4 +1019,43 @@ function selectionGroupParentListener<FIELD extends BaseControl>(
       parent.runChange(flags);
     },
   ];
+}
+
+function setArrayValueInternal<FIELD extends BaseControl, V>(
+  control: ParentControl<V>,
+  value: ValueTypeForControl<FIELD>[],
+  elems: FIELD[],
+  makeControl: () => FIELD,
+  findExisting: (
+    elems: FIELD[],
+    i: number,
+    v: ValueTypeForControl<FIELD>,
+    initial: boolean
+  ) => FIELD | undefined,
+  update: (changed: FIELD[]) => void,
+  initial: boolean
+): void {
+  control.groupedChanges(() => {
+    let flags: ControlChange =
+      value.length !== elems.length ? ControlChange.Value : 0;
+    const childElems = value.map((v, i) => {
+      const existing = findExisting(elems, i, v, initial);
+      if (!existing) {
+        flags |= ControlChange.Value;
+        const newControl = makeControl();
+        setValueUnsafe(newControl, v, true);
+        return newControl;
+      } else {
+        if (i >= elems.length || elems[i] !== existing) {
+          flags |= ControlChange.Value;
+        }
+        setValueUnsafe(existing, v, initial);
+        return existing;
+      }
+    });
+    update(childElems);
+    control.runChange(
+      flags | control.updateDirty(!initial && control.isAnyChildDirty())
+    );
+  });
 }
