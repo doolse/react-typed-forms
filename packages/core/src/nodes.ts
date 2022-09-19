@@ -104,15 +104,23 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     protected meta: M,
     protected flags: ControlFlags,
     protected listeners: ChangeListener<V, M>[],
-    private _fields?: { [k: string | symbol]: FormControl<any, M> },
-    private _childListener?: ChangeListener<any, M>
+    private _children?:
+      | { [k: string | symbol]: FormControl<any, M> }
+      | FormControl<any, M>[],
+    private _childListener?: ChangeListener<any, M>,
+    private _makeChild?: (
+      key: string | symbol | undefined,
+      value: any
+    ) => FormControl<any, M>
   ) {
     this.initialValue = _value;
-    if (_fields) {
-      Object.values(_fields).forEach((fc) => {
-        const cl = this.childListener;
-        fc.addChangeListener(cl[1], cl[0]);
-      });
+    if (_children) {
+      (Array.isArray(_children) ? _children : Object.values(_children)).forEach(
+        (fc) => {
+          const cl = this.childListener;
+          fc.addChangeListener(cl[1], cl[0]);
+        }
+      );
     }
   }
 
@@ -282,11 +290,11 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     ? { [K in keyof V]-?: FormControl<V[K]> }
     : never {
     if (!this._fieldsProxy) {
-      if (!this._fields) {
-        this._fields = {};
+      if (!this._children) {
+        this._children = {};
       }
       const t = this;
-      const p = new Proxy(this._fields!, {
+      const p = new Proxy(this._children!, {
         get(
           target: { [p: string | symbol]: FormControl<any, M> },
           p: string | symbol,
@@ -321,8 +329,8 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     if (this.valueSynced) return this._value;
 
     const newValue = { ...this._value };
-    if (this._fields) {
-      Object.entries(this._fields).forEach(([p, c]) => {
+    if (this._children) {
+      Object.entries(this._children).forEach(([p, c]) => {
         (newValue as any)[p] = c.value;
       });
     }
@@ -337,7 +345,10 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
   get elems(): undefined extends V
     ? FormControlElems<V, M> | undefined
     : FormControlElems<V, M> {
-    return undefined as any;
+    if (!this._children) {
+      this._children = [];
+    }
+    return this._children as any;
   }
 
   get element(): M extends BaseControlMetadata ? M["element"] : never {
@@ -348,26 +359,34 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     (this.meta as any)["element"] = e;
   }
 
-  add(child: V extends Array<infer A> ? A : never, index?: number): void {}
+  add(child: V extends Array<infer A> ? A : never, index?: number): void {
+    const e = this.elems!;
+    this._children = [...e, this._makeChild!(undefined, child)];
+  }
 
   remove(
     child: V extends Array<infer A> ? number | FormControl<A, M> : never
   ): void {}
 
   setValue(v: V, initial?: boolean): FormControl<V, M> {
-    if (this._fields) {
+    if (this._children) {
       this.groupedChanges(() => {
-        Object.entries(this._fields!).forEach(([p, fc]) => {
-          fc.setValue((v as any)[p], initial);
-        });
+        if (Array.isArray(this._children)) {
+        } else {
+          Object.entries(this._children!).forEach(([p, fc]) => {
+            fc.setValue((v as any)[p], initial);
+          });
+        }
         // TODO what about when fields dont have form controls yet?
       });
-    }
-    if (this._value === v) {
       return this;
+    } else {
+      if (this._value === v) {
+        return this;
+      }
+      this._value = v;
+      return this.runChange(ControlChange.Value);
     }
-    this._value = v;
-    return this.runChange(ControlChange.Value);
   }
 
   toObject(): V {
@@ -414,8 +433,8 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   protected getChildControls(): ControlImpl<any, M>[] {
-    if (this._fields) {
-      return Object.values(this._fields) as ControlImpl<any, M>[];
+    if (this._children) {
+      return Object.values(this._children) as ControlImpl<any, M>[];
     }
     return [];
   }
@@ -497,7 +516,25 @@ export function control<V>(
 export function arrayControl<CHILD>(
   child: CHILD
 ): () => FormControl<ControlDefType<CHILD>[]> {
-  throw "Not yet arrayControl";
+  return () => {
+    return new ControlImpl<ControlDefType<CHILD>[], BaseControlMetadata>(
+      [],
+      undefined,
+      { element: null },
+      ControlFlags.Valid,
+      [],
+      undefined,
+      undefined,
+      (key, value) =>
+        new ControlImpl<any, BaseControlMetadata>(
+          value,
+          undefined,
+          { element: null },
+          ControlFlags.Valid,
+          []
+        )
+    );
+  };
 }
 
 export function arraySelectionControl<V>(
