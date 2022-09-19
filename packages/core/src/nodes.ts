@@ -104,24 +104,17 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     protected meta: M,
     protected flags: ControlFlags,
     protected listeners: ChangeListener<V, M>[],
+    private _makeChild?: (
+      value: any,
+      listeners: ChangeListener<any, M>[],
+      key?: string | symbol
+    ) => FormControl<any, M>,
     private _children?:
       | { [k: string | symbol]: FormControl<any, M> }
       | FormControl<any, M>[],
-    private _childListener?: ChangeListener<any, M>,
-    private _makeChild?: (
-      key: string | symbol | undefined,
-      value: any
-    ) => FormControl<any, M>
+    private _childListener?: ChangeListener<any, M>
   ) {
     this.initialValue = _value;
-    if (_children) {
-      (Array.isArray(_children) ? _children : Object.values(_children)).forEach(
-        (fc) => {
-          const cl = this.childListener;
-          fc.addChangeListener(cl[1], cl[0]);
-        }
-      );
-    }
   }
 
   stateVersion: number = 0;
@@ -346,7 +339,10 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
     ? FormControlElems<V, M> | undefined
     : FormControlElems<V, M> {
     if (!this._children) {
-      this._children = [];
+      const childValues = this.value as any[];
+      this._children = childValues.map((x) =>
+        this._makeChild!(x, [this.childListener])
+      );
     }
     return this._children as any;
   }
@@ -361,7 +357,8 @@ export class ControlImpl<V, M> implements FormControl<V, M> {
 
   add(child: V extends Array<infer A> ? A : never, index?: number): void {
     const e = this.elems!;
-    this._children = [...e, this._makeChild!(undefined, child)];
+    const newChild = this._makeChild!(child, [this.childListener]);
+    this._children = [...e, newChild];
   }
 
   remove(
@@ -523,15 +520,13 @@ export function arrayControl<CHILD>(
       { element: null },
       ControlFlags.Valid,
       [],
-      undefined,
-      undefined,
-      (key, value) =>
+      (value, listeners) =>
         new ControlImpl<any, BaseControlMetadata>(
           value,
           undefined,
           { element: null },
           ControlFlags.Valid,
-          []
+          listeners
         )
     );
   };
@@ -578,6 +573,7 @@ export function groupControl<DEF extends { [t: string]: any }>(
       {},
       allValid ? ControlFlags.Valid : 0,
       [],
+      (v, key) => control(v)(),
       Object.fromEntries(initialFields)
     ) as any;
   };
@@ -627,18 +623,24 @@ function makeChildListener<V, M>(
   ];
 }
 
-export function groupFromControls<
-  M,
-  C extends { [k: string]: FormControl<any> }
->(fields: C): FormControl<{ [K in keyof C]: ControlValueTypeOut<C[K]> }> {
-  const c = new ControlImpl<{ [K in keyof C]: ControlValueTypeOut<C[K]> }, M>(
+export function groupFromControls<C extends { [k: string]: FormControl<any> }>(
+  fields: C
+): FormControl<{ [K in keyof C]: ControlValueTypeOut<C[K]> }> {
+  const c = new ControlImpl<
+    { [K in keyof C]: ControlValueTypeOut<C[K]> },
+    BaseControlMetadata
+  >(
     {} as any,
     undefined,
-    {} as any,
+    { element: null },
     ControlFlags.Valid,
     [],
+    undefined,
     fields
   );
   c.valueSynced = false;
+  Object.values(fields).forEach((x) =>
+    x.addChangeListener(c.childListener[1], c.childListener[0])
+  );
   return c;
 }
