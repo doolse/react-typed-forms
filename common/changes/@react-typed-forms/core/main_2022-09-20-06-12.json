@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@react-typed-forms/core",
+      "comment": "Consolidate everything in FormControl",
+      "type": "none"
+    }
+  ],
+  "packageName": "@react-typed-forms/core"
+}
