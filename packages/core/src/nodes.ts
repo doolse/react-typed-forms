@@ -35,19 +35,6 @@ type FormControlElems<V, M> = V extends Array<infer E>
   ? FormControl<E, M>[]
   : never;
 
-export type ControlValueTypeOut<C> = C extends FormControl<infer V> ? V : never;
-export type ValueTypeForControl<C> = C extends FormControl<infer V> ? V : never;
-export type GroupControl<C> = FormControl<{
-  [K in keyof C]: ControlValueTypeOut<C[K]>;
-}>;
-
-export type ArrayControl<C> = FormControl<ControlValueTypeOut<C>>;
-
-export type Control<V> = FormControl<V>;
-
-export type AnyControl = FormControl<any>;
-export type BaseControl = FormControl<any>;
-
 export interface FormControl<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
   readonly stateVersion: number;
@@ -73,18 +60,31 @@ export interface FormControl<V, M = BaseControlMetadata> {
   element: M extends BaseControlMetadata ? M["element"] : never;
   setError(error?: string | null): FormControl<V, M>;
   validate(): FormControl<V, M>;
-  readonly fields: undefined extends V
-    ? FormControlFields<V, M> | undefined
-    : FormControlFields<V, M>;
   toObject(): V;
   setDisabled(disabled: boolean): FormControl<V, M>;
   readonly initialValue: V;
+  clearErrors(): void;
+  lookupControl(path: (string | number)[]): FormControl<any, M> | undefined;
+
+  // fields
+  readonly fields: undefined extends V
+    ? FormControlFields<V, M> | undefined
+    : FormControlFields<V, M>;
+  addFields<OTHER extends { [k: string]: any }>(
+    v: V extends object
+      ? { [K in keyof OTHER]-?: FormControl<OTHER[K], M> }
+      : never
+  ): FormControl<V extends object ? V & OTHER : never>;
+  subGroup<OUT>(
+    select: (fields: FormControlFields<V, M>) => OUT
+  ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }>;
 
   // array
   readonly elems: undefined extends V
     ? FormControlElems<V, M> | undefined
     : FormControlElems<V, M>;
   update(f: (orig: FormControlElems<V, M>) => FormControlElems<V, M>): void;
+
   remove(
     child: V extends Array<infer A> ? number | FormControl<A, M> : never
   ): void;
@@ -146,6 +146,14 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       return ControlChange.Error | this.updateValid(!Boolean(error));
     }
     return this.updateValid(!Boolean(error));
+  }
+
+  clearErrors() {
+    throw "not yet clearErrors";
+  }
+
+  lookupControl(path: (string | number)[]): FormControl<any, M> {
+    throw "not yet lookupControl";
   }
 
   get valid() {
@@ -290,7 +298,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   private makeChild(v: any, iv: any, p?: string | symbol) {
-    return (this._makeChild ?? createControl)(
+    return (this._makeChild ?? createChild)(
       v,
       iv,
       {} as any,
@@ -636,6 +644,20 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     this.updateAll((c) => c.updateTouched(touched));
     return this;
   }
+
+  addFields<OTHER extends { [p: string]: any }>(
+    v: V extends object
+      ? { [K in keyof OTHER]-?: FormControl<OTHER[K], M> }
+      : never
+  ): FormControl<V extends object ? V & OTHER : never> {
+    throw "not yet";
+  }
+
+  subGroup<OUT>(
+    select: (fields: FormControlFields<V, M>) => OUT
+  ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }> {
+    throw "not yet";
+  }
 }
 
 export type ControlCreator<V> = () => FormControl<V>;
@@ -711,11 +733,11 @@ function builderFormControl(
   return control(child)();
 }
 
-function initChild(
-  c: FormControl<any>,
-  v: any,
-  iv: any,
-  listeners: ChangeListener<any, BaseControlMetadata>[]
+function initChild<V, M>(
+  c: FormControl<V, M>,
+  v: V,
+  iv: V,
+  listeners: ChangeListener<V, M>[]
 ) {
   c.setValue(iv, true);
   c.setValue(v);
@@ -724,9 +746,9 @@ function initChild(
 
 export function arrayControl<CHILD>(
   child: CHILD
-): () => FormControl<ControlDefType<CHILD>[]> {
+): () => FormControl<(CHILD extends () => FormControl<infer V> ? V : CHILD)[]> {
   return () => {
-    return new ControlImpl<ControlDefType<CHILD>[], BaseControlMetadata>(
+    return new ControlImpl(
       [],
       [],
       undefined,
@@ -792,7 +814,7 @@ export function groupControl<DEF extends { [t: string]: any }>(
           initChild(fc, v, iv, listeners);
           return fc;
         }
-        return createControl(v, iv, meta, flags, listeners);
+        return createChild(v, iv, meta, flags, listeners);
       }
     ) as any;
   };
@@ -842,21 +864,16 @@ function makeChildListener<V, M>(
   ];
 }
 
-export function groupFromControls<C extends { [k: string]: FormControl<any> }>(
+export function groupFromControls<
+  C extends { [k: string]: FormControl<any> },
+  M
+>(
   fields: C
-): FormControl<{ [K in keyof C]: ControlValueTypeOut<C[K]> }> {
+): FormControl<{ [K in keyof C]: ValueTypeForControl<C[K]> }, Partial<M>> {
   const c = new ControlImpl<
-    { [K in keyof C]: ControlValueTypeOut<C[K]> },
-    BaseControlMetadata
-  >(
-    {} as any,
-    {} as any,
-    undefined,
-    { element: null },
-    ControlFlags.Valid,
-    [],
-    undefined
-  );
+    { [K in keyof C]: ValueTypeForControl<C[K]> },
+    Partial<M>
+  >({} as any, {} as any, undefined, {}, ControlFlags.Valid, [], undefined);
   c._children = fields;
   Object.values(fields).forEach((x) =>
     x.addChangeListener(c.childListener[1], c.childListener[0])
@@ -866,6 +883,30 @@ export function groupFromControls<C extends { [k: string]: FormControl<any> }>(
 }
 
 export function createControl<V, M>(
+  initial: V,
+  flags: ControlFlags = ControlFlags.Valid,
+  meta?: M,
+  error?: string,
+  dontClearError?: boolean
+): FormControl<V, Partial<M>> {
+  return new ControlImpl<V, Partial<M>>(
+    initial,
+    initial,
+    error,
+    meta ?? {},
+    flags,
+    dontClearError
+      ? []
+      : [
+          [
+            ControlChange.Value | ControlChange.Validate,
+            (c) => c.setError(undefined),
+          ],
+        ]
+  );
+}
+
+function createChild<V, M>(
   value: V,
   initialValue: V,
   meta: M,
@@ -967,9 +1008,59 @@ export function defineControl<
             initChild(exField, v, iv, listeners);
             return exField;
           }
-          return createControl(v, iv, {}, flags, listeners);
+          return createChild(v, iv, {}, flags, listeners);
         }
       );
     },
   };
 }
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type ControlValueTypeOut<C> = C extends FormControl<infer V> ? V : never;
+
+export type ValueTypeForControl<C> = C extends FormControl<infer V> ? V : never;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type GroupControl<C> = FormControl<{
+  [K in keyof C]: ControlValueTypeOut<C[K]>;
+}>;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type GroupControlFields<C> = C extends FormControl<infer V>
+  ? { [K in keyof V]: FormControl<V[K]> }
+  : never;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type Control<V> = FormControl<V>;
+
+export type AnyControl =
+  | FormControl<any>
+  | FormControl<any[]>
+  | FormControl<{ [k: string]: any }>;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type BaseControl = FormControl<any>;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type ControlType<T> = T extends () => FormControl<infer V>
+  ? FormControl<V>
+  : never;
+
+/**
+ * @deprecated Use FormControl instead
+ */
+export type ArrayControl<C> = FormControl<ValueTypeForControl<C>[]>;
+
+export type ParentControl<V> = FormControl<V[] | { [k: string]: V }>;

@@ -12,7 +12,6 @@ import React, {
 import {
   BaseControlMetadata,
   ControlChange,
-  ControlFlags,
   createControl,
   FormControl,
   FormControlBuilder,
@@ -90,11 +89,15 @@ export function useControlValue<A>(control: FormControl<A>) {
   return useControlState(control, (n) => n.value, ControlChange.Value);
 }
 
-export function useControlStateVersion(
-  control: FormControl<any>,
+export function useControlStateVersion<V>(
+  control: FormControl<V>,
   mask?: ControlChange
 ) {
-  return useControlState(control, (c) => c.stateVersion, mask);
+  return useControlState(
+    control as FormControl<any>,
+    (c) => c.stateVersion,
+    mask
+  );
 }
 
 export function useControlStateComponent<V, M, S>(
@@ -232,9 +235,7 @@ export function useControl<V, M = BaseControlMetadata>(
   builder?: FormControlBuilder<V, Partial<M>>
 ): FormControl<V, Partial<M>> {
   return useState(() =>
-    builder
-      ? builder.build(v)
-      : createControl<V, Partial<M>>(v, v, {}, ControlFlags.Valid, [])
+    builder ? builder.build(v) : createControl<V, Partial<M>>(v, undefined)
   )[0];
 }
 
