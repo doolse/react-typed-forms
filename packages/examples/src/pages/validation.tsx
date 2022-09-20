@@ -93,7 +93,7 @@ export default function ValidationExample() {
           id="add"
           className="btn btn-secndary"
           onClick={() => {
-            fields.array.add();
+            fields.array.add({ notBlank: "" });
             formState.setTouched(true);
           }}
         >

@@ -2,11 +2,15 @@ import {
   arrayControl,
   buildGroup,
   control,
+  defineControl,
+  elementsWith,
   Finput,
   FormArray,
   FormControl,
   groupControl,
+  useControl,
   useControlStateComponent,
+  validateWith,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
@@ -22,12 +26,10 @@ type MainForm = {
 
 const defaultRow: RowForm = { id: "", name: "" };
 
-const FormDef = buildGroup<MainForm>()({
-  strings: arrayControl(""),
-  structured: arrayControl(
-    groupControl({
-      id: control("", (v) => (!v ? "Not blank" : undefined)),
-      name: "",
+const FormDef = defineControl<MainForm>({
+  structured: elementsWith(
+    defineControl<RowForm>({
+      id: validateWith((v) => (!v ? "Not blank" : undefined)),
     })
   ),
 });
@@ -36,11 +38,12 @@ let renders = 0;
 
 export default function ArraysExample() {
   renders++;
-  const [formState] = useState(() =>
-    FormDef().setValue({
+  const formState = useControl(
+    {
       strings: [""],
       structured: [{ id: "", name: "" }],
-    })
+    },
+    FormDef
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();

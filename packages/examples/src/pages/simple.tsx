@@ -1,4 +1,11 @@
-import { Finput, buildGroup, control } from "@react-typed-forms/core";
+import {
+  Finput,
+  buildGroup,
+  control,
+  defineControl,
+  validateWith,
+  useControl,
+} from "@react-typed-forms/core";
 import { useState } from "react";
 import React from "react";
 
@@ -7,13 +14,12 @@ interface SimpleForm {
   lastName: string;
 }
 
-const FormDef = buildGroup<SimpleForm>()({
-  firstName: "",
-  lastName: control("", (v) => (!v ? "Required field" : undefined)),
+const FormDef = defineControl<SimpleForm>({
+  lastName: validateWith((v) => (!v ? "Required field" : undefined)),
 });
 
 export default function SimpleExample() {
-  const [formState] = useState(FormDef);
+  const formState = useControl(FormDef, { firstName: "", lastName: "" });
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (

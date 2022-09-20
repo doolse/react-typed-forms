@@ -36,5 +36,20 @@ describe("Optional data", () => {
         nested: {},
       })
     );
+    cy.get("#clearNested").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
+      })
+    );
+    cy.get("#unClearNested").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
+        nested: { optional: "optional" },
+      })
+    );
   });
 });

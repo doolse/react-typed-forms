@@ -4,9 +4,6 @@ import {
   Fselect,
   Finput,
   defineControl,
-  validateWith,
-  useControlState,
-  useControl,
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 
@@ -16,25 +13,19 @@ type SimpleForm = {
   number: string;
 };
 
-const FormDef = defineControl<SimpleForm>({
-  password: validateWith((v) =>
+const FormDef = buildGroup<SimpleForm>()({
+  password: control("", (v) =>
     v.length < 6 ? "Password must be 6 characters" : undefined
   ),
-  username: validateWith((v) => (!v ? "Required field" : undefined)),
+  username: control("", (v) => (!v ? "Required field" : undefined)),
+  number: "",
 });
 
 let renders = 0;
 
 export default function BasicFormExample() {
   renders++;
-  const formState = useControl(
-    {
-      username: "",
-      number: "",
-      password: "",
-    },
-    FormDef
-  );
+  const [formState] = useState(FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);

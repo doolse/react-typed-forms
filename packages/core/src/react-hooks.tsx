@@ -10,10 +10,13 @@ import React, {
   useState,
 } from "react";
 import {
+  BaseControlMetadata,
   ControlChange,
-  ControlValueTypeOut,
+  ControlFlags,
+  createControl,
   FormControl,
   FormControlBuilder,
+  FormControlFields,
 } from "./nodes";
 
 export function useControlChangeEffect<V, M>(
@@ -124,13 +127,13 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
 }
 
 export interface FormArrayProps<V, M> {
-  state: FormControl<V[], M>;
+  state: FormControl<V[] | undefined, M>;
   children: (elems: FormControl<V, M>[]) => ReactNode;
 }
 
 export function FormArray<V, M>({ state, children }: FormArrayProps<V, M>) {
-  useControlState(state, (c) => c.elems, ControlChange.Value);
-  return <>{children(state.elems)}</>;
+  const elems = useControlState(state, (c) => c.elems, ControlChange.Value);
+  return <>{elems ? children(elems) : undefined}</>;
 }
 
 export function FormSelectionArray<V, M>({
@@ -224,10 +227,15 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   };
 }
 
-export function useFormState<V, M>(
-  builder: FormControlBuilder<V, M>
-): FormControl<V, M> {
-  return useState(() => builder.build())[0];
+export function useControl<V, M = BaseControlMetadata>(
+  v: V,
+  builder?: FormControlBuilder<V, Partial<M>>
+): FormControl<V, Partial<M>> {
+  return useState(() =>
+    builder
+      ? builder.build(v)
+      : createControl<V, Partial<M>>(v, v, {}, ControlFlags.Valid, [])
+  )[0];
 }
 
 export function useEntryControls<A extends string | number>(
@@ -235,4 +243,10 @@ export function useEntryControls<A extends string | number>(
   single?: boolean
 ): (entry: A) => FormControl<boolean> {
   throw "Not yet";
+}
+
+export function useOptionalFields<V, M>(
+  c: FormControl<V | undefined, M>
+): FormControlFields<V, M> | undefined {
+  return useControlState(c, (c) => c.fields, ControlChange.Value);
 }
