@@ -45,6 +45,9 @@ export type ArrayControl<C> = FormControl<ControlValueTypeOut<C>>;
 
 export type Control<V> = FormControl<V>;
 
+export type AnyControl = FormControl<any>;
+export type BaseControl = FormControl<any>;
+
 export interface FormControl<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
   readonly stateVersion: number;
