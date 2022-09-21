@@ -7,11 +7,15 @@ import {
 } from "../react-hooks";
 
 // Only allow strings and numbers
-export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
-};
+export type FinputProps<V extends string | number> =
+  React.InputHTMLAttributes<HTMLInputElement> & {
+    state: FormControl<V>;
+  };
 
-export function Finput({ state, ...others }: FinputProps) {
+export function Finput<V extends string | number>({
+  state,
+  ...others
+}: FinputProps<V>) {
   // Re-render on value or disabled state change
   useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
 

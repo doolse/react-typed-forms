@@ -27,15 +27,11 @@ export interface BaseControlMetadata {
   element?: HTMLElement | null;
 }
 
-export type FormControlFields<V, M> = V extends Array<any>
-  ? never
-  : V extends Record<string, any>
+export type FormControlFields<V, M> = NonNullable<V> extends object
   ? { [K in keyof V]-?: FormControl<V[K], M> }
   : never;
 
-type ElemType<V> = 0 extends 1 & V ? any : V extends (infer E)[] ? E : never;
-
-type FormControlElems<V, M> = FormControl<ElemType<V>, M>[];
+type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : unknown;
 
 export interface FormControl<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
@@ -67,60 +63,67 @@ export interface FormControl<V, M = BaseControlMetadata> {
   clearErrors(): void;
   lookupControl(path: (string | number)[]): FormControl<any, M> | undefined;
 
-  element: M extends BaseControlMetadata ? M["element"] : never;
+  element: HTMLElement | null;
 
-  /**
-   * @deprecated Use .value
-   */
-  toArray(): V;
-
-  /**
-   * @deprecated Use .value
-   */
-  toObject(): V;
+  as<NV extends V>(): FormControl<NV, M>;
 
   /**
    * @deprecated Use .value
    */
   toValue(): V;
 
-  // fields
-  readonly fields: undefined extends V
-    ? FormControlFields<V, M> | undefined
-    : FormControlFields<V, M>;
+  // as<NV>(): NV extends V ? FormControl<NV, M> : never;
 
-  addFields<OTHER extends { [k: string]: any }>(
-    v: V extends Record<string, any>
-      ? { [K in keyof OTHER]-?: FormControl<OTHER[K], M> }
-      : never
-  ): FormControl<V extends Record<string, any> ? V & OTHER : never>;
-  subGroup<OUT>(
+  /**
+   * @deprecated Use .value
+   */
+  toObject(): V;
+
+  // fields
+  readonly fields:
+    | FormControlFields<V, M>
+    | (undefined extends V ? undefined : never);
+
+  addFields<OTHER extends { [k: string]: any }>(v: {
+    [K in keyof OTHER]-?: FormControl<OTHER[K], M>;
+  }): FormControl<V & OTHER>;
+
+  subGroup<OUT extends { [k: string]: FormControl<any> }>(
     select: (fields: FormControlFields<V, M>) => OUT
   ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }>;
 
-  // array
-  readonly elems: undefined extends V
-    ? FormControlElems<V, M> | undefined
-    : FormControlElems<V, M>;
-  update(f: (orig: FormControlElems<V, M>) => FormControlElems<V, M>): void;
+  readonly elems:
+    | FormControl<ElemType<V>, M>[]
+    | (undefined extends V ? undefined : never);
+
+  update(
+    cb: (
+      elems: FormControl<ElemType<V>, M>[],
+      makeChild: (e: ElemType<V>) => FormControl<ElemType<V>, Partial<M>>
+    ) => FormControl<ElemType<V>, M>[]
+  ): void;
 
   remove(child: number | FormControl<ElemType<V>, M>): void;
   add(
     child: ElemType<V>,
     index?: number | FormControl<ElemType<V>, M>
   ): FormControl<ElemType<V>, M>;
-  add(): FormControl<ElemType<V>, M>;
+  markArrayClean(): void;
+  /**
+   * @deprecated Use .value
+   */
+  toArray(): V;
 }
 
 class ControlImpl<V, M> implements FormControl<V, M> {
   uniqueId = ++controlCount;
   _outOfSync: ControlChange = 0;
 
-  private _fieldsProxy?: this["fields"];
+  private _fieldsProxy?: { [K in keyof V]-?: FormControl<V[K], M> };
 
   _children?:
     | { [k: string | symbol]: FormControl<any, M> }
-    | [FormControl<any, M>[], FormControl<any, M>[]];
+    | [FormControl<ElemType<V>, M>[], FormControl<ElemType<V>, M>[]];
 
   constructor(
     private _value: V,
@@ -140,6 +143,56 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     private equals?: (a: V, b: V) => boolean,
     private _childListener?: ChangeListener<any, M>
   ) {}
+
+  update(
+    cb: (
+      elems: FormControl<ElemType<V>, M>[],
+      makeChild: (e: ElemType<V>) => FormControl<ElemType<V>, Partial<M>>
+    ) => FormControl<ElemType<V>, M>[]
+  ): void {
+    const [e, initial] = this.ensureArray();
+    const newElems = cb(e, (v) => this.makeChild(v, v).as());
+    if (e !== newElems) {
+      this._children = [newElems, initial];
+      this._outOfSync |= ControlChange.Value;
+      this.runChange(ControlChange.Value | this.updateArrayFlags());
+    }
+  }
+
+  remove(child: number | FormControl<ElemType<V>, M>): void {
+    const [elems, initialElems] = this.ensureArray();
+    this._children = [
+      elems.filter((e, i) => i !== child && e !== child),
+      initialElems,
+    ];
+    this.runChange(ControlChange.Value | this.updateArrayFlags());
+  }
+
+  add(
+    child: ElemType<V>,
+    index?: number | FormControl<ElemType<V>, M>
+  ): FormControl<ElemType<V>, M> {
+    if (this._value === undefined) {
+      this.setValue([child] as any);
+      return this.elems![0] as FormControl<ElemType<V>, M>;
+    }
+    const [elems, initialElems] = this.ensureArray();
+    const newElems = [...elems];
+    const newChild = this.makeChild(child, child).as<ElemType<V>>();
+    if (typeof index === "object") {
+      index = newElems.indexOf(index as any);
+    }
+    if (index !== undefined) {
+      newElems.splice(index as number, 0, newChild);
+    } else {
+      newElems.push(newChild);
+    }
+    this._children = [newElems, initialElems];
+    this._value = [] as any;
+    this._outOfSync |= ControlChange.Value;
+    this.runChange(ControlChange.Value | this.updateArrayFlags());
+    return newChild as any;
+  }
 
   isEqual(a: V, b: V): boolean {
     if (this.equals) return this.equals(a, b);
@@ -328,14 +381,17 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     );
   }
 
-  ensureArray(): [FormControl<any, M>[], FormControl<any, M>[]] {
+  ensureArray(): [
+    FormControl<ElemType<V>, M>[],
+    FormControl<ElemType<V>, M>[]
+  ] {
     const fc = this as unknown as ControlImpl<any[], M>;
     if (!this._children) {
       const valArr = fc._value ?? [];
       const iArr = fc._initialValue ?? [];
       const mostElems = Math.max(valArr.length, iArr.length);
-      const iArrElem: FormControl<any, M>[] = [];
-      const ivArrElem: FormControl<any, M>[] = [];
+      const iArrElem: FormControl<ElemType<V>, M>[] = [];
+      const ivArrElem: FormControl<ElemType<V>, M>[] = [];
       for (let i = 0; i < mostElems; i++) {
         const haveValue = i < valArr.length;
         const haveInitial = i < iArr.length;
@@ -344,8 +400,8 @@ class ControlImpl<V, M> implements FormControl<V, M> {
           firstValue,
           haveInitial ? iArr[i] : firstValue
         );
-        if (haveValue) iArrElem.push(c);
-        if (haveInitial) ivArrElem.push(c);
+        if (haveValue) iArrElem.push(c.as());
+        if (haveInitial) ivArrElem.push(c.as());
       }
       this._children = [iArrElem, ivArrElem];
       return this._children;
@@ -354,9 +410,9 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     throw "Not an array";
   }
 
-  get fields(): undefined extends V
-    ? FormControlFields<V, M> | undefined
-    : FormControlFields<V, M> {
+  get fields():
+    | FormControlFields<V, M>
+    | (undefined extends V ? undefined : never) {
     if (this._value === undefined) {
       return undefined as any;
     }
@@ -447,40 +503,19 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     }
   }
 
-  get elems(): undefined extends V
-    ? FormControlElems<V, M> | undefined
-    : FormControlElems<V, M> {
+  get elems():
+    | FormControl<ElemType<V>, M>[]
+    | (undefined extends V ? undefined : never) {
     if (this._value === undefined) return undefined as any;
-    return this.ensureArray()[0] as FormControlElems<V, M>;
+    return this.ensureArray()[0] as FormControl<ElemType<V>, M>[];
   }
 
-  get element(): M extends BaseControlMetadata ? M["element"] : never {
+  get element(): HTMLElement | null {
     return (this.meta as any)["element"];
   }
 
-  set element(e: M extends BaseControlMetadata ? M["element"] : never) {
+  set element(e: HTMLElement | null) {
     (this.meta as any)["element"] = e;
-  }
-
-  add(child?: ElemType<V>, index?: number): FormControl<ElemType<V>, M> {
-    if (this._value === undefined) {
-      this.setValue([child] as any);
-      return this.elems![0];
-    }
-    const [elems, initialElems] = this.ensureArray();
-    const newElems = [...elems];
-    const newChild = this.makeChild(child, child);
-
-    if (index !== undefined) {
-      newElems.splice(index, 0, newChild);
-    } else {
-      newElems.push(newChild);
-    }
-    this._children = [newElems, initialElems];
-    this._value = [] as any;
-    this._outOfSync |= ControlChange.Value;
-    this.runChange(ControlChange.Value | this.updateArrayFlags());
-    return newChild as any;
   }
 
   isAnyChildDirty(): boolean {
@@ -506,15 +541,6 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       this.updateDirty(this.isAnyChildDirty()) |
       this.updateValid(this.visitChildren((c) => c.valid))
     );
-  }
-
-  remove(child: number | FormControl<ElemType<V>, M>): void {
-    const [elems, initialElems] = this.ensureArray();
-    this._children = [
-      elems.filter((e, i) => i !== child && e !== child),
-      initialElems,
-    ];
-    this.runChange(ControlChange.Value | this.updateArrayFlags());
   }
 
   setValue(v: V, initial?: boolean): FormControl<V, M> {
@@ -543,7 +569,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
               ? elems[i].setValue(x, initial)
               : i < initialElems.length
               ? initialElems[i].setValue(x, initial)
-              : this.makeChild(x, x)
+              : this.makeChild(x, x).as<ElemType<V>>()
           );
           this._children = [e, initial ? e : initialElems];
           return this.runChange(
@@ -589,26 +615,12 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     }
   }
 
-  toObject(): V {
-    return this.value;
-  }
-
   toArray(): V {
     return this.value;
   }
 
   toValue(): V {
     return this.value;
-  }
-
-  update(f: (orig: FormControlElems<V, M>) => FormControlElems<V, M>): void {
-    const [e, initial] = this.ensureArray();
-    const newElems = f(e as FormControlElems<V, M>);
-    if (e !== newElems) {
-      this._children = [newElems, initial];
-      this._outOfSync |= ControlChange.Value;
-      this.runChange(ControlChange.Value | this.updateArrayFlags());
-    }
   }
 
   /**
@@ -671,18 +683,29 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     return this;
   }
 
-  addFields<OTHER extends { [p: string]: any }>(
-    v: V extends Record<string, any>
-      ? { [K in keyof OTHER]-?: FormControl<OTHER[K], M> }
-      : never
-  ): FormControl<V extends Record<string, any> ? V & OTHER : never> {
-    throw "not yet";
+  markArrayClean(): void {
+    throw "not yet markArrayClean";
   }
 
-  subGroup<OUT>(
+  addFields<OTHER extends { [p: string]: any }>(v: {
+    [K in keyof OTHER]-?: FormControl<OTHER[K], M>;
+  }): FormControl<V & OTHER> {
+    this._children = { ...this._children, ...v } as any;
+    return this.as();
+  }
+
+  as<NV extends V>(): FormControl<NV, M> {
+    return this as unknown as FormControl<NV, M>;
+  }
+
+  subGroup<OUT extends { [k: string]: FormControl<any> }>(
     select: (fields: FormControlFields<V, M>) => OUT
   ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }> {
-    throw "not yet";
+    return groupFromControls(select(this.fields!)).as();
+  }
+
+  toObject(): V {
+    return this.value;
   }
 }
 
@@ -694,17 +717,17 @@ export interface FormControlBuilder<V, M> {
   build(value: V): FormControl<V, M>;
 }
 
-function setupValidator<V>(
+function setupValidator<V, M>(
   value: V,
   validator?: ((v: V) => string | undefined) | null
 ): {
   error: string | undefined;
   flags: ControlFlags;
-  listeners: ChangeListener<V, BaseControlMetadata>[];
+  listeners: ChangeListener<V, M>[];
 } {
   const error = validator?.(value);
   const flags = error ? 0 : ControlFlags.Valid;
-  const listeners: ChangeListener<V, BaseControlMetadata>[] =
+  const listeners: ChangeListener<V, M>[] =
     validator === null
       ? []
       : [
@@ -730,7 +753,10 @@ export function control<V>(
   equals?: (a: V, b: V) => boolean
 ): () => FormControl<V> {
   return () => {
-    const { error, flags, listeners } = setupValidator(value, validator);
+    const { error, flags, listeners } = setupValidator<V, BaseControlMetadata>(
+      value,
+      validator
+    );
     return new ControlImpl<V, BaseControlMetadata>(
       value,
       value,
@@ -853,9 +879,9 @@ export function buildGroup<T>(): <
 }
 
 function makeChildListener<V, M>(
-  parent: FormControl<V, M>
+  parent: ControlImpl<V, M>
 ): ChangeListener<any, M> {
-  const pc = parent as ControlImpl<V, M>;
+  const pc = parent;
 
   return [
     ControlChange.Value |
@@ -944,7 +970,10 @@ export function validateWith<V, M = BaseControlMetadata>(
 ): FormControlBuilder<V, Partial<M>> {
   return {
     build(value: V): FormControl<V, Partial<M>> {
-      const { error, flags, listeners } = setupValidator(value, validator);
+      const { error, flags, listeners } = setupValidator<V, Partial<M>>(
+        value,
+        validator
+      );
       return new ControlImpl<V, Partial<M>>(
         value,
         value,
@@ -963,30 +992,31 @@ export function elementsWith<V, M = BaseControlMetadata>(
 ): FormControlBuilder<V[], Partial<M>> {
   return {
     build(value: V[]): FormControl<V[], Partial<M>> {
-      const { error, flags, listeners } = setupValidator(
+      const { error, flags, listeners } = setupValidator<V[], Partial<M>>(
         value,
         !validator ? null : validator
       );
-      const childElems = value.map((v) => element.build(v));
-      const allValid = childElems.every((x) => x.valid);
-      const c = new ControlImpl<V[], Partial<M>>(
-        value,
-        value,
-        error,
-        {},
-        flags & ~(allValid ? 0 : ControlFlags.Valid),
-        listeners,
-        (v, iv, m, flags, listeners) => {
-          const b = element.build(iv);
-          initChild(b, v, iv, listeners);
-          return b;
-        }
-      );
-      c._children = [childElems, childElems];
-      childElems.forEach((x) =>
-        x.addChangeListener(c.childListener[1], c.childListener[0])
-      );
-      return c;
+      return undefined as any;
+      // const childElems = value.map((v) => element.build(v));
+      // const allValid = childElems.every((x) => x.valid);
+      // const c = new ControlImpl<V[], Partial<M>>(
+      //   value,
+      //   value,
+      //   error,
+      //   {},
+      //   flags & ~(allValid ? 0 : ControlFlags.Valid),
+      //   listeners,
+      //   (v, iv, m, flags, listeners) => {
+      //     const b = element.build(iv);
+      //     initChild(b, v as V, iv as V, listeners);
+      //     return b as FormControl<any, Partial<M>>;
+      //   }
+      // );
+      // c._children = [childElems, childElems];
+      // childElems.forEach((x) =>
+      //   x.addChangeListener(c.childListener[1], c.childListener[0])
+      // );
+      // return c.thisAsFC;
     },
   };
 }
@@ -1001,7 +1031,7 @@ export function defineControl<
 ): FormControlBuilder<V, Partial<M>> {
   return {
     build(value: V): FormControl<V, Partial<M>> {
-      const { error, flags, listeners } = setupValidator(
+      const { error, flags, listeners } = setupValidator<V, Partial<M>>(
         value,
         !validator ? null : validator
       );
@@ -1040,9 +1070,11 @@ export type ValueTypeForControl<C> = C extends FormControl<infer V> ? V : never;
 /**
  * @deprecated Use FormControl instead
  */
-export type GroupControl<C> = FormControl<{
-  [K in keyof C]: ControlValueTypeOut<C[K]>;
-}>;
+export type GroupControl<C> = 0 extends 1 & C
+  ? FormControl<{}>
+  : FormControl<{
+      [K in keyof C]: ControlValueTypeOut<C[K]>;
+    }>;
 
 /**
  * @deprecated Use FormControl instead
@@ -1075,12 +1107,4 @@ export type ControlType<T> = T extends () => FormControl<infer V>
  */
 export type ArrayControl<C> = FormControl<ValueTypeForControl<C>[]>;
 
-export type ParentControl<V> = FormControl<V[] | { [k: string]: V }>;
-
-const plot: FormControl<any> = undefined as any;
-plot.fields!.d;
-
-const ok: FormControl<{ [k: string]: any }> =
-  undefined as unknown as FormControl<{ ok: { dodood: string }[] }>;
-
-ok.fields.ok;
+export type ParentControl<V> = FormControl<V>;

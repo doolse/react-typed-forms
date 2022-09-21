@@ -19,7 +19,7 @@ const FormDef = defineControl<SimpleForm>({
 });
 
 export default function SimpleExample() {
-  const formState = useControl(FormDef, { firstName: "", lastName: "" });
+  const formState = useControl({ firstName: "", lastName: "" }, FormDef);
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (

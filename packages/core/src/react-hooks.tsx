@@ -93,11 +93,7 @@ export function useControlStateVersion<V>(
   control: FormControl<V>,
   mask?: ControlChange
 ) {
-  return useControlState(
-    control as FormControl<any>,
-    (c) => c.stateVersion,
-    mask
-  );
+  return useControlState(control, (c) => c.stateVersion, mask);
 }
 
 export function useControlStateComponent<V, M, S>(
@@ -134,7 +130,10 @@ export interface FormArrayProps<V, M> {
   children: (elems: FormControl<V, M>[]) => ReactNode;
 }
 
-export function FormArray<V, M>({ state, children }: FormArrayProps<V, M>) {
+export function FormArray<V, M = BaseControlMetadata>({
+  state,
+  children,
+}: FormArrayProps<V, M>) {
   const elems = useControlState(state, (c) => c.elems, ControlChange.Value);
   return <>{elems ? children(elems) : undefined}</>;
 }
