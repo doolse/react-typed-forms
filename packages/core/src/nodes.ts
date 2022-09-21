@@ -79,6 +79,11 @@ export interface FormControl<V, M = BaseControlMetadata> {
    */
   toObject(): V;
 
+  /**
+   * @deprecated Use .value
+   */
+  toValue(): V;
+
   // fields
   readonly fields: undefined extends V
     ? FormControlFields<V, M> | undefined
@@ -100,7 +105,11 @@ export interface FormControl<V, M = BaseControlMetadata> {
   update(f: (orig: FormControlElems<V, M>) => FormControlElems<V, M>): void;
 
   remove(child: number | FormControl<ElemType<V>, M>): void;
-  add(child: ElemType<V>, index?: number): FormControl<V, M>;
+  add(
+    child: ElemType<V>,
+    index?: number | FormControl<ElemType<V>, M>
+  ): FormControl<ElemType<V>, M>;
+  add(): FormControl<ElemType<V>, M>;
 }
 
 class ControlImpl<V, M> implements FormControl<V, M> {
@@ -453,9 +462,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     (this.meta as any)["element"] = e;
   }
 
-  add(child: ElemType<V>, index?: number): FormControl<V, M> {
+  add(child?: ElemType<V>, index?: number): FormControl<ElemType<V>, M> {
     if (this._value === undefined) {
-      return this.setValue([child] as any);
+      this.setValue([child] as any);
+      return this.elems![0];
     }
     const [elems, initialElems] = this.ensureArray();
     const newElems = [...elems];
@@ -469,7 +479,8 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     this._children = [newElems, initialElems];
     this._value = [] as any;
     this._outOfSync |= ControlChange.Value;
-    return this.runChange(ControlChange.Value | this.updateArrayFlags());
+    this.runChange(ControlChange.Value | this.updateArrayFlags());
+    return newChild as any;
   }
 
   isAnyChildDirty(): boolean {
@@ -583,6 +594,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   toArray(): V {
+    return this.value;
+  }
+
+  toValue(): V {
     return this.value;
   }
 
@@ -751,7 +766,7 @@ export function arrayControl<CHILD>(
   child: CHILD
 ): () => FormControl<(CHILD extends () => FormControl<infer V> ? V : CHILD)[]> {
   return () => {
-    return new ControlImpl(
+    return new ControlImpl<any[], BaseControlMetadata>(
       [],
       [],
       undefined,
@@ -763,7 +778,7 @@ export function arrayControl<CHILD>(
         initChild(c, v, iv, listeners);
         return c;
       }
-    );
+    ) as any;
   };
 }
 
