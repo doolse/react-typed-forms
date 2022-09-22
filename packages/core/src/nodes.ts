@@ -27,11 +27,13 @@ export interface BaseControlMetadata {
   element?: HTMLElement | null;
 }
 
-export type FormControlFields<V, M> = NonNullable<V> extends object
+export type FormControlFields<V, M> = V extends {
+  [k: string]: any;
+}
   ? { [K in keyof V]-?: FormControl<V[K], M> }
-  : never;
+  : {};
 
-type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : unknown;
+type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : any;
 
 export interface FormControl<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
@@ -81,7 +83,7 @@ export interface FormControl<V, M = BaseControlMetadata> {
 
   // fields
   readonly fields:
-    | FormControlFields<V, M>
+    | FormControlFields<NonNullable<V>, M>
     | (undefined extends V ? undefined : never);
 
   addFields<OTHER extends { [k: string]: any }>(v: {
@@ -89,7 +91,7 @@ export interface FormControl<V, M = BaseControlMetadata> {
   }): FormControl<V & OTHER>;
 
   subGroup<OUT extends { [k: string]: FormControl<any> }>(
-    select: (fields: FormControlFields<V, M>) => OUT
+    select: (fields: FormControlFields<NonNullable<V>, M>) => OUT
   ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }>;
 
   readonly elems:
@@ -220,12 +222,24 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     return this.updateValid(!Boolean(error));
   }
 
-  clearErrors() {
-    throw "not yet clearErrors";
+  clearErrors(): this {
+    this.updateAll((c) => c.updateError(undefined));
+    return this;
   }
 
-  lookupControl(path: (string | number)[]): FormControl<any, M> {
-    throw "not yet lookupControl";
+  lookupControl(path: (string | number)[]): FormControl<any, M> | undefined {
+    let base = this as FormControl<any>;
+    let index = 0;
+    while (index < path.length && base) {
+      const childId = path[index];
+      if (typeof childId === "string") {
+        base = base.as<Record<string, any>>().fields?.[childId];
+      } else {
+        base = base.as<any[]>().elems?.[childId];
+      }
+      index++;
+    }
+    return base;
   }
 
   get valid() {
@@ -411,7 +425,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   get fields():
-    | FormControlFields<V, M>
+    | FormControlFields<NonNullable<V>, M>
     | (undefined extends V ? undefined : never) {
     if (this._value === undefined) {
       return undefined as any;
@@ -440,7 +454,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       });
       this._fieldsProxy = p as any;
     }
-    return this._fieldsProxy!;
+    return this._fieldsProxy as any;
   }
 
   get value(): V {
@@ -455,7 +469,6 @@ class ControlImpl<V, M> implements FormControl<V, M> {
         Object.entries(this._children).forEach(([p, c]) => {
           (newValue as any)[p] = c.value;
         });
-        console.log("Not sync", this._value, newValue);
         this._value = newValue;
       }
     }
@@ -683,9 +696,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     return this;
   }
 
-  markArrayClean(): void {
-    throw "not yet markArrayClean";
-  }
+  markArrayClean(): void {}
 
   addFields<OTHER extends { [p: string]: any }>(v: {
     [K in keyof OTHER]-?: FormControl<OTHER[K], M>;
@@ -699,7 +710,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   subGroup<OUT extends { [k: string]: FormControl<any> }>(
-    select: (fields: FormControlFields<V, M>) => OUT
+    select: (fields: FormControlFields<NonNullable<V>, M>) => OUT
   ): FormControl<{ [K in keyof OUT]: ValueTypeForControl<OUT[K]> }> {
     return groupFromControls(select(this.fields!)).as();
   }

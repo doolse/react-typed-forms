@@ -247,6 +247,6 @@ export function useEntryControls<A extends string | number>(
 
 export function useOptionalFields<V, M>(
   c: FormControl<V | undefined, M>
-): FormControlFields<V, M> | undefined {
+): FormControlFields<NonNullable<V>, M> | undefined {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
 }
