@@ -224,7 +224,7 @@ export function useControl<V, M = BaseControlMetadata>(
   builder?: FormControlBuilder<V, Partial<M>>
 ): FormControl<V, Partial<M>> {
   return useState(() =>
-    builder ? builder.build(v) : createControl<V, Partial<M>>(v, undefined)
+    builder ? builder.build(v, v) : createControl<V, Partial<M>>(v)
   )[0];
 }
 
