@@ -5,6 +5,13 @@ export enum ControlFlags {
   Disabled = 8,
 }
 
+enum ChildSyncFlags {
+  Valid = 1,
+  Dirty = 4,
+  Value = 16,
+  InitialValue = 32,
+}
+
 export enum ControlChange {
   Valid = 1,
   Touched = 2,
@@ -119,7 +126,7 @@ export interface FormControl<V, M = BaseControlMetadata> {
 
 class ControlImpl<V, M> implements FormControl<V, M> {
   uniqueId = ++controlCount;
-  _outOfSync: ControlChange = 0;
+  _childSync: ChildSyncFlags = 0;
 
   private _fieldsProxy?: { [K in keyof V]-?: FormControl<V[K], M> };
 
@@ -156,8 +163,9 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     const newElems = cb(e, (v) => this.makeChild(v, v).as());
     if (e !== newElems) {
       this._children = [newElems, initial];
-      this._outOfSync |= ControlChange.Value;
-      this.runChange(ControlChange.Value | this.updateArrayFlags());
+      this._childSync |=
+        ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+      this.runChange(ControlChange.Value);
     }
   }
 
@@ -167,7 +175,9 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       elems.filter((e, i) => i !== child && e !== child),
       initialElems,
     ];
-    this.runChange(ControlChange.Value | this.updateArrayFlags());
+    this._childSync |=
+      ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+    this.runChange(ControlChange.Value);
   }
 
   add(
@@ -191,9 +201,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     }
     this._children = [newElems, initialElems];
     this._value = [] as any;
-    this._outOfSync |= ControlChange.Value;
-    this.runChange(ControlChange.Value | this.updateArrayFlags());
-    return newChild as any;
+    this._childSync |=
+      ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+    this.runChange(ControlChange.Value);
+    return newChild;
   }
 
   isEqual(a: V, b: V): boolean {
@@ -217,9 +228,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   updateError(error?: string | null): ControlChange {
     if (this.error !== error) {
       this.error = error ? error : undefined;
-      return ControlChange.Error | this.updateValid(!Boolean(error));
+      this._childSync |= ChildSyncFlags.Valid;
+      return ControlChange.Error;
     }
-    return this.updateValid(!Boolean(error));
+    return 0;
   }
 
   clearErrors(): this {
@@ -328,8 +340,21 @@ class ControlImpl<V, M> implements FormControl<V, M> {
    * @internal
    */
   runChange(changed: ControlChange): FormControl<V, M> {
-    if (changed) {
+    if (
+      changed ||
+      this._childSync & (ChildSyncFlags.Dirty | ChildSyncFlags.Valid)
+    ) {
       if (this.freezeCount === 0) {
+        if (this._childSync & ChildSyncFlags.Valid) {
+          this._childSync &= ~ChildSyncFlags.Valid;
+          changed |= this.updateValid(
+            !(Boolean(this.error) || this.isAnyChildInvalid())
+          );
+        }
+        if (this._childSync & ChildSyncFlags.Dirty) {
+          this._childSync &= ~ChildSyncFlags.Dirty;
+          changed |= this.updateDirty(this.isAnyChildDirty());
+        }
         this.runListeners(changed);
       } else {
         this.frozenChanges |= changed;
@@ -348,7 +373,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   unfreeze() {
     this.freezeCount--;
     if (this.freezeCount === 0) {
-      this.runListeners(this.frozenChanges);
+      this.runChange(this.frozenChanges);
     }
   }
 
@@ -383,7 +408,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     return this.runChange(ControlChange.Validate);
   }
 
-  private makeChild(v: any, iv: any, p?: string | symbol) {
+  makeChild(v: any, iv: any, p?: string | symbol) {
     return (this._makeChild ?? createChild)(
       v,
       iv,
@@ -458,7 +483,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
   }
 
   get value(): V {
-    if (!(this._outOfSync & ControlChange.Value)) return this._value;
+    if (!(this._childSync & ChildSyncFlags.Value)) return this._value;
 
     if (this._children) {
       if (Array.isArray(this._children)) {
@@ -472,12 +497,13 @@ class ControlImpl<V, M> implements FormControl<V, M> {
         this._value = newValue;
       }
     }
-    this._outOfSync &= ~ControlChange.Value;
+    this._childSync &= ~ChildSyncFlags.Value;
     return this._value;
   }
 
   get initialValue(): V {
-    if (!(this._outOfSync & ControlChange.Dirty)) return this._initialValue;
+    if (!(this._childSync & ChildSyncFlags.InitialValue))
+      return this._initialValue;
 
     if (this._children) {
       if (Array.isArray(this._children)) {
@@ -491,7 +517,7 @@ class ControlImpl<V, M> implements FormControl<V, M> {
         this._initialValue = newValue;
       }
     }
-    this._outOfSync &= ~ControlChange.Dirty;
+    this._childSync &= ~ChildSyncFlags.InitialValue;
     return this._initialValue;
   }
 
@@ -531,6 +557,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
     (this.meta as any)["element"] = e;
   }
 
+  isAnyChildInvalid(): boolean {
+    return this.getChildControls().some((x) => !x.valid);
+  }
+
   isAnyChildDirty(): boolean {
     const c = this._children;
     if (c) {
@@ -546,14 +576,6 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       return this.getChildControls().some((x) => x.dirty);
     }
     return false;
-  }
-
-  private updateArrayFlags() {
-    return (
-      this.updateTouched(true) |
-      this.updateDirty(this.isAnyChildDirty()) |
-      this.updateValid(this.visitChildren((c) => c.valid))
-    );
   }
 
   setValue(v: V, initial?: boolean): FormControl<V, M> {
@@ -585,8 +607,11 @@ class ControlImpl<V, M> implements FormControl<V, M> {
               : this.makeChild(x, x).as<ElemType<V>>()
           );
           this._children = [e, initial ? e : initialElems];
+          const sizeChanged = e.length !== elems.length;
+          if (sizeChanged)
+            this._childSync |= ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
           return this.runChange(
-            (wasUndefined ? ControlChange.Value : 0) | this.updateArrayFlags()
+            wasUndefined || sizeChanged ? ControlChange.Value : 0
           );
         } else {
           const childFields = this._children as unknown as {
@@ -615,16 +640,12 @@ class ControlImpl<V, M> implements FormControl<V, M> {
       if (initial) {
         this._initialValue = v;
       }
+      const nowDirty = !initial && !this.isEqual(v, this._initialValue);
       if (this.isEqual(this._value, v)) {
-        return this.runChange(
-          this.updateDirty(!this.isEqual(v, this._initialValue))
-        );
+        return this.runChange(this.updateDirty(nowDirty));
       }
       this._value = v;
-      return this.runChange(
-        ControlChange.Value |
-          this.updateDirty(!this.isEqual(this._value, this._initialValue))
-      );
+      return this.runChange(ControlChange.Value | this.updateDirty(nowDirty));
     }
   }
 
@@ -640,14 +661,16 @@ class ControlImpl<V, M> implements FormControl<V, M> {
    * @internal
    */
   protected updateAll(change: (c: ControlImpl<any, M>) => ControlChange) {
-    this.visitChildren(
-      (c) => {
-        c.runChange(change(c));
-        return true;
-      },
-      true,
-      true
-    );
+    this.groupedChanges(() => {
+      this.visitChildren(
+        (c) => {
+          c.runChange(change(c));
+          return true;
+        },
+        true,
+        true
+      );
+    });
   }
 
   visitChildren(
@@ -717,6 +740,10 @@ class ControlImpl<V, M> implements FormControl<V, M> {
 
   toObject(): V {
     return this.value;
+  }
+
+  isLiveChild(v: FormControl<any, M>): boolean {
+    return this.getChildControls().includes(v as any);
   }
 }
 
@@ -819,15 +846,6 @@ export function arrayControl<CHILD>(
   };
 }
 
-export function arraySelectionControl<V>(
-  child: FormControl<V[]>,
-  getKey: (v: V) => any,
-  getElemKey: (elem: FormControl<V>) => any,
-  defaultValues?: V[]
-): () => FormControl<V[]> {
-  throw "Not yet arraySelectionControl";
-}
-
 /**
  *
  * @param children
@@ -900,16 +918,19 @@ function makeChildListener<V, M>(
       ControlChange.Touched |
       ControlChange.Dirty,
     (child, change) => {
+      if (!pc.isLiveChild(child)) return;
       let flags: ControlChange = change & ControlChange.Value;
-      pc._outOfSync |= change & (ControlChange.Value | ControlChange.Dirty);
+      pc._childSync |= change & ControlChange.Value;
       if (change & ControlChange.Valid) {
-        const valid =
-          child.valid && (parent.valid || pc.visitChildren((c) => c.valid));
-        flags |= pc.updateValid(valid);
+        if (!(pc._childSync & ChildSyncFlags.Valid) && pc.valid && !child.valid)
+          flags |= pc.updateValid(false);
+        else pc._childSync |= ChildSyncFlags.Valid;
       }
       if (change & ControlChange.Dirty) {
-        const dirty = child.dirty || (parent.dirty && pc.isAnyChildDirty());
-        flags |= pc.updateDirty(dirty);
+        pc._childSync |= ChildSyncFlags.InitialValue;
+        if (!(pc._childSync & ChildSyncFlags.Dirty) && !pc.dirty && child.dirty)
+          flags |= pc.updateDirty(true);
+        else pc._childSync |= ChildSyncFlags.Dirty;
       }
       if (change & ControlChange.Touched) {
         flags |= pc.updateTouched(child.touched || parent.touched);
@@ -930,7 +951,12 @@ export function groupFromControls<C extends { [k: string]: any }, M>(
   Object.values(fields).forEach((x) =>
     x.addChangeListener(c.childListener[1], c.childListener[0])
   );
-  c._outOfSync = ControlChange.Value | ControlChange.Dirty;
+  c._childSync =
+    ChildSyncFlags.InitialValue |
+    ChildSyncFlags.Value |
+    ChildSyncFlags.Valid |
+    ChildSyncFlags.Dirty;
+  c.runChange(0);
   return c;
 }
 
@@ -1007,27 +1033,26 @@ export function elementsWith<V, M = BaseControlMetadata>(
         value,
         !validator ? null : validator
       );
-      return undefined as any;
-      // const childElems = value.map((v) => element.build(v));
-      // const allValid = childElems.every((x) => x.valid);
-      // const c = new ControlImpl<V[], Partial<M>>(
-      //   value,
-      //   value,
-      //   error,
-      //   {},
-      //   flags & ~(allValid ? 0 : ControlFlags.Valid),
-      //   listeners,
-      //   (v, iv, m, flags, listeners) => {
-      //     const b = element.build(iv);
-      //     initChild(b, v as V, iv as V, listeners);
-      //     return b as FormControl<any, Partial<M>>;
-      //   }
-      // );
-      // c._children = [childElems, childElems];
-      // childElems.forEach((x) =>
-      //   x.addChangeListener(c.childListener[1], c.childListener[0])
-      // );
-      // return c.thisAsFC;
+      const childElems = value.map((v) => element.build(v));
+      const allValid = childElems.every((x) => x.valid);
+      const c = new ControlImpl<V[], Partial<M>>(
+        value,
+        value,
+        error,
+        {},
+        flags & ~(allValid ? 0 : ControlFlags.Valid),
+        listeners,
+        (v, iv, m, flags, listeners) => {
+          const b = element.build(iv);
+          initChild(b, v as V, iv as V, listeners);
+          return b as FormControl<any, Partial<M>>;
+        }
+      );
+      c._children = [childElems, childElems];
+      childElems.forEach((x) =>
+        x.addChangeListener(c.childListener[1], c.childListener[0])
+      );
+      return c;
     },
   };
 }
@@ -1069,6 +1094,10 @@ export function defineControl<
       );
     },
   };
+}
+
+export function notEmpty<V>(msg: string): (v: V) => string | undefined {
+  return (v: V) => (!v ? msg : undefined);
 }
 
 /**
@@ -1119,3 +1148,97 @@ export type ControlType<T> = T extends () => FormControl<infer V>
 export type ArrayControl<C> = FormControl<ValueTypeForControl<C>[]>;
 
 export type ParentControl<V> = FormControl<V>;
+
+export interface SelectionGroup<V> {
+  selected: boolean;
+  value: V;
+}
+
+export function createSelectableArray<V, M>(
+  c: FormControl<V[], M>,
+  allowed?: V[],
+  key?: (v1: V) => any
+): FormControl<SelectionGroup<V>[], M> {
+  const orig = c as ControlImpl<V[], M>;
+  const [origElems, origInitial] = orig.ensureArray();
+  const newFields = origElems
+    .map((x) =>
+      groupFromControls({
+        selected: newBoolean(true, origInitial.includes(x)),
+        value: x,
+      })
+    )
+    .concat(
+      origInitial
+        .filter((x) => !origElems.includes(x))
+        .map((x) =>
+          groupFromControls({ selected: newBoolean(false, true), value: x })
+        )
+    );
+
+  if (allowed && key) {
+    allowed.forEach((av) => {
+      const thisKey = key(av);
+      if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
+        newFields.push(
+          groupFromControls({
+            selected: newBoolean(false, false),
+            value: orig.makeChild(av, av).as<V>(),
+          })
+        );
+      }
+    });
+  }
+
+  const sc = new ControlImpl<SelectionGroup<V>[], Partial<M>>(
+    [],
+    [],
+    undefined,
+    {},
+    ControlFlags.Valid,
+    [],
+    (value, initialValue, parentMeta, flags, listeners) => {
+      const valueChild = orig.makeChild(value.value, initialValue.value);
+      return groupFromControls({
+        selected: newBoolean(value.selected, initialValue.selected),
+        value: valueChild,
+      });
+    }
+  );
+  sc._children = [newFields, newFields];
+  return sc;
+
+  function selectionChanged() {
+    const e = sc.ensureArray()[0];
+    const current: FormControl<V>[] = [];
+    const initial: FormControl<V>[] = [];
+    e.forEach((v) => {
+      const sel = v.fields.selected;
+      if (sel.value) current.push(v.fields.value);
+      if (sel.initialValue) initial.push(v.fields.value);
+    });
+
+    orig._children = [current, initial];
+    console.log({ current, initial });
+    orig._childSync |=
+      ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+    orig.runChange(ControlChange.Value);
+  }
+
+  function newBoolean(v: boolean, iv: boolean) {
+    return new ControlImpl<boolean, Partial<M>>(
+      v,
+      iv,
+      undefined,
+      {},
+      ControlFlags.Valid | (v !== iv ? ControlFlags.Dirty : 0),
+      [
+        [
+          ControlChange.Value | ControlChange.Validate,
+          (c) => c.setError(undefined),
+        ],
+        [ControlChange.Value, selectionChanged],
+      ]
+    );
+  }
+}

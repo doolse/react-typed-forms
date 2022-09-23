@@ -138,16 +138,6 @@ export function FormArray<V, M = BaseControlMetadata>({
   return <>{elems ? children(elems) : undefined}</>;
 }
 
-export function FormSelectionArray<V, M>({
-  state,
-  children,
-}: {
-  state: FormControl<V[], M>;
-  children: (elems: [FormControl<V>, FormControl<boolean>][]) => ReactNode;
-}) {
-  throw "not yet";
-}
-
 export function useAsyncValidator<V, M>(
   control: FormControl<V, M>,
   validator: (
@@ -236,13 +226,6 @@ export function useControl<V, M = BaseControlMetadata>(
   return useState(() =>
     builder ? builder.build(v) : createControl<V, Partial<M>>(v, undefined)
   )[0];
-}
-
-export function useEntryControls<A extends string | number>(
-  state: FormControl<A[] | undefined>,
-  single?: boolean
-): (entry: A) => FormControl<boolean> {
-  throw "Not yet";
 }
 
 export function useOptionalFields<V, M>(

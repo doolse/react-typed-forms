@@ -45,6 +45,7 @@ export default function ArraysExample() {
     },
     FormDef
   );
+  console.log(formState);
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useControlStateComponent(fields.structured, (c) => {

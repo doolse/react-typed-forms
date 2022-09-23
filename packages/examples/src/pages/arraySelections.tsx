@@ -1,15 +1,19 @@
 import {
-  arraySelectionControl,
-  buildGroup,
-  control,
   ControlType,
+  createSelectableArray,
+  defineControl,
+  elementsWith,
   Fcheckbox,
   Finput,
-  FormSelectionArray,
+  FormArray,
+  FormControl,
+  notEmpty,
   SelectionGroup,
+  useControl,
   useControlStateComponent,
+  validateWith,
 } from "@react-typed-forms/core";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 interface FormData {
   people: RowForm[];
@@ -25,52 +29,52 @@ const selected: RowForm[] = [{ first: "Jolse", last: "Maginnis" }];
 
 const allIds = ["Jolse", "Thomas", "Nicholas"];
 
-const RowFormDef = buildGroup<RowForm>()({
-  first: control("", (v) => (!v ? "Not blank" : undefined)),
-  last: "",
-});
-
-const FormDef = buildGroup<FormData>()({
-  other: "",
-  people: arraySelectionControl(
-    RowFormDef,
-    (v) => v.first,
-    (e) => e.fields.first.value,
-    allIds.map((first) => ({ first, last: "" }))
-  ),
-});
-
 let renders = 0;
 
 export default function ArraySelectionsExample() {
   renders++;
-  const [allFormState] = useState(() =>
-    FormDef().setValue({ other: "HI", people: selected }, true)
+  const allFormState = useControl<FormData>(
+    { other: "HI", people: selected },
+    defineControl<FormData>({
+      people: elementsWith(
+        defineControl<RowForm>({
+          first: validateWith(notEmpty("Please enter")),
+        })
+      ),
+    })
   );
-  const formState = allFormState.fields.people;
+  const formState = useMemo(
+    () =>
+      createSelectableArray(
+        allFormState.fields.people,
+        allIds.map((x) => ({ first: x, last: "" })),
+        (v) => v.first
+      ),
+    [allFormState]
+  );
   const [formData, setFormData] = useState<RowForm[]>();
-  const Dirty = useControlStateComponent(formState, (c) => {
+  const Dirty = useControlStateComponent(allFormState, (c) => {
     return c.dirty;
   });
-  const Valid = useControlStateComponent(formState, (c) => c.valid);
+  const Valid = useControlStateComponent(allFormState, (c) => c.valid);
 
   return (
     <div className="container">
       <h2>Array Selections Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormSelectionArray state={formState}>
+        <FormArray state={formState}>
           {(elems) =>
             elems.map((x, idx) => (
               <StructuredRow
                 state={x}
                 key={x.uniqueId}
                 index={idx}
-                onDelete={() => formState.underlying.remove(x)}
+                onDelete={() => formState.remove(x)}
               />
             ))
           }
-        </FormSelectionArray>
+        </FormArray>
         <Dirty>
           {(dirty) => (
             <span>
@@ -98,7 +102,7 @@ export default function ArraySelectionsExample() {
           id="submit"
           className="btn btn-primary"
           onClick={() => {
-            setFormData(formState.toArray());
+            setFormData(allFormState.fields.people.toArray());
           }}
         >
           toObject()
@@ -113,7 +117,9 @@ export default function ArraySelectionsExample() {
         <button
           id="setValue"
           className="btn btn-primary"
-          onClick={() => formState.setValue([{ first: "Thomas", last: "" }])}
+          onClick={() =>
+            allFormState.fields.people.setValue([{ first: "Thomas", last: "" }])
+          }
         >
           Set Value
         </button>
@@ -130,7 +136,7 @@ function StructuredRow({
   index,
   onDelete,
 }: {
-  state: SelectionGroup<ControlType<typeof RowFormDef>>;
+  state: FormControl<SelectionGroup<RowForm>>;
   index: number;
   onDelete: () => void;
 }) {
