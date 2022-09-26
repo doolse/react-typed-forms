@@ -1,5 +1,5 @@
 import React from "react";
-import { ControlChange, FormControl } from "../nodes";
+import { ControlChange, Control } from "../nodes";
 import {
   genericProps,
   useControlChangeEffect,
@@ -8,7 +8,7 @@ import {
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  state: FormControl<string | number | undefined>;
+  state: Control<string | number | undefined>;
 };
 
 export function Fselect({ state, children, ...others }: FselectProps) {

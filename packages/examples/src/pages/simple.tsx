@@ -1,25 +1,22 @@
 import {
+  controlWithFields,
   Finput,
-  buildGroup,
-  control,
-  defineControl,
-  validateWith,
+  notEmpty,
   useControl,
+  validated,
 } from "@react-typed-forms/core";
-import { useState } from "react";
-import React from "react";
+import React, { useState } from "react";
 
 interface SimpleForm {
   firstName: string;
   lastName: string;
 }
 
-const FormDef = defineControl<SimpleForm>({
-  lastName: validateWith((v) => (!v ? "Required field" : undefined)),
-});
-
 export default function SimpleExample() {
-  const formState = useControl({ firstName: "", lastName: "" }, FormDef);
+  const formState = useControl(
+    { firstName: "", lastName: "" },
+    { lastName: validated(notEmpty("Required field")) }
+  );
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
   return (

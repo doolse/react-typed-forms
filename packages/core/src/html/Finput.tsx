@@ -1,5 +1,5 @@
 import React from "react";
-import { ControlChange, FormControl } from "../nodes";
+import { ControlChange, Control } from "../nodes";
 import {
   genericProps,
   useControlChangeEffect,
@@ -9,7 +9,7 @@ import {
 // Only allow strings and numbers
 export type FinputProps<V extends string | number> =
   React.InputHTMLAttributes<HTMLInputElement> & {
-    state: FormControl<V>;
+    state: Control<V>;
   };
 
 export function Finput<V extends string | number>({

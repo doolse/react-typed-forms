@@ -1,27 +1,17 @@
 import {
-  control,
-  buildGroup,
-  Fselect,
   Finput,
-  defineControl,
-  validateWith,
-  useControlState,
+  Fselect,
+  notEmpty,
   useControl,
+  validated,
 } from "@react-typed-forms/core";
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 
 type SimpleForm = {
   username: string;
   password: string;
   number: string;
 };
-
-const FormDef = defineControl<SimpleForm>({
-  password: validateWith((v) =>
-    v.length < 6 ? "Password must be 6 characters" : undefined
-  ),
-  username: validateWith((v) => (!v ? "Required field" : undefined)),
-});
 
 let renders = 0;
 
@@ -33,7 +23,12 @@ export default function BasicFormExample() {
       number: "",
       password: "",
     },
-    FormDef
+    () => ({
+      password: validated((v) =>
+        v.length < 6 ? "Password must be 6 characters" : undefined
+      ),
+      username: validated(notEmpty("Required field")),
+    })
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();

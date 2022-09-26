@@ -11,16 +11,17 @@ import React, {
 } from "react";
 import {
   BaseControlMetadata,
+  Control,
+  ControlBuilder,
   ControlChange,
-  createControl,
-  FormControl,
-  FormControlBuilder,
+  createAnyControl,
   FormControlFields,
+  withFields,
 } from "./nodes";
 
 export function useControlChangeEffect<V, M>(
-  control: FormControl<V, M>,
-  changeEffect: (control: FormControl<V, M>, change: ControlChange) => void,
+  control: Control<V, M>,
+  changeEffect: (control: Control<V, M>, change: ControlChange) => void,
   mask?: ControlChange,
   deps?: any[],
   runInitial?: boolean
@@ -29,7 +30,7 @@ export function useControlChangeEffect<V, M>(
   effectRef.current = changeEffect;
   useEffect(() => {
     if (runInitial) effectRef.current(control, 0);
-    const changeListener = (c: FormControl<V, M>, m: ControlChange) => {
+    const changeListener = (c: Control<V, M>, m: ControlChange) => {
       effectRef.current(c, m);
     };
     control.addChangeListener(changeListener, mask);
@@ -38,7 +39,7 @@ export function useControlChangeEffect<V, M>(
 }
 
 export function useValueChangeEffect<V, M>(
-  control: FormControl<V, M>,
+  control: Control<V, M>,
   changeEffect: (control: V) => void,
   debounce?: number,
   runInitial?: boolean
@@ -51,7 +52,7 @@ export function useValueChangeEffect<V, M>(
   effectRef.current[0] = changeEffect;
   effectRef.current[2] = debounce;
   useEffect(() => {
-    const updater = (c: FormControl<V, M>) => {
+    const updater = (c: Control<V, M>) => {
       const r = effectRef.current;
       if (r[2]) {
         if (r[1]) clearTimeout(r[1]);
@@ -69,8 +70,8 @@ export function useValueChangeEffect<V, M>(
 }
 
 export function useControlState<V, M, S>(
-  control: FormControl<V, M>,
-  toState: (state: FormControl<V, M>, previous?: S) => S,
+  control: Control<V, M>,
+  toState: (state: Control<V, M>, previous?: S) => S,
   mask?: ControlChange,
   deps?: any[]
 ): S {
@@ -85,20 +86,20 @@ export function useControlState<V, M, S>(
   return state;
 }
 
-export function useControlValue<A>(control: FormControl<A>) {
+export function useControlValue<A>(control: Control<A>) {
   return useControlState(control, (n) => n.value, ControlChange.Value);
 }
 
 export function useControlStateVersion<V>(
-  control: FormControl<V>,
+  control: Control<V>,
   mask?: ControlChange
 ) {
   return useControlState(control, (c) => c.stateVersion, mask);
 }
 
 export function useControlStateComponent<V, M, S>(
-  control: FormControl<V, M>,
-  toState: (state: FormControl<V, M>) => S,
+  control: Control<V, M>,
+  toState: (state: Control<V, M>) => S,
   mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
@@ -112,7 +113,7 @@ export function useControlStateComponent<V, M, S>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: FormControl<any>;
+  state: Control<any>;
   children: (validForm: boolean) => ReactElement;
 }
 
@@ -126,8 +127,8 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
 }
 
 export interface FormArrayProps<V, M> {
-  state: FormControl<V[] | undefined, M>;
-  children: (elems: FormControl<V, M>[]) => ReactNode;
+  state: Control<V[] | undefined, M>;
+  children: (elems: Control<V, M>[]) => ReactNode;
 }
 
 export function FormArray<V, M = BaseControlMetadata>({
@@ -139,13 +140,13 @@ export function FormArray<V, M = BaseControlMetadata>({
 }
 
 export function useAsyncValidator<V, M>(
-  control: FormControl<V, M>,
+  control: Control<V, M>,
   validator: (
-    control: FormControl<V, M>,
+    control: Control<V, M>,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue: (control: FormControl<V, M>) => any = (c) => control.value
+  validCheckValue: (control: Control<V, M>) => any = (c) => control.value
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
@@ -192,7 +193,7 @@ export interface FormControlProps<V, E extends HTMLElement> {
 }
 
 export function genericProps<V, E extends HTMLElement>(
-  state: FormControl<V>
+  state: Control<V>
 ): FormControlProps<V, E> {
   return {
     ref: (elem) => {
@@ -208,28 +209,40 @@ export function genericProps<V, E extends HTMLElement>(
 
 export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   render: (
-    props: PropsWithChildren<P & { state: FormControl<V> }>,
+    props: PropsWithChildren<P & { state: Control<V> }>,
     genProps: FormControlProps<V, E>
   ) => ReactElement,
   mask?: ControlChange
-): FC<P & { state: FormControl<V> }> {
+): FC<P & { state: Control<V> }> {
   return (props) => {
     useControlStateVersion(props.state, mask);
     return render(props, genericProps(props.state));
   };
 }
 
+type UseControlBuilder<V, M> =
+  | ControlBuilder<V, M>
+  | { [K in keyof V]?: ControlBuilder<V[K], M> };
+
 export function useControl<V, M = BaseControlMetadata>(
   v: V,
-  builder?: FormControlBuilder<V, Partial<M>>
-): FormControl<V, Partial<M>> {
-  return useState(() =>
-    builder ? builder.build(v, v) : createControl<V, Partial<M>>(v)
-  )[0];
+  builder?:
+    | (() => UseControlBuilder<V, Partial<M>>)
+    | UseControlBuilder<V, Partial<M>>
+): Control<V, Partial<M>> {
+  return useState(() => {
+    const b: UseControlBuilder<V, Partial<M>> | undefined =
+      typeof builder === "function" ? builder?.() : builder;
+    return b
+      ? b instanceof ControlBuilder
+        ? b.build(v, v)
+        : withFields(b).build(v, v)
+      : (createAnyControl.build(v, v) as Control<V, Partial<M>>);
+  })[0];
 }
 
 export function useOptionalFields<V, M>(
-  c: FormControl<V | undefined, M>
+  c: Control<V | undefined, M>
 ): FormControlFields<NonNullable<V>, M> | undefined {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
 }

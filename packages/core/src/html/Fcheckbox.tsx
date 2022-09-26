@@ -1,5 +1,5 @@
 import React from "react";
-import { ControlChange, FormControl } from "../nodes";
+import { ControlChange, Control } from "../nodes";
 import {
   genericProps,
   useControlChangeEffect,
@@ -7,7 +7,7 @@ import {
 } from "../react-hooks";
 
 export type FcheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<boolean>;
+  state: Control<boolean>;
   type?: "checkbox" | "radio";
 };
 
