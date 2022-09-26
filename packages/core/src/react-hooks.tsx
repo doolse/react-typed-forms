@@ -233,7 +233,7 @@ export function useControl<V, M = BaseControlMetadata>(
 }
 
 export function useOptionalFields<V, M>(
-  c: Control<V | undefined, M>
+  c: Control<V | undefined | null, M>
 ): FormControlFields<NonNullable<V>, M> | undefined {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
 }

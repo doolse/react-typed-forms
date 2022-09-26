@@ -94,7 +94,8 @@ export interface Control<V, M = BaseControlMetadata> {
   // fields
   readonly fields:
     | FormControlFields<NonNullable<V>, M>
-    | (V extends null | undefined ? undefined : never);
+    | (undefined extends V ? undefined : never)
+    | (null extends V ? undefined : never);
 
   addFields<OTHER extends { [k: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
@@ -111,7 +112,8 @@ export interface Control<V, M = BaseControlMetadata> {
 
   readonly elems:
     | Control<ElemType<V>, M>[]
-    | (V extends undefined | null ? undefined : never);
+    | (undefined extends V ? undefined : never)
+    | (null extends V ? undefined : never);
 
   update(
     cb: (
@@ -448,7 +450,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   get fields():
     | FormControlFields<NonNullable<V>, M>
-    | (V extends undefined | null ? undefined : never) {
+    | (undefined extends V ? undefined : never)
+    | (null extends V ? undefined : never) {
     if (this._value === undefined || this._value === null) {
       return undefined as any;
     }
@@ -541,7 +544,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   get elems():
     | Control<ElemType<V>, M>[]
-    | (V extends undefined | null ? undefined : never) {
+    | (undefined extends V ? undefined : never)
+    | (null extends V ? undefined : never) {
     if (this._value === undefined || this._value === null)
       return undefined as any;
     return this.ensureArray()[0] as Control<ElemType<V>, M>[];
