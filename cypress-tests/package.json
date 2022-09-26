@@ -10,7 +10,7 @@
   "scripts": {
     "docs": "typedoc --stripInternal --out docs",
     "readme": "md-magic --path '**/*.md' --ignore 'node_modules'",
-    "build": "tsc",
+    "build": "cypress verify",
     "cypress": "cypress open"
   },
   "repository": {

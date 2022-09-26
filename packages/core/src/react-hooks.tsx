@@ -15,8 +15,8 @@ import {
   ControlBuilder,
   ControlChange,
   createAnyControl,
+  controlBuilder,
   FormControlFields,
-  withFields,
 } from "./nodes";
 
 export function useControlChangeEffect<V, M>(
@@ -220,22 +220,15 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   };
 }
 
-type UseControlBuilder<V, M> =
-  | ControlBuilder<V, M>
-  | { [K in keyof V]?: ControlBuilder<V[K], M> };
-
 export function useControl<V, M = BaseControlMetadata>(
   v: V,
-  builder?: (() => UseControlBuilder<V, M>) | UseControlBuilder<V, M>
+  builder?: (b: ControlBuilder<V, M>) => ControlBuilder<V, M>
 ): Control<V, M> {
   return useState(() => {
-    const b: UseControlBuilder<V, M> | undefined =
-      typeof builder === "function" ? builder?.() : builder;
-    return b
-      ? b instanceof ControlBuilder
-        ? b.build(v, v)
-        : withFields(b).build(v, v)
-      : (createAnyControl.build(v, v) as Control<V, M>);
+    return (
+      builder?.(controlBuilder<V, M>()).build(v, v) ??
+      (createAnyControl.build(v, v) as Control<V, M>)
+    );
   })[0];
 }
 

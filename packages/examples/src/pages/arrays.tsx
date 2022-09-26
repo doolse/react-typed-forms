@@ -1,4 +1,6 @@
 import {
+  defineElements,
+  defineFields,
   Finput,
   FormArray,
   FormControl,
@@ -6,8 +8,6 @@ import {
   useControl,
   useControlStateComponent,
   validated,
-  withElems,
-  withFields,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
@@ -23,9 +23,9 @@ type MainForm = {
 
 const defaultRow: RowForm = { id: "", name: "" };
 
-const FormDef = withFields<MainForm>({
-  structured: withElems(
-    withFields<RowForm>({
+const FormDef = defineFields<MainForm>({
+  structured: defineElements(
+    defineFields({
       id: validated(notEmpty("Not blank")),
     })
   ),
@@ -42,7 +42,6 @@ export default function ArraysExample() {
     },
     FormDef
   );
-  console.log(formState);
   const { fields } = formState;
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useControlStateComponent(fields.structured, (c) => {

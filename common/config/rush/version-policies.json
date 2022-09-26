@@ -102,7 +102,7 @@
   {
     "policyName": "publicRelease",
     "definitionName": "lockStepVersion",
-    "version": "3.0.0-dev.8",
+    "version": "3.0.0-dev.9",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/core"
   }

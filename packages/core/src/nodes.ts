@@ -94,7 +94,7 @@ export interface Control<V, M = BaseControlMetadata> {
   // fields
   readonly fields:
     | FormControlFields<NonNullable<V>, M>
-    | (undefined extends V ? undefined : never);
+    | (V extends null | undefined ? undefined : never);
 
   addFields<OTHER extends { [k: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
@@ -111,7 +111,7 @@ export interface Control<V, M = BaseControlMetadata> {
 
   readonly elems:
     | Control<ElemType<V>, M>[]
-    | (undefined extends V ? undefined : never);
+    | (V extends undefined | null ? undefined : never);
 
   update(
     cb: (
@@ -192,7 +192,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     child: ElemType<V>,
     index?: number | Control<ElemType<V>, M>
   ): Control<ElemType<V>, M> {
-    if (this._value === undefined) {
+    if (!this._value) {
       this.setValue([child] as any);
       return this.elems![0] as Control<ElemType<V>, M>;
     }
@@ -448,8 +448,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   get fields():
     | FormControlFields<NonNullable<V>, M>
-    | (undefined extends V ? undefined : never) {
-    if (this._value === undefined) {
+    | (V extends undefined | null ? undefined : never) {
+    if (this._value === undefined || this._value === null) {
       return undefined as any;
     }
     if (!this._fieldsProxy) {
@@ -541,8 +541,9 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   get elems():
     | Control<ElemType<V>, M>[]
-    | (undefined extends V ? undefined : never) {
-    if (this._value === undefined) return undefined as any;
+    | (V extends undefined | null ? undefined : never) {
+    if (this._value === undefined || this._value === null)
+      return undefined as any;
     return this.ensureArray()[0] as Control<ElemType<V>, M>[];
   }
 
@@ -577,7 +578,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   setValue(v: V, initial?: boolean): Control<V, M> {
     if (this._children) {
-      if (v === undefined) {
+      if (v === undefined || v === null) {
+        v = undefined as any;
         if (initial) {
           this._initialValue = v;
         }
@@ -767,6 +769,14 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
     public equals?: (v: V, v2: V) => boolean
   ) {}
 
+  // defineControl<CV>(m?: Partial<M>): ControlBuilder<CV, M> {
+  //   return new ControlBuilder<CV, M>(undefined, m);
+  // }
+  //
+  // validated<CV>(validator: ControlValidator<CV>): ControlBuilder<CV, M> {
+  //   return new ControlBuilder<CV, M>(validator);
+  // }
+
   withValidator(v: ControlValidator<V> | undefined) {
     this.validator = v;
     return this;
@@ -782,14 +792,19 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
     return this;
   }
 
-  withElems(elemBuilder: ControlBuilder<ElemType<V>, M>) {
+  withElements(
+    elemBuilder: (
+      b: ControlBuilder<ElemType<V>, M>
+    ) => ControlBuilder<ElemType<V>, M>
+  ): ControlBuilder<V, M> {
+    const builder = elemBuilder(controlBuilder<ElemType<V>, M>());
     this.setupChildren = (c, value, initialValue) => {
       const allElems = createElemsFromArrays<ElemType<V>, M>(
         value ?? [],
         initialValue ?? [],
-        (v, iv) => elemBuilder.build(v, iv)
+        (v, iv) => builder.build(v, iv)
       );
-      c._childBuilder = () => elemBuilder;
+      c._childBuilder = () => builder;
       c._children = splitArrayElems(
         allElems,
         value?.length ?? 0,
@@ -805,12 +820,16 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
     return this;
   }
 
-  withFields(fields: { [K in keyof V]?: ControlBuilder<V[K], M> }) {
+  withFields(fields: {
+    [K in keyof V]?: (b: ControlBuilder<V[K], M>) => ControlBuilder<V[K], M>;
+  }) {
     this.setupChildren = (c, v, iv) => {
       const childEntries: [string, Control<any, M>][] = fields
         ? Object.entries(fields).map(([k, b]) => [
             k,
-            (b as ControlBuilder<any, M>).build(v[k], iv[k]),
+            (b as (b: ControlBuilder<any, M>) => ControlBuilder<any, M>)(
+              controlBuilder<any, M>()
+            ).build(v[k], iv[k]),
           ])
         : [];
       const childFields = Object.fromEntries(childEntries);
@@ -1053,24 +1072,6 @@ export function controlGroup<C extends { [k: string]: any }, M>(
   return c;
 }
 
-export function withMetadata<V, M = BaseControlMetadata>(
-  m?: Partial<M>
-): ControlBuilder<V, M> {
-  return new ControlBuilder<V, M>(undefined, m);
-}
-
-export function withFields<V, M = BaseControlMetadata>(fields: {
-  [K in keyof V]?: ControlBuilder<V[K], M>;
-}) {
-  return new ControlBuilder<V, M>().withFields(fields);
-}
-
-export function withElems<V, M = BaseControlMetadata>(
-  element: ControlBuilder<ElemType<V>, M>
-) {
-  return new ControlBuilder<V, M>().withElems(element);
-}
-
 export const createAnyControl: CreateControl<any, any> = {
   build(value: any, initialValue: any): Control<any, any> {
     return new ControlImpl(
@@ -1083,10 +1084,30 @@ export const createAnyControl: CreateControl<any, any> = {
   },
 };
 
-export function validated<V, M = BaseControlMetadata>(
-  validator: ControlValidator<V>
+export function controlBuilder<V, M = BaseControlMetadata>(
+  m?: Partial<M>
 ): ControlBuilder<V, M> {
-  return new ControlBuilder<V, M>(validator);
+  return new ControlBuilder<V, M>(undefined, m);
+}
+
+export function defineFields<V, M = BaseControlMetadata>(fields: {
+  [K in keyof V]?: (b: ControlBuilder<V[K], M>) => ControlBuilder<V[K], M>;
+}): (b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
+  return (b) => b.withFields(fields);
+}
+
+export function defineElements<V, M = BaseControlMetadata>(
+  elemBuilder: (
+    b: ControlBuilder<ElemType<V>, M>
+  ) => ControlBuilder<ElemType<V>, M>
+): (b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
+  return (b) => b.withElements(elemBuilder);
+}
+
+export function validated<V>(
+  validator: ControlValidator<V>
+): <M>(b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
+  return (b) => b.withValidator(validator);
 }
 
 export function notEmpty<V>(msg: string): (v: V) => string | undefined {

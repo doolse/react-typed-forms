@@ -1,5 +1,5 @@
 import {
-  controlWithFields,
+  defineFields,
   Finput,
   notEmpty,
   useControl,
@@ -13,9 +13,8 @@ interface SimpleForm {
 }
 
 export default function SimpleExample() {
-  const formState = useControl(
-    { firstName: "", lastName: "" },
-    { lastName: validated(notEmpty("Required field")) }
+  const formState = useControl({ firstName: "", lastName: "" }, (c) =>
+    c.withFields({ lastName: validated(notEmpty("Required field")) })
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();

@@ -1,4 +1,5 @@
 import {
+  defineFields,
   Finput,
   Fselect,
   notEmpty,
@@ -23,7 +24,7 @@ export default function BasicFormExample() {
       number: "",
       password: "",
     },
-    () => ({
+    defineFields({
       password: validated((v) =>
         v.length < 6 ? "Password must be 6 characters" : undefined
       ),

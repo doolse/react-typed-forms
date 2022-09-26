@@ -1,4 +1,8 @@
-import { FormArray, useControl } from "@react-typed-forms/core";
+import {
+  FormArray,
+  useControl,
+  useOptionalFields,
+} from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState } from "react";
 
@@ -9,18 +13,21 @@ type Form = {
     optional: string | undefined;
   };
   optionalStrings?: string[];
-  optionalStructs?: { id: string };
+  nullableStruct: { id: string } | null;
 };
 
 export default function OptionalsTest() {
   const formState = useControl<Form>({
     nested: { optional: undefined },
+    nullableStruct: null,
   });
   const { fields } = formState;
   const [formData, setFormData] = useState<Form>();
 
   const nestedFields = fields.nested.fields;
   const optionalArray = fields.optionalStrings;
+
+  const nullableFields = useOptionalFields(fields.nullableStruct);
   return (
     <div className="container">
       <h2>Optionals Test</h2>
@@ -63,6 +70,11 @@ export default function OptionalsTest() {
           Add optional string
         </button>
       </div>
+      {nullableFields && (
+        <div>
+          <FTextField state={nullableFields.id} label="Nullable" />
+        </div>
+      )}
       <div>
         <button
           id="clearStrings"
@@ -105,10 +117,28 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({ nested: { optional: undefined } });
+            formState.setValue({
+              nested: { optional: undefined },
+              nullableStruct: null,
+            });
           }}
         >
           Reset data
+        </button>{" "}
+        <button
+          id="toggleNullable"
+          className="btn btn-secondary"
+          onClick={(e) => {
+            e.preventDefault();
+            formState.setValue({
+              ...formState.value,
+              nullableStruct: formState.value.nullableStruct
+                ? null
+                : { id: "hi" },
+            });
+          }}
+        >
+          Toggle nullable
         </button>{" "}
         <button
           id="submit"

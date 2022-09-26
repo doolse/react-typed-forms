@@ -9,6 +9,7 @@ describe("Optional data", () => {
     cy.get("pre").should(
       compareJson({
         nested: {},
+        nullableStruct: null,
       })
     );
     cy.get("#firstName").type("a").clear();
@@ -18,6 +19,7 @@ describe("Optional data", () => {
       compareJson({
         firstName: "",
         age: null,
+        nullableStruct: null,
         nested: {},
       })
     );
@@ -26,6 +28,7 @@ describe("Optional data", () => {
     cy.get("pre").should(
       compareJson({
         nested: {},
+        nullableStruct: null,
       })
     );
     cy.get("#age").type("10.3");
@@ -34,6 +37,7 @@ describe("Optional data", () => {
       compareJson({
         age: 10.3,
         nested: {},
+        nullableStruct: null,
       })
     );
     cy.get("#clearNested").click();
@@ -41,6 +45,7 @@ describe("Optional data", () => {
     cy.get("pre").should(
       compareJson({
         age: 10.3,
+        nullableStruct: null,
       })
     );
     cy.get("#unClearNested").click();
@@ -49,6 +54,16 @@ describe("Optional data", () => {
       compareJson({
         age: 10.3,
         nested: { optional: "optional" },
+        nullableStruct: null,
+      })
+    );
+    cy.get("#toggleNullable").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
+        nested: { optional: "optional" },
+        nullableStruct: { id: "hi" },
       })
     );
   });

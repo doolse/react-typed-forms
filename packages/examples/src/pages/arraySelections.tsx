@@ -1,5 +1,7 @@
 import {
   createSelectableArray,
+  defineElements,
+  defineFields,
   Fcheckbox,
   Finput,
   FormArray,
@@ -9,8 +11,6 @@ import {
   useControl,
   useControlStateComponent,
   validated,
-  withElems,
-  withFields,
 } from "@react-typed-forms/core";
 import React, { useMemo, useState } from "react";
 
@@ -34,12 +34,11 @@ export default function ArraySelectionsExample() {
   renders++;
   const allFormState = useControl<FormData>(
     { other: "HI", people: selected },
-    withFields<FormData>({
-      people: withElems(
-        withFields<RowForm>({
-          first: validated(notEmpty("Please enter")),
-        })
-      ),
+    defineFields({
+      people: (c) =>
+        c.withElements(
+          defineFields({ first: validated(notEmpty("Please enter")) })
+        ),
     })
   );
   const formState = useMemo(
