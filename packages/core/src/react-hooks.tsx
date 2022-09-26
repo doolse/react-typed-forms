@@ -17,6 +17,7 @@ import {
   createAnyControl,
   controlBuilder,
   FormControlFields,
+  RetainOptionality,
 } from "./nodes";
 
 export function useControlChangeEffect<V, M>(
@@ -233,7 +234,7 @@ export function useControl<V, M = BaseControlMetadata>(
 }
 
 export function useOptionalFields<V, M>(
-  c: Control<V | undefined | null, M>
-): FormControlFields<NonNullable<V>, M> | undefined {
+  c: Control<V, M>
+): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
 }

@@ -44,6 +44,10 @@ export type FormControlFields<V, M> = V extends {
 
 type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : any;
 
+export type RetainOptionality<V> =
+  | (undefined extends V ? undefined : never)
+  | (null extends V ? null : never);
+
 export interface Control<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
   readonly stateVersion: number;
@@ -92,10 +96,7 @@ export interface Control<V, M = BaseControlMetadata> {
   toObject(): V;
 
   // fields
-  readonly fields:
-    | FormControlFields<NonNullable<V>, M>
-    | (undefined extends V ? undefined : never)
-    | (null extends V ? undefined : never);
+  readonly fields: FormControlFields<NonNullable<V>, M> | RetainOptionality<V>;
 
   addFields<OTHER extends { [k: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
@@ -110,10 +111,7 @@ export interface Control<V, M = BaseControlMetadata> {
     select: (fields: FormControlFields<NonNullable<V>, M>) => OUT
   ): Control<{ [K in keyof OUT]: ControlValue<OUT[K]> }>;
 
-  readonly elems:
-    | Control<ElemType<V>, M>[]
-    | (undefined extends V ? undefined : never)
-    | (null extends V ? undefined : never);
+  readonly elems: Control<ElemType<V>, M>[] | RetainOptionality<V>;
 
   update(
     cb: (
@@ -448,12 +446,9 @@ class ControlImpl<V, M> implements Control<V, M> {
     throw "Not an array";
   }
 
-  get fields():
-    | FormControlFields<NonNullable<V>, M>
-    | (undefined extends V ? undefined : never)
-    | (null extends V ? undefined : never) {
-    if (this._value === undefined || this._value === null) {
-      return undefined as any;
+  get fields(): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
+    if (this._value == null) {
+      return this._value as any;
     }
     if (!this._fieldsProxy) {
       if (!this._children) {
@@ -542,12 +537,8 @@ class ControlImpl<V, M> implements Control<V, M> {
     }
   }
 
-  get elems():
-    | Control<ElemType<V>, M>[]
-    | (undefined extends V ? undefined : never)
-    | (null extends V ? undefined : never) {
-    if (this._value === undefined || this._value === null)
-      return undefined as any;
+  get elems(): Control<ElemType<V>, M>[] | RetainOptionality<V> {
+    if (this._value == null) return this._value as any;
     return this.ensureArray()[0] as Control<ElemType<V>, M>[];
   }
 
@@ -582,19 +573,18 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   setValue(v: V, initial?: boolean): Control<V, M> {
     if (this._children) {
-      if (v === undefined || v === null) {
-        v = undefined as any;
+      if (v == null) {
         if (initial) {
           this._initialValue = v;
         }
         const flags =
-          this.updateDirty(this._initialValue !== undefined) |
-          (this._value !== undefined ? ControlChange.Value : 0);
+          this.updateDirty(this._initialValue !== v) |
+          (this._value !== v ? ControlChange.Value : 0);
         this._value = v;
         return this.runChange(flags);
       }
       this.groupedChanges(() => {
-        const wasUndefined = this._value === undefined;
+        const wasUndefined = this._value == null;
         if (Array.isArray(this._children)) {
           this._value = v;
           if (initial) {
@@ -1288,4 +1278,9 @@ function splitArrayElems<V, M>(
   initialLen: number
 ): [Control<V, M>[], Control<V, M>[]] {
   return [all.slice(0, validLen), all.slice(0, initialLen)];
+}
+
+export function EditingRow<A extends { id: string }>(a: Control<A>) {
+  //// @ts-expect-error
+  a.fields.id;
 }

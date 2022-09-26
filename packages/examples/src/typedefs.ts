@@ -1,29 +1,15 @@
-import {ArrayControl, FormControl, GroupControl} from "@react-typed-forms/core";
+import { Control } from "@react-typed-forms/core";
 
-export type MeasurementValueForm = GroupControl<{
-    type: FormControl<string>;
-    childType: FormControl<MeasurementType>;
-    value: FormControl<any>;
-    timestamp: FormControl<string>;
-    values: ArrayControl<MeasurementValueForm>;
-    data: GroupControl<{
-        [key in keyof typeof MeasurementType]?: MeasurementValueForm;
-    }>;
-}>;
-
-export interface MeasurementValue {
-    timestamp: string;
-    value?: any | undefined;
-    type: string;
+function typeWithNull<A extends { id: string } | null>(c: Control<A>) {
+  // @ts-expect-error
+  c.fields.id;
+  c.fields?.id;
 }
 
-
-export interface MeasurementFormValue extends MeasurementValue {
-    childType: MeasurementType;
-    values: MeasurementFormValue[];
-    data: { [key in keyof typeof MeasurementType]?: MeasurementFormValue };
-}
-
-enum MeasurementType {
-    Ok = "OK"
+function typeWithUndefined<A extends { id: string } | undefined>(
+  c: Control<A>
+) {
+  // @ts-expect-error
+  c.fields.id;
+  c.fields?.id;
 }
