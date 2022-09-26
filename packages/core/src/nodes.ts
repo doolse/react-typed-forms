@@ -54,6 +54,7 @@ export interface Control<V, M = BaseControlMetadata> {
   readonly dirty: boolean;
   readonly disabled: boolean;
   readonly touched: boolean;
+  meta: Partial<M>;
   setValue(v: V, initial?: boolean): Control<V, M>;
   groupedChanges(run: () => void): Control<V, M>;
   unfreeze(): void;
@@ -115,7 +116,7 @@ export interface Control<V, M = BaseControlMetadata> {
   update(
     cb: (
       elems: Control<ElemType<V>, M>[],
-      makeChild: (e: ElemType<V>) => Control<ElemType<V>, Partial<M>>
+      makeChild: (e: ElemType<V>) => Control<ElemType<V>, M>
     ) => Control<ElemType<V>, M>[]
   ): void;
 
@@ -150,12 +151,12 @@ class ControlImpl<V, M> implements Control<V, M> {
     private _value: V,
     private _initialValue: V,
     public error: string | undefined,
-    protected meta: M,
+    public meta: Partial<M>,
     protected flags: ControlFlags,
     protected validator?: ControlValidator<V>,
     private equals?: (a: V, b: V) => boolean,
     public _childBuilder?: (
-      parentMeta: M,
+      parentMeta: Partial<M>,
       key?: string
     ) => CreateControl<any, M> | undefined
   ) {}
@@ -163,7 +164,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   update(
     cb: (
       elems: Control<ElemType<V>, M>[],
-      makeChild: (e: ElemType<V>) => Control<ElemType<V>, Partial<M>>
+      makeChild: (e: ElemType<V>) => Control<ElemType<V>, M>
     ) => Control<ElemType<V>, M>[]
   ): void {
     const [e, initial] = this.ensureArray();
@@ -247,7 +248,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   }
 
   lookupControl(path: (string | number)[]): Control<any, M> | undefined {
-    let base = this as Control<any>;
+    let base = this as Control<any, M>;
     let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
@@ -415,10 +416,10 @@ class ControlImpl<V, M> implements Control<V, M> {
     return this.runChange(ControlChange.Validate);
   }
 
-  makeChild(v: any, iv: any, p?: string | symbol): Control<any, Partial<M>> {
+  makeChild(v: any, iv: any, p?: string | symbol): Control<any, M> {
     const newChild = (
       this._childBuilder?.(this.meta, p as string) ?? createAnyControl
-    ).build(v, iv) as ControlImpl<any, Partial<M>>;
+    ).build(v, iv) as ControlImpl<any, M>;
     newChild.flags |=
       this.flags & (ControlFlags.Touched | ControlFlags.Disabled);
     newChild.addChangeListener(this.childListener[1], this.childListener[0]);
@@ -753,12 +754,12 @@ export interface CreateControl<V, M> {
   build(value: V, initialValue: V): Control<V, M>;
 }
 
-export class ControlBuilder<V, M> implements CreateControl<V, Partial<M>> {
+export class ControlBuilder<V, M> implements CreateControl<V, M> {
   private setupChildren?: (
-    c: ControlImpl<V, Partial<M>>,
+    c: ControlImpl<V, M>,
     value: any,
     initialValue: any
-  ) => Control<V, Partial<M>>;
+  ) => Control<V, M>;
 
   constructor(
     public validator?: ControlValidator<V>,
@@ -806,7 +807,7 @@ export class ControlBuilder<V, M> implements CreateControl<V, Partial<M>> {
 
   withFields(fields: { [K in keyof V]?: ControlBuilder<V[K], M> }) {
     this.setupChildren = (c, v, iv) => {
-      const childEntries: [string, Control<any, Partial<M>>][] = fields
+      const childEntries: [string, Control<any, M>][] = fields
         ? Object.entries(fields).map(([k, b]) => [
             k,
             (b as ControlBuilder<any, M>).build(v[k], iv[k]),
@@ -836,7 +837,7 @@ export class ControlBuilder<V, M> implements CreateControl<V, Partial<M>> {
       ? ControlFlags.Dirty
       : 0;
 
-    const c = new ControlImpl<V, Partial<M>>(
+    const c = new ControlImpl<V, M>(
       value,
       initialValue,
       error,
@@ -1031,8 +1032,8 @@ function makeChildListener<V, M>(
 
 export function controlGroup<C extends { [k: string]: any }, M>(
   fields: C
-): Control<{ [K in keyof C]: ControlValue<C[K]> }, Partial<M>> {
-  const c = new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }, Partial<M>>(
+): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
+  const c = new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }, M>(
     {} as any,
     {} as any,
     undefined,
@@ -1054,8 +1055,8 @@ export function controlGroup<C extends { [k: string]: any }, M>(
 
 export function withMetadata<V, M = BaseControlMetadata>(
   m?: Partial<M>
-): ControlBuilder<V, Partial<M>> {
-  return new ControlBuilder<V, Partial<M>>(undefined, m);
+): ControlBuilder<V, M> {
+  return new ControlBuilder<V, M>(undefined, m);
 }
 
 export function withFields<V, M = BaseControlMetadata>(fields: {
@@ -1084,8 +1085,8 @@ export const createAnyControl: CreateControl<any, any> = {
 
 export function validated<V, M = BaseControlMetadata>(
   validator: ControlValidator<V>
-): ControlBuilder<V, Partial<M>> {
-  return new ControlBuilder<V, Partial<M>>(validator);
+): ControlBuilder<V, M> {
+  return new ControlBuilder<V, M>(validator);
 }
 
 export function notEmpty<V>(msg: string): (v: V) => string | undefined {
@@ -1190,7 +1191,7 @@ export function createSelectableArray<V, M>(
     });
   }
 
-  const sc = new ControlImpl<SelectionGroup<V>[], Partial<M>>(
+  const sc = new ControlImpl<SelectionGroup<V>[], M>(
     [],
     [],
     undefined,
@@ -1199,7 +1200,7 @@ export function createSelectableArray<V, M>(
     undefined,
     undefined,
     () => ({
-      build(value: any, initialValue: any): Control<any, Partial<M>> {
+      build(value: any, initialValue: any): Control<any, M> {
         const valueChild = orig.makeChild(value.value, initialValue.value);
         return controlGroup({
           selected: newBoolean(value.selected, initialValue.selected),
@@ -1213,8 +1214,8 @@ export function createSelectableArray<V, M>(
 
   function selectionChanged() {
     const e = sc.ensureArray()[0];
-    const current: Control<V>[] = [];
-    const initial: Control<V>[] = [];
+    const current: Control<V, M>[] = [];
+    const initial: Control<V, M>[] = [];
     e.forEach((v) => {
       const sel = v.fields.selected;
       if (sel.value) current.push(v.fields.value);
@@ -1228,7 +1229,7 @@ export function createSelectableArray<V, M>(
   }
 
   function newBoolean(v: boolean, iv: boolean) {
-    const b = new ControlImpl<boolean, Partial<M>>(
+    const b = new ControlImpl<boolean, M>(
       v,
       iv,
       undefined,
