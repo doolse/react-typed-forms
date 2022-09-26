@@ -1,12 +1,10 @@
 import {
-  ControlChange,
-  defineControl,
-  elementsWith,
   FormArray,
+  notEmpty,
   useControl,
-  useControlState,
   useOptionalFields,
-  validateWith,
+  validated,
+  withElems,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
 import { Button } from "@material-ui/core";
@@ -17,15 +15,15 @@ type MyForm = {
   strings?: string[];
   subObject?: { coolBeans: string };
 };
-const FormDef = defineControl<MyForm>({
-  field1: validateWith((v) => (!v ? "Please put it in" : undefined)),
-  strings: elementsWith(
-    validateWith((v) => (!v ? "Please put it in pls" : undefined))
-  ),
-});
 
 export default function CharliePage() {
-  const fc = useControl<MyForm>({});
+  const fc = useControl<MyForm, { shit: string; element?: HTMLElement | null }>(
+    {},
+    {
+      field1: validated(notEmpty("Please put it in")),
+      strings: withElems(validated(notEmpty("PLS"))),
+    }
+  );
   const fields = fc.fields;
   const subFields = useOptionalFields(fields.subObject);
   return (

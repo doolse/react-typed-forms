@@ -785,15 +785,15 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
   withElems(elemBuilder: ControlBuilder<ElemType<V>, M>) {
     this.setupChildren = (c, value, initialValue) => {
       const allElems = createElemsFromArrays<ElemType<V>, M>(
-        value,
-        initialValue,
+        value ?? [],
+        initialValue ?? [],
         (v, iv) => elemBuilder.build(v, iv)
       );
       c._childBuilder = () => elemBuilder;
       c._children = splitArrayElems(
         allElems,
-        value.length,
-        initialValue.length
+        value?.length ?? 0,
+        initialValue?.length ?? 0
       );
       c._childSync = ChildSyncFlags.Valid | ChildSyncFlags.Dirty;
       allElems.forEach((x) =>

@@ -1,11 +1,5 @@
-import {
-  control,
-  buildGroup,
-  Fselect,
-  Finput,
-  defineControl,
-} from "@react-typed-forms/core";
-import React, { useState, useRef } from "react";
+import { buildGroup, control, Finput, Fselect } from "@react-typed-forms/core";
+import React, { useRef, useState } from "react";
 
 type SimpleForm = {
   username: string;

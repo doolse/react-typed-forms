@@ -226,18 +226,16 @@ type UseControlBuilder<V, M> =
 
 export function useControl<V, M = BaseControlMetadata>(
   v: V,
-  builder?:
-    | (() => UseControlBuilder<V, Partial<M>>)
-    | UseControlBuilder<V, Partial<M>>
-): Control<V, Partial<M>> {
+  builder?: (() => UseControlBuilder<V, M>) | UseControlBuilder<V, M>
+): Control<V, M> {
   return useState(() => {
-    const b: UseControlBuilder<V, Partial<M>> | undefined =
+    const b: UseControlBuilder<V, M> | undefined =
       typeof builder === "function" ? builder?.() : builder;
     return b
       ? b instanceof ControlBuilder
         ? b.build(v, v)
         : withFields(b).build(v, v)
-      : (createAnyControl.build(v, v) as Control<V, Partial<M>>);
+      : (createAnyControl.build(v, v) as Control<V, M>);
   })[0];
 }
 
