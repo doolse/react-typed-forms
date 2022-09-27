@@ -116,7 +116,10 @@ export default function ArraySelectionsExample() {
           id="setValue"
           className="btn btn-primary"
           onClick={() =>
-            allFormState.fields.people.setValue([{ first: "Thomas", last: "" }])
+            allFormState.fields.people.setValue([
+              { first: "Thomas", last: "" },
+              { first: "Derek", last: "Chongster" },
+            ])
           }
         >
           Set Value

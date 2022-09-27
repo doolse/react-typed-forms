@@ -1225,6 +1225,40 @@ export function createSelectableArray<V, M>(
     })
   );
   sc._children = [newFields, newFields];
+  orig.addChangeListener((c) => {
+    const [origElems, origInitial] = orig.ensureArray();
+    const [selElems] = sc.ensureArray();
+    sc.groupedChanges(() => {
+      const changes = origElems.map((o) => ({
+        node: o,
+        existing: selElems.find(
+          (x) =>
+            x.fields.value === o ||
+            (key && key(x.fields.value.value) === key(o.value))
+        ),
+        original: origInitial.includes(o),
+      }));
+      selElems
+        .filter((selElem) => !changes.some((x) => selElem === x.existing))
+        .forEach((x) => x.fields.selected.setValue(false));
+      changes
+        .filter((x) => x.existing)
+        .forEach((x) => x.existing!.fields.selected.setValue(true));
+      const additional = changes
+        .filter((x) => !x.existing)
+        .map((x) =>
+          controlGroup({
+            selected: newBoolean(true, x.original),
+            value: x.node,
+          })
+        );
+      if (additional.length) {
+        const newChildren = [...selElems, ...additional];
+        sc._children = [newChildren, newChildren];
+        sc.runChange(ControlChange.Value);
+      }
+    });
+  }, ControlChange.Value | ControlChange.Dirty);
   return sc;
 
   function selectionChanged() {
@@ -1278,9 +1312,4 @@ function splitArrayElems<V, M>(
   initialLen: number
 ): [Control<V, M>[], Control<V, M>[]] {
   return [all.slice(0, validLen), all.slice(0, initialLen)];
-}
-
-export function EditingRow<A extends { id: string }>(a: Control<A>) {
-  //// @ts-expect-error
-  a.fields.id;
 }
