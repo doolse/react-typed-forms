@@ -1170,45 +1170,60 @@ export interface SelectionGroup<V> {
   value: V;
 }
 
+interface SelectionGroupCreator<V, M> {
+  makeElem: (v: V, iv: V) => Control<V, M>;
+  makeGroup: (
+    selected: boolean,
+    wasSelected: boolean,
+    value: Control<V, M>
+  ) => Control<SelectionGroup<V>, M>;
+}
+
+type SelectionGroupSync<V, M> = (
+  elems: Control<V, M>[],
+  initialElems: Control<V, M>[],
+  groupCreator: SelectionGroupCreator<V, M>
+) => Control<SelectionGroup<V>, M>[];
+
+function defaultSelectionCreator<V, M>(
+  elems: Control<V, M>[],
+  initialElems: Control<V, M>[],
+  groupCreator: SelectionGroupCreator<V, M>
+): Control<SelectionGroup<V>, M>[] {
+  return elems
+    .map((x) => groupCreator.makeGroup(true, initialElems.includes(x), x))
+    .concat(
+      initialElems
+        .filter((x) => !elems.includes(x))
+        .map((x) => groupCreator.makeGroup(false, true, x))
+    );
+}
+
+export function ensureSelectableValues<V, M>(
+  values: V[],
+  key: (v: V) => any,
+  parentSync: SelectionGroupSync<V, M> = defaultSelectionCreator
+): SelectionGroupSync<V, M> {
+  return (elems, initialElems, groupCreator) => {
+    const newFields = parentSync(elems, initialElems, groupCreator);
+    values.forEach((av) => {
+      const thisKey = key(av);
+      if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
+        newFields.push(
+          groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
+        );
+      }
+    });
+    return newFields;
+  };
+}
+
 export function createSelectableArray<V, M>(
   c: Control<V[], M>,
-  allowed?: V[],
-  key?: (v1: V) => any
+  mergeArrays: SelectionGroupSync<V, M> = defaultSelectionCreator
 ): Control<SelectionGroup<V>[], M> {
   const orig = c as ControlImpl<V[], M>;
-
-  function calculateGroups() {
-    const [origElems, origInitial] = orig.ensureArray();
-    const newFields = origElems
-      .map((x) =>
-        controlGroup({
-          selected: newBoolean(true, origInitial.includes(x)),
-          value: x,
-        })
-      )
-      .concat(
-        origInitial
-          .filter((x) => !origElems.includes(x))
-          .map((x) =>
-            controlGroup({ selected: newBoolean(false, true), value: x })
-          )
-      );
-
-    if (allowed && key) {
-      allowed.forEach((av) => {
-        const thisKey = key(av);
-        if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
-          newFields.push(
-            controlGroup({
-              selected: newBoolean(false, false),
-              value: orig.makeChild(av, av).as<V>(),
-            })
-          );
-        }
-      });
-    }
-    return newFields;
-  }
+  let currentElems = orig.ensureArray();
 
   const sc = new ControlImpl<SelectionGroup<V>[], M>(
     [],
@@ -1228,12 +1243,28 @@ export function createSelectableArray<V, M>(
       },
     })
   );
-  const newFields = calculateGroups();
+  const creator: SelectionGroupCreator<V, M> = {
+    makeGroup: (selected, wasSelected, value) =>
+      controlGroup({ selected: newBoolean(selected, wasSelected), value }),
+    makeElem: (v, iv) => orig.makeChild(v, iv) as Control<V, M>,
+  };
+  const newFields = mergeArrays(currentElems[0], currentElems[1], creator);
   sc._children = [newFields, newFields];
+
   orig.addChangeListener((c) => {
-    const newFields = calculateGroups();
-    sc._children = [newFields, newFields];
-    sc.runChange(ControlChange.Value);
+    const newOrigChildren = orig.ensureArray();
+    if (newOrigChildren !== currentElems) {
+      const newFields = mergeArrays(
+        newOrigChildren[0],
+        newOrigChildren[1],
+        creator
+      );
+      currentElems = newOrigChildren;
+      sc._children = [newFields, newFields];
+      sc._childSync |=
+        ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+      sc.runChange(ControlChange.Value);
+    }
   }, ControlChange.Value | ControlChange.Dirty);
   return sc;
 
@@ -1246,8 +1277,8 @@ export function createSelectableArray<V, M>(
       if (sel.value) current.push(v.fields.value);
       if (sel.initialValue) initial.push(v.fields.value);
     });
-
-    orig._children = [current, initial];
+    currentElems = [current, initial];
+    orig._children = currentElems;
     orig._childSync |=
       ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
     orig.runChange(ControlChange.Value);

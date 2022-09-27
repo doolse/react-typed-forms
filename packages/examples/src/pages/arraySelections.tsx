@@ -2,6 +2,7 @@ import {
   createSelectableArray,
   defineElements,
   defineFields,
+  ensureSelectableValues,
   Fcheckbox,
   Finput,
   FormArray,
@@ -26,7 +27,10 @@ type RowForm = {
 
 const selected: RowForm[] = [{ first: "Jolse", last: "Maginnis" }];
 
-const allIds = ["Jolse", "Thomas", "Nicholas"];
+const allDefaults: RowForm[] = ["Jolse", "Thomas", "Nicholas"].map((x) => ({
+  first: x,
+  last: "",
+}));
 
 let renders = 0;
 
@@ -45,8 +49,7 @@ export default function ArraySelectionsExample() {
     () =>
       createSelectableArray(
         allFormState.fields.people,
-        allIds.map((x) => ({ first: x, last: "" })),
-        (v) => v.first
+        ensureSelectableValues(allDefaults, (x) => x.first)
       ),
     [allFormState]
   );
