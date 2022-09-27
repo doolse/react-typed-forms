@@ -1176,34 +1176,38 @@ export function createSelectableArray<V, M>(
   key?: (v1: V) => any
 ): Control<SelectionGroup<V>[], M> {
   const orig = c as ControlImpl<V[], M>;
-  const [origElems, origInitial] = orig.ensureArray();
-  const newFields = origElems
-    .map((x) =>
-      controlGroup({
-        selected: newBoolean(true, origInitial.includes(x)),
-        value: x,
-      })
-    )
-    .concat(
-      origInitial
-        .filter((x) => !origElems.includes(x))
-        .map((x) =>
-          controlGroup({ selected: newBoolean(false, true), value: x })
-        )
-    );
 
-  if (allowed && key) {
-    allowed.forEach((av) => {
-      const thisKey = key(av);
-      if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
-        newFields.push(
-          controlGroup({
-            selected: newBoolean(false, false),
-            value: orig.makeChild(av, av).as<V>(),
-          })
-        );
-      }
-    });
+  function calculateGroups() {
+    const [origElems, origInitial] = orig.ensureArray();
+    const newFields = origElems
+      .map((x) =>
+        controlGroup({
+          selected: newBoolean(true, origInitial.includes(x)),
+          value: x,
+        })
+      )
+      .concat(
+        origInitial
+          .filter((x) => !origElems.includes(x))
+          .map((x) =>
+            controlGroup({ selected: newBoolean(false, true), value: x })
+          )
+      );
+
+    if (allowed && key) {
+      allowed.forEach((av) => {
+        const thisKey = key(av);
+        if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
+          newFields.push(
+            controlGroup({
+              selected: newBoolean(false, false),
+              value: orig.makeChild(av, av).as<V>(),
+            })
+          );
+        }
+      });
+    }
+    return newFields;
   }
 
   const sc = new ControlImpl<SelectionGroup<V>[], M>(
@@ -1224,40 +1228,12 @@ export function createSelectableArray<V, M>(
       },
     })
   );
+  const newFields = calculateGroups();
   sc._children = [newFields, newFields];
   orig.addChangeListener((c) => {
-    const [origElems, origInitial] = orig.ensureArray();
-    const [selElems] = sc.ensureArray();
-    sc.groupedChanges(() => {
-      const changes = origElems.map((o) => ({
-        node: o,
-        existing: selElems.find(
-          (x) =>
-            x.fields.value === o ||
-            (key && key(x.fields.value.value) === key(o.value))
-        ),
-        original: origInitial.includes(o),
-      }));
-      selElems
-        .filter((selElem) => !changes.some((x) => selElem === x.existing))
-        .forEach((x) => x.fields.selected.setValue(false));
-      changes
-        .filter((x) => x.existing)
-        .forEach((x) => x.existing!.fields.selected.setValue(true));
-      const additional = changes
-        .filter((x) => !x.existing)
-        .map((x) =>
-          controlGroup({
-            selected: newBoolean(true, x.original),
-            value: x.node,
-          })
-        );
-      if (additional.length) {
-        const newChildren = [...selElems, ...additional];
-        sc._children = [newChildren, newChildren];
-        sc.runChange(ControlChange.Value);
-      }
-    });
+    const newFields = calculateGroups();
+    sc._children = [newFields, newFields];
+    sc.runChange(ControlChange.Value);
   }, ControlChange.Value | ControlChange.Dirty);
   return sc;
 
