@@ -76,6 +76,7 @@ export default function BasicFormExample() {
             className="btn btn-secondary"
             onClick={(e) => {
               e.preventDefault();
+              console.log(formState);
               formState.setDisabled(!formState.disabled);
             }}
           >

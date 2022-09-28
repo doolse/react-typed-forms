@@ -10,12 +10,13 @@ import React, {
   useState,
 } from "react";
 import {
+  AllArrayControls,
   BaseControlMetadata,
   Control,
-  ControlBuilder,
   controlBuilder,
   ControlChange,
   ControlConfigure,
+  controlGroup,
   FormControlFields,
   RetainOptionality,
 } from "./nodes";
@@ -235,4 +236,133 @@ export function useOptionalFields<V, M>(
   c: Control<V, M>
 ): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
+}
+
+export interface SelectionGroup<V> {
+  selected: boolean;
+  value: V;
+}
+
+interface SelectionGroupCreator<V, M> {
+  makeElem: (v: V, iv: V) => Control<V, M>;
+  makeGroup: (
+    selected: boolean,
+    wasSelected: boolean,
+    value: Control<V, M>
+  ) => Control<SelectionGroup<V>, M>;
+}
+
+type SelectionGroupSync<V, M> = (
+  allElems: AllArrayControls<V, M>,
+  groupCreator: SelectionGroupCreator<V, M>
+) => AllArrayControls<SelectionGroup<V>, M>;
+
+const defaultSelectionCreator: SelectionGroupSync<any, any> = (
+  allElems,
+  creator
+) => {
+  const selectionElems = allElems.allElems.map((x, i) => {
+    const selected = i < allElems.valueLength;
+    return creator.makeGroup(selected, true, x);
+  });
+  return {
+    allElems: selectionElems,
+    valueLength: selectionElems.length,
+    initialLength: selectionElems.length,
+  };
+
+  // return elems
+  //   .map((x) => groupCreator.makeGroup(true, initialElems.includes(x), x))
+  //   .concat(
+  //     initialElems
+  //       .filter((x) => !elems.includes(x))
+  //       .map((x) => groupCreator.makeGroup(false, true, x))
+  //   );
+};
+
+export function ensureSelectableValues<V, M>(
+  values: V[],
+  key: (v: V) => any,
+  parentSync: SelectionGroupSync<
+    V,
+    M
+  > = defaultSelectionCreator as unknown as SelectionGroupSync<V, M>
+): SelectionGroupSync<V, M> {
+  return (allElems, groupCreator) => {
+    const newFields = parentSync(allElems, groupCreator);
+    const allNew = newFields.allElems;
+    values.forEach((av) => {
+      const thisKey = key(av);
+      if (!allNew.some((x) => thisKey === key(x.fields.value.value))) {
+        allNew.push(
+          groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
+        );
+      }
+    });
+    return {
+      ...newFields,
+      valueLength: allNew.length,
+      initialLength: allNew.length,
+    };
+  };
+}
+
+export function useSelectableArray<V, M>(
+  control: Control<V[], M>,
+  groupSyncer: SelectionGroupSync<
+    V,
+    M
+  > = defaultSelectionCreator as unknown as SelectionGroupSync<V, M>
+): Control<SelectionGroup<V>[], M> {
+  const selectable = useControl<SelectionGroup<V>[], M>([]);
+  const updatedWithRef = useRef<Control<V, M>[] | undefined>(undefined);
+  useControlChangeEffect(
+    control,
+    (c) => {
+      const allControlElems = c.allElems;
+      if (updatedWithRef.current === allControlElems.allElems) return;
+      selectable.updateAllElems((existing, builder) => {
+        const elemBuilder =
+          allControlElems.configureChild?.(controlBuilder()) ??
+          controlBuilder();
+        return groupSyncer(allControlElems, {
+          makeElem: (v, iv) => elemBuilder.build(v, iv),
+          makeGroup: (selected, wasSelected, value) =>
+            controlGroup({
+              selected: controlBuilder().build(selected, wasSelected),
+              value,
+            }) as Control<SelectionGroup<V>, M>,
+        });
+      });
+    },
+    ControlChange.Value | ControlChange.InitialValue,
+    undefined,
+    true
+  );
+  useControlChangeEffect(
+    selectable,
+    (c) => {
+      control.updateAllElems((ex) => {
+        const selOnly = selectable.elems.filter((x) => x.fields.selected.value);
+        const selectedElems = selectable.elems
+          .filter(
+            (x) => x.fields.selected.value || x.fields.selected.initialValue
+          )
+          .sort((a, b) =>
+            a.fields.selected.value ? (b.fields.selected.value ? 0 : -1) : 1
+          )
+          .map((x) => x.fields.value);
+        updatedWithRef.current = selectedElems;
+        const out = {
+          allElems: selectedElems,
+          valueLength: selOnly.length,
+          initialLength: ex.initialLength,
+        };
+        console.log(out);
+        return out;
+      });
+    },
+    ControlChange.Value
+  );
+  return selectable;
 }

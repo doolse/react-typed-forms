@@ -25,9 +25,14 @@ describe("Array Selections", () => {
     cy.get("#setValue").click();
     cy.contains("#dirtyFlag", "true");
     cy.get("#submit").click();
-    cy.get("pre").should(compareJson([{ first: "Thomas", last: "" }]));
+    cy.get("pre").should(
+      compareJson([
+        { first: "Thomas", last: "" },
+        { first: "Derek", last: "Chongster" },
+      ])
+    );
     cy.get("#clean").click();
-    cy.get(".row_1 .lastField").type("This won't matter");
+    cy.get(".row_2 .lastField").type("This won't matter");
     cy.contains("#dirtyFlag", "false");
   });
 });

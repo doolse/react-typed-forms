@@ -1,6 +1,4 @@
 import {
-  createSelectableArray,
-  defineElements,
   defineFields,
   ensureSelectableValues,
   Fcheckbox,
@@ -11,9 +9,10 @@ import {
   SelectionGroup,
   useControl,
   useControlStateComponent,
+  useSelectableArray,
   validated,
 } from "@react-typed-forms/core";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
 interface FormData {
   people: RowForm[];
@@ -45,13 +44,9 @@ export default function ArraySelectionsExample() {
         ),
     })
   );
-  const formState = useMemo(
-    () =>
-      createSelectableArray(
-        allFormState.fields.people,
-        ensureSelectableValues(allDefaults, (x) => x.first)
-      ),
-    [allFormState]
+  const formState = useSelectableArray(
+    allFormState.fields.people,
+    ensureSelectableValues(allDefaults, (x) => x.first)
   );
   const [formData, setFormData] = useState<RowForm[]>();
   const Dirty = useControlStateComponent(allFormState, (c) => {
