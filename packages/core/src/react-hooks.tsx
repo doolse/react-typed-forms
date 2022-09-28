@@ -13,9 +13,9 @@ import {
   BaseControlMetadata,
   Control,
   ControlBuilder,
-  ControlChange,
-  createAnyControl,
   controlBuilder,
+  ControlChange,
+  ControlConfigure,
   FormControlFields,
   RetainOptionality,
 } from "./nodes";
@@ -223,13 +223,11 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
 
 export function useControl<V, M = BaseControlMetadata>(
   v: V,
-  builder?: (b: ControlBuilder<V, M>) => ControlBuilder<V, M>
+  configure?: ControlConfigure<V, M>
 ): Control<V, M> {
   return useState(() => {
-    return (
-      builder?.(controlBuilder<V, M>()).build(v, v) ??
-      (createAnyControl.build(v, v) as Control<V, M>)
-    );
+    const builder = controlBuilder<V, M>();
+    return (configure ? configure(builder) : builder).build(v, v);
   })[0];
 }
 

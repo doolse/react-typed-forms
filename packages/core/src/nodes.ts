@@ -48,6 +48,10 @@ export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
   | (null extends V ? null : never);
 
+export type ControlConfigure<V, M> = (
+  b: ControlBuilder<V, M>
+) => ControlBuilder<V, M>;
+
 export interface Control<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
   readonly stateVersion: number;
@@ -155,10 +159,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     protected flags: ControlFlags,
     protected validator?: ControlValidator<V>,
     private equals?: (a: V, b: V) => boolean,
-    public _childBuilder?: (
-      parentMeta: Partial<M>,
-      key?: string
-    ) => CreateControl<any, M> | undefined
+    public _childAdjust?: ControlConfigure<any, M>
   ) {}
 
   update(
@@ -416,12 +417,21 @@ class ControlImpl<V, M> implements Control<V, M> {
     return this.runChange(ControlChange.Validate);
   }
 
-  makeChild(v: any, iv: any, p?: string | symbol): Control<any, M> {
-    const newChild = (
-      this._childBuilder?.(this.meta, p as string) ?? createAnyControl
-    ).build(v, iv) as ControlImpl<any, M>;
-    newChild.flags |=
-      this.flags & (ControlFlags.Touched | ControlFlags.Disabled);
+  makeChild(
+    v: any,
+    iv: any,
+    p?: string | symbol,
+    inheritFlags?: boolean
+  ): Control<any, M> {
+    const builder = controlBuilder<any, M>();
+    builder.parentMeta = this.meta;
+    builder.key = p as string;
+    const finalBuilder = this._childAdjust?.(builder) ?? builder;
+    const newChild = finalBuilder.build(v, iv) as ControlImpl<any, M>;
+    if (inheritFlags) {
+      newChild.flags |=
+        this.flags & (ControlFlags.Touched | ControlFlags.Disabled);
+    }
     newChild.addChangeListener(this.childListener[1], this.childListener[0]);
     return newChild;
   }
@@ -467,7 +477,7 @@ class ControlImpl<V, M> implements Control<V, M> {
           const thisInitial = t.initialValue as any;
           const v = (t.value as any)[p];
           const iv = thisInitial ? thisInitial[p] : v;
-          const c = t.makeChild(v, iv, p);
+          const c = t.makeChild(v, iv, p, true);
           target[p] = c;
           return c;
         },
@@ -751,16 +761,18 @@ export interface CreateControl<V, M> {
 }
 
 export class ControlBuilder<V, M> implements CreateControl<V, M> {
-  private setupChildren?: (
-    c: ControlImpl<V, M>,
+  private doBuild?: (
     value: any,
-    initialValue: any
+    initialValue: any,
+    createImpl: () => ControlImpl<V, M>
   ) => Control<V, M>;
 
   constructor(
     public validator?: ControlValidator<V>,
     public meta?: Partial<M>,
-    public equals?: (v: V, v2: V) => boolean
+    public equals?: (v: V, v2: V) => boolean,
+    public parentMeta: Partial<M> = {},
+    public key?: string
   ) {}
 
   // defineControl<CV>(m?: Partial<M>): ControlBuilder<CV, M> {
@@ -787,18 +799,17 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
   }
 
   withElements(
-    elemBuilder: (
-      b: ControlBuilder<ElemType<V>, M>
-    ) => ControlBuilder<ElemType<V>, M>
+    elemBuilder: ControlConfigure<ElemType<V>, M>
   ): ControlBuilder<V, M> {
     const builder = elemBuilder(controlBuilder<ElemType<V>, M>());
-    this.setupChildren = (c, value, initialValue) => {
+    this.doBuild = (value, initialValue, make) => {
+      const c = make();
       const allElems = createElemsFromArrays<ElemType<V>, M>(
         value ?? [],
         initialValue ?? [],
         (v, iv) => builder.build(v, iv)
       );
-      c._childBuilder = () => builder;
+      c._childAdjust = elemBuilder as unknown as ControlConfigure<any, M>;
       c._children = splitArrayElems(
         allElems,
         value?.length ?? 0,
@@ -817,7 +828,8 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
   withFields(fields: {
     [K in keyof V]?: (b: ControlBuilder<V[K], M>) => ControlBuilder<V[K], M>;
   }) {
-    this.setupChildren = (c, v, iv) => {
+    this.doBuild = (v, iv, make) => {
+      const c = make();
       const childEntries: [string, Control<any, M>][] = fields
         ? Object.entries(fields).map(([k, b]) => [
             k,
@@ -839,6 +851,17 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
     return this;
   }
 
+  withBuildFunc(
+    doBuild: (
+      value: any,
+      initialValue: any,
+      createImpl: () => ControlImpl<V, M>
+    ) => Control<V, M>
+  ) {
+    this.doBuild = doBuild;
+    return this;
+  }
+
   build(value: V, initialValue: V): Control<V, M> {
     let { error, flags } = setupValidator<V, BaseControlMetadata>(
       value,
@@ -850,16 +873,17 @@ export class ControlBuilder<V, M> implements CreateControl<V, M> {
       ? ControlFlags.Dirty
       : 0;
 
-    const c = new ControlImpl<V, M>(
-      value,
-      initialValue,
-      error,
-      this.meta ?? {},
-      flags,
-      this.validator,
-      this.equals
-    );
-    return this.setupChildren?.(c, value, initialValue) ?? c;
+    const make = () =>
+      new ControlImpl<V, M>(
+        value,
+        initialValue,
+        error,
+        this.meta ?? {},
+        flags,
+        this.validator,
+        this.equals
+      );
+    return this.doBuild ? this.doBuild(value, initialValue, make) : make();
   }
 }
 
@@ -931,16 +955,12 @@ export function arrayControl<CHILD>(
       ControlFlags.Valid,
       undefined,
       undefined,
-      () => ({
-        build(
-          value: any,
-          initialValue: any
-        ): Control<any, BaseControlMetadata> {
+      (b) =>
+        b.withBuildFunc((i, iv) => {
           const c = builderFormControl(child);
-          initChild(c, value, initialValue);
+          initChild(c, i, iv);
           return c;
-        },
-      })
+        })
     ) as any;
   };
 }
@@ -981,16 +1001,14 @@ export function groupControl<DEF extends { [t: string]: any }>(
       allValid ? ControlFlags.Valid : 0,
       undefined,
       undefined,
-      (meta, p) =>
-        fields[p as string]
-          ? {
-              build(value: any, initialValue: any): Control<any, {}> {
-                const fc = fields[p as string];
-                initChild(fc, value, initialValue);
-                return fc;
-              },
-            }
-          : undefined
+      (b) =>
+        fields[b.key as string]
+          ? b.withBuildFunc((i, iv) => {
+              const c = fields[b.key as string];
+              initChild(c, i, iv);
+              return c;
+            })
+          : b
     ) as any;
   };
 }
@@ -1065,18 +1083,6 @@ export function controlGroup<C extends { [k: string]: any }, M>(
   c.runChange(0);
   return c;
 }
-
-export const createAnyControl: CreateControl<any, any> = {
-  build(value: any, initialValue: any): Control<any, any> {
-    return new ControlImpl(
-      value,
-      initialValue,
-      undefined,
-      {},
-      ControlFlags.Valid | (value !== initialValue ? ControlFlags.Dirty : 0)
-    );
-  },
-};
 
 export function controlBuilder<V, M = BaseControlMetadata>(
   m?: Partial<M>
@@ -1218,84 +1224,84 @@ export function ensureSelectableValues<V, M>(
   };
 }
 
-export function createSelectableArray<V, M>(
-  c: Control<V[], M>,
-  mergeArrays: SelectionGroupSync<V, M> = defaultSelectionCreator
-): Control<SelectionGroup<V>[], M> {
-  const orig = c as ControlImpl<V[], M>;
-  let currentElems = orig.ensureArray();
-
-  const sc = new ControlImpl<SelectionGroup<V>[], M>(
-    [],
-    [],
-    undefined,
-    {},
-    ControlFlags.Valid,
-    undefined,
-    undefined,
-    () => ({
-      build(value: any, initialValue: any): Control<any, M> {
-        const valueChild = orig.makeChild(value.value, initialValue.value);
-        return controlGroup({
-          selected: newBoolean(value.selected, initialValue.selected),
-          value: valueChild,
-        });
-      },
-    })
-  );
-  const creator: SelectionGroupCreator<V, M> = {
-    makeGroup: (selected, wasSelected, value) =>
-      controlGroup({ selected: newBoolean(selected, wasSelected), value }),
-    makeElem: (v, iv) => orig.makeChild(v, iv) as Control<V, M>,
-  };
-  const newFields = mergeArrays(currentElems[0], currentElems[1], creator);
-  sc._children = [newFields, newFields];
-
-  orig.addChangeListener((c) => {
-    const newOrigChildren = orig.ensureArray();
-    if (newOrigChildren !== currentElems) {
-      const newFields = mergeArrays(
-        newOrigChildren[0],
-        newOrigChildren[1],
-        creator
-      );
-      currentElems = newOrigChildren;
-      sc._children = [newFields, newFields];
-      sc._childSync |=
-        ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
-      sc.runChange(ControlChange.Value);
-    }
-  }, ControlChange.Value | ControlChange.Dirty);
-  return sc;
-
-  function selectionChanged() {
-    const e = sc.ensureArray()[0];
-    const current: Control<V, M>[] = [];
-    const initial: Control<V, M>[] = [];
-    e.forEach((v) => {
-      const sel = v.fields.selected;
-      if (sel.value) current.push(v.fields.value);
-      if (sel.initialValue) initial.push(v.fields.value);
-    });
-    currentElems = [current, initial];
-    orig._children = currentElems;
-    orig._childSync |=
-      ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
-    orig.runChange(ControlChange.Value);
-  }
-
-  function newBoolean(v: boolean, iv: boolean) {
-    const b = new ControlImpl<boolean, M>(
-      v,
-      iv,
-      undefined,
-      {},
-      ControlFlags.Valid | (v !== iv ? ControlFlags.Dirty : 0)
-    );
-    b.addChangeListener(selectionChanged, ControlChange.Value);
-    return b;
-  }
-}
+// export function createSelectableArray<V, M>(
+//   c: Control<V[], M>,
+//   mergeArrays: SelectionGroupSync<V, M> = defaultSelectionCreator
+// ): Control<SelectionGroup<V>[], M> {
+//   const orig = c as ControlImpl<V[], M>;
+//   let currentElems = orig.ensureArray();
+//
+//   const sc = new ControlImpl<SelectionGroup<V>[], M>(
+//     [],
+//     [],
+//     undefined,
+//     {},
+//     ControlFlags.Valid,
+//     undefined,
+//     undefined,
+//     // () => ({
+//     //   build(value: any, initialValue: any): Control<any, M> {
+//     //     const valueChild = orig.makeChild(value.value, initialValue.value);
+//     //     return controlGroup({
+//     //       selected: newBoolean(value.selected, initialValue.selected),
+//     //       value: valueChild,
+//     //     });
+//     //   },
+//     })
+//   );
+//   const creator: SelectionGroupCreator<V, M> = {
+//     makeGroup: (selected, wasSelected, value) =>
+//       controlGroup({ selected: newBoolean(selected, wasSelected), value }),
+//     makeElem: (v, iv) => orig.makeChild(v, iv) as Control<V, M>,
+//   };
+//   const newFields = mergeArrays(currentElems[0], currentElems[1], creator);
+//   sc._children = [newFields, newFields];
+//
+//   orig.addChangeListener((c) => {
+//     const newOrigChildren = orig.ensureArray();
+//     if (newOrigChildren !== currentElems) {
+//       const newFields = mergeArrays(
+//         newOrigChildren[0],
+//         newOrigChildren[1],
+//         creator
+//       );
+//       currentElems = newOrigChildren;
+//       sc._children = [newFields, newFields];
+//       sc._childSync |=
+//         ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+//       sc.runChange(ControlChange.Value);
+//     }
+//   }, ControlChange.Value | ControlChange.Dirty);
+//   return sc;
+//
+//   function selectionChanged() {
+//     const e = sc.ensureArray()[0];
+//     const current: Control<V, M>[] = [];
+//     const initial: Control<V, M>[] = [];
+//     e.forEach((v) => {
+//       const sel = v.fields.selected;
+//       if (sel.value) current.push(v.fields.value);
+//       if (sel.initialValue) initial.push(v.fields.value);
+//     });
+//     currentElems = [current, initial];
+//     orig._children = currentElems;
+//     orig._childSync |=
+//       ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
+//     orig.runChange(ControlChange.Value);
+//   }
+//
+//   function newBoolean(v: boolean, iv: boolean) {
+//     const b = new ControlImpl<boolean, M>(
+//       v,
+//       iv,
+//       undefined,
+//       {},
+//       ControlFlags.Valid | (v !== iv ? ControlFlags.Dirty : 0)
+//     );
+//     b.addChangeListener(selectionChanged, ControlChange.Value);
+//     return b;
+//   }
+// }
 
 function createElemsFromArrays<V, M>(
   valArr: V[],
