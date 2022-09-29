@@ -10,7 +10,6 @@ import React, {
   useState,
 } from "react";
 import {
-  AllArrayControls,
   BaseControlMetadata,
   Control,
   controlBuilder,
@@ -253,31 +252,20 @@ interface SelectionGroupCreator<V, M> {
 }
 
 type SelectionGroupSync<V, M> = (
-  allElems: AllArrayControls<V, M>,
+  elems: Control<V, M>[],
+  initialValue: V[],
   groupCreator: SelectionGroupCreator<V, M>
-) => AllArrayControls<SelectionGroup<V>, M>;
+) => Control<SelectionGroup<V>, M>[];
 
 const defaultSelectionCreator: SelectionGroupSync<any, any> = (
-  allElems,
+  elems,
+  initialValue,
   creator
 ) => {
-  const selectionElems = allElems.allElems.map((x, i) => {
-    const selected = i < allElems.valueLength;
-    return creator.makeGroup(selected, true, x);
+  const selectionElems = elems.map((x, i) => {
+    return creator.makeGroup(true, true, x);
   });
-  return {
-    allElems: selectionElems,
-    valueLength: selectionElems.length,
-    initialLength: selectionElems.length,
-  };
-
-  // return elems
-  //   .map((x) => groupCreator.makeGroup(true, initialElems.includes(x), x))
-  //   .concat(
-  //     initialElems
-  //       .filter((x) => !elems.includes(x))
-  //       .map((x) => groupCreator.makeGroup(false, true, x))
-  //   );
+  return selectionElems;
 };
 
 export function ensureSelectableValues<V, M>(
@@ -288,22 +276,17 @@ export function ensureSelectableValues<V, M>(
     M
   > = defaultSelectionCreator as unknown as SelectionGroupSync<V, M>
 ): SelectionGroupSync<V, M> {
-  return (allElems, groupCreator) => {
-    const newFields = parentSync(allElems, groupCreator);
-    const allNew = newFields.allElems;
+  return (elems, initialValue, groupCreator) => {
+    const newFields = parentSync(elems, initialValue, groupCreator);
     values.forEach((av) => {
       const thisKey = key(av);
-      if (!allNew.some((x) => thisKey === key(x.fields.value.value))) {
-        allNew.push(
+      if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
+        newFields.push(
           groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
         );
       }
     });
-    return {
-      ...newFields,
-      valueLength: allNew.length,
-      initialLength: allNew.length,
-    };
+    return newFields;
   };
 }
 
@@ -319,14 +302,11 @@ export function useSelectableArray<V, M>(
   useControlChangeEffect(
     control,
     (c) => {
-      const allControlElems = c.allElems;
-      if (updatedWithRef.current === allControlElems.allElems) return;
-      selectable.updateAllElems((existing, builder) => {
-        const elemBuilder =
-          allControlElems.configureChild?.(controlBuilder()) ??
-          controlBuilder();
-        return groupSyncer(allControlElems, {
-          makeElem: (v, iv) => elemBuilder.build(v, iv),
+      const allControlElems = c.elems;
+      if (updatedWithRef.current === allControlElems) return;
+      selectable.update((existing, builder) => {
+        return groupSyncer(allControlElems, control.initialValue, {
+          makeElem: (v, iv) => c.elementBuilder.build(v, iv),
           makeGroup: (selected, wasSelected, value) =>
             controlGroup({
               selected: controlBuilder().build(selected, wasSelected),
@@ -342,25 +322,11 @@ export function useSelectableArray<V, M>(
   useControlChangeEffect(
     selectable,
     (c) => {
-      control.updateAllElems((ex) => {
-        const selOnly = selectable.elems.filter((x) => x.fields.selected.value);
-        const selectedElems = selectable.elems
-          .filter(
-            (x) => x.fields.selected.value || x.fields.selected.initialValue
-          )
-          .sort((a, b) =>
-            a.fields.selected.value ? (b.fields.selected.value ? 0 : -1) : 1
-          )
-          .map((x) => x.fields.value);
-        updatedWithRef.current = selectedElems;
-        const out = {
-          allElems: selectedElems,
-          valueLength: selOnly.length,
-          initialLength: ex.initialLength,
-        };
-        console.log(out);
-        return out;
-      });
+      const selectedElems = selectable.elems
+        .filter((x) => x.fields.selected.value)
+        .map((x) => x.fields.value);
+      updatedWithRef.current = selectedElems;
+      control.update((ex) => selectedElems);
     },
     ControlChange.Value
   );
