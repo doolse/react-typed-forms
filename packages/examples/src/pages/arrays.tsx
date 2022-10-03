@@ -1,9 +1,9 @@
 import {
+  Control,
   defineElements,
   defineFields,
   Finput,
   FormArray,
-  FormControl,
   notEmpty,
   useControl,
   useControlStateComponent,
@@ -50,7 +50,7 @@ export default function ArraysExample() {
   });
   const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
-  function moveUp(fa: FormControl<any[]>, index: number) {
+  function moveUp(fa: Control<any[]>, index: number) {
     if (index > 0 && index < fa.elems.length)
       fa.update((fields) =>
         fields.map((f, idx) =>
@@ -62,7 +62,7 @@ export default function ArraysExample() {
         )
       );
   }
-  function moveDown(fa: FormControl<any[]>, index: number) {
+  function moveDown(fa: Control<any[]>, index: number) {
     if (index >= 0 && index < fa.elems.length - 1)
       fa.update((fields) =>
         fields.map((f, idx) =>
@@ -94,9 +94,24 @@ export default function ArraysExample() {
                 <div>
                   <button
                     className="btn mx-2"
+                    id={`rem-${idx + 1}`}
                     onClick={() => fields.strings.remove(idx)}
                   >
                     X
+                  </button>
+                  <button
+                    className="btn mx-2"
+                    id={`before-${idx + 1}`}
+                    onClick={() => fields.strings.add("Before", c)}
+                  >
+                    Insert before
+                  </button>
+                  <button
+                    className="btn mx-2"
+                    id={`after-${idx + 1}`}
+                    onClick={() => fields.strings.add("After", c, true)}
+                  >
+                    Insert After
                   </button>
                 </div>
               </div>

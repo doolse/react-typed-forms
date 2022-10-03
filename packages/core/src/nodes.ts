@@ -133,7 +133,8 @@ export interface Control<V, M = BaseControlMetadata> {
 
   add(
     child: ElemType<V>,
-    index?: number | Control<ElemType<V>, M>
+    index?: number | Control<ElemType<V>, M>,
+    insertAfter?: boolean
   ): Control<ElemType<V>, M>;
 
   markArrayClean(): void;
@@ -214,7 +215,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   add(
     child: ElemType<V>,
-    index?: number | Control<ElemType<V>, M>
+    index?: number | Control<ElemType<V>, M>,
+    insertAfter?: boolean
   ): Control<ElemType<V>, M> {
     if (!this._value) {
       this.setValue([child] as any);
@@ -227,7 +229,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     }
     let newElems = [...c.elems];
     if (typeof index === "number" && index < c.elems.length) {
-      newElems.splice(index, 0, newChild);
+      newElems.splice(index + (insertAfter ? 1 : 0), 0, newChild);
     } else {
       newElems.push(newChild);
     }
