@@ -45,11 +45,7 @@ export type FormControlFields<V, M> = V extends {
   ? { [K in keyof V]-?: Control<V[K], M> }
   : {};
 
-type ElemType<V> = NonNullable<V> extends (infer E)[]
-  ? E
-  : 0 extends 1 & V
-  ? any
-  : never;
+type ElemType<V, O = any> = NonNullable<V> extends (infer E)[] ? E : O;
 
 export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
@@ -129,13 +125,13 @@ export interface Control<V, M = BaseControlMetadata> {
   remove(child: number | Control<ElemType<V>, M>): void;
 
   add(
-    child: ElemType<V>,
+    child: ElemType<V, never>,
     index?: number | Control<ElemType<V>, M>,
     insertAfter?: boolean
   ): Control<ElemType<V>, M>;
 
   newElement(
-    value: ElemType<V>,
+    value: ElemType<V, never>,
     initialValue: ElemType<V>
   ): Control<ElemType<V>, M>;
 
