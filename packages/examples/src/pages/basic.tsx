@@ -1,11 +1,4 @@
-import {
-  defineFields,
-  Finput,
-  Fselect,
-  notEmpty,
-  useControl,
-  validated,
-} from "@react-typed-forms/core";
+import { Finput, Fselect, notEmpty, useControl } from "@react-typed-forms/core";
 import React, { useRef, useState } from "react";
 
 type SimpleForm = {
@@ -24,12 +17,15 @@ export default function BasicFormExample() {
       number: "",
       password: "",
     },
-    defineFields({
-      password: validated((v) =>
-        v.length < 6 ? "Password must be 6 characters" : undefined
-      ),
-      username: validated(notEmpty("Required field")),
-    })
+    {
+      fields: {
+        password: {
+          validator: (v) =>
+            v.length < 6 ? "Password must be 6 characters" : undefined,
+        },
+        username: { validator: notEmpty("Required field") },
+      },
+    }
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();

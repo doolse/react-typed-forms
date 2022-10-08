@@ -1,10 +1,4 @@
-import {
-  defineFields,
-  Finput,
-  notEmpty,
-  useControl,
-  validated,
-} from "@react-typed-forms/core";
+import { Finput, notEmpty, useControl } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
 interface SimpleForm {
@@ -13,8 +7,9 @@ interface SimpleForm {
 }
 
 export default function SimpleExample() {
-  const formState = useControl({ firstName: "", lastName: "" }, (c) =>
-    c.withFields({ lastName: validated(notEmpty("Required field")) })
+  const formState = useControl(
+    { firstName: "", lastName: "" },
+    { fields: { lastName: { validator: notEmpty("Required field") } } }
   );
   const { fields } = formState;
   const [formData, setFormData] = useState<SimpleForm>();
@@ -22,7 +17,7 @@ export default function SimpleExample() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        setFormData(formState.toObject());
+        setFormData(formState.value);
       }}
     >
       <label>First Name</label>

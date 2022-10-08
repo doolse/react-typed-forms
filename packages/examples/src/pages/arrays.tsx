@@ -1,13 +1,11 @@
 import {
   Control,
-  defineElements,
-  defineFields,
+  ControlSetup,
   Finput,
   FormArray,
   notEmpty,
   useControl,
   useControlStateComponent,
-  validated,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
@@ -23,13 +21,15 @@ type MainForm = {
 
 const defaultRow: RowForm = { id: "", name: "" };
 
-const FormDef = defineFields<MainForm>({
-  structured: defineElements(
-    defineFields({
-      id: validated(notEmpty("Not blank")),
-    })
-  ),
-});
+const FormDef: ControlSetup<MainForm> = {
+  fields: {
+    structured: {
+      elems: {
+        fields: { id: { validator: notEmpty("Not blank") } },
+      },
+    },
+  },
+};
 
 let renders = 0;
 

@@ -45,15 +45,15 @@ export type FormControlFields<V, M> = V extends {
   ? { [K in keyof V]-?: Control<V[K], M> }
   : {};
 
-type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : any;
+type ElemType<V> = NonNullable<V> extends (infer E)[]
+  ? E
+  : 0 extends 1 & V
+  ? any
+  : never;
 
 export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
   | (null extends V ? null : never);
-
-export type ControlConfigure<V, M> = (
-  b: ControlBuilder<V, M>
-) => ControlBuilder<V, M>;
 
 export interface Control<V, M = BaseControlMetadata> {
   readonly uniqueId: number;
@@ -66,6 +66,7 @@ export interface Control<V, M = BaseControlMetadata> {
   readonly disabled: boolean;
   readonly touched: boolean;
   meta: Partial<M>;
+
   setValue(v: V, initial?: boolean): Control<V, M>;
   setInitialValue(v: V): Control<V, M>;
   setValueAndInitial(v: V, iv: V): Control<V, M>;
@@ -120,13 +121,9 @@ export interface Control<V, M = BaseControlMetadata> {
   ): Control<{ [K in keyof OUT]: ControlValue<OUT[K]> }>;
 
   readonly elems: Control<ElemType<V>, M>[] | RetainOptionality<V>;
-  readonly elementBuilder: ControlBuilder<ElemType<V>, M>;
 
   update(
-    cb: (
-      elems: Control<ElemType<V>, M>[],
-      makeChild: (e: ElemType<V>) => Control<ElemType<V>, M>
-    ) => Control<ElemType<V>, M>[]
+    cb: (elems: Control<ElemType<V>, M>[]) => Control<ElemType<V>, M>[]
   ): void;
 
   remove(child: number | Control<ElemType<V>, M>): void;
@@ -137,6 +134,11 @@ export interface Control<V, M = BaseControlMetadata> {
     insertAfter?: boolean
   ): Control<ElemType<V>, M>;
 
+  newElement(
+    value: ElemType<V>,
+    initialValue: ElemType<V>
+  ): Control<ElemType<V>, M>;
+
   markArrayClean(): void;
 
   /**
@@ -145,15 +147,13 @@ export interface Control<V, M = BaseControlMetadata> {
   toArray(): V;
 }
 
-interface FieldsChildren<V, M> {
-  fields: { [K in keyof V]?: Control<V[K], M> };
-  fieldsProxy?: FormControlFields<NonNullable<V>, M>;
-  configureChild: (k: string) => ControlConfigure<any, M>;
-}
-
-export interface ArrayChildren<V, M> {
-  elems: Control<V, M>[];
-  configureChild: ControlConfigure<V, M>;
+export interface ControlSetup<V, M = BaseControlMetadata> {
+  meta?: Partial<M>;
+  validator?: ControlValidator<V>;
+  equals?: (a: V, b: V) => boolean;
+  elems?: ControlSetup<ElemType<V>, M>;
+  fields?: { [K in keyof V]?: ControlSetup<V[K], M> };
+  create?: (value: V, initial: V, setup: ControlSetup<V, M>) => Control<V, M>;
 }
 
 class ControlImpl<V, M> implements Control<V, M> {
@@ -162,31 +162,38 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   private _childListener?: ChangeListener<any, M>;
   private listeners: ChangeListener<V, M>[] = [];
+  public meta: Partial<M>;
+  private _fieldsProxy?: FormControlFields<NonNullable<V>, M>;
+  private _elems?: Control<ElemType<V>, M>[];
 
   constructor(
     public _value: V,
     public _initialValue: V,
     public error: string | undefined,
-    public meta: Partial<M>,
     public flags: ControlFlags,
-    public validator?: ControlValidator<V>,
-    private equals?: (a: V, b: V) => boolean,
-    public _children?: FieldsChildren<V, M> | ArrayChildren<ElemType<V>, M>
-  ) {}
+    public setup: ControlSetup<V, M>,
+    private _fields?: { [K in keyof V]?: Control<V[K], M> },
+    childSync?: ChildSyncFlags
+  ) {
+    this.meta = setup.meta ?? {};
+    if (childSync !== undefined) {
+      this._childSync = childSync;
+      this.runChange(0);
+    }
+    if (_fields)
+      Object.values(_fields).forEach((x) =>
+        this.attachParentListener(x as Control<any, M>)
+      );
+  }
 
   update(
-    cb: (
-      elems: Control<ElemType<V>, M>[],
-      makeChild: (e: ElemType<V>) => Control<ElemType<V>, M>
-    ) => Control<ElemType<V>, M>[]
+    cb: (elems: Control<ElemType<V>, M>[]) => Control<ElemType<V>, M>[]
   ): void {
     const c = this.ensureArray();
-    const newElems = cb(c.elems, (v) =>
-      c.configureChild(controlBuilder()).build(v, v)
-    );
-    if (c.elems !== newElems) {
-      this.ensureArrayAttachment(newElems, c.elems);
-      this._children = { ...c, elems: newElems };
+    const newElems = cb(c);
+    if (c !== newElems) {
+      this.ensureArrayAttachment(newElems, c);
+      this._elems = newElems;
       this._childSync |=
         ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
       this.runChange(ControlChange.Value);
@@ -207,10 +214,13 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   remove(child: number | Control<ElemType<V>, M>): void {
     const c = this.ensureArray();
-    const wantedIndex =
-      typeof child === "number" ? child : c.elems.indexOf(child);
-    if (wantedIndex < 0 || wantedIndex >= c.elems.length) return;
+    const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
+    if (wantedIndex < 0 || wantedIndex >= c.length) return;
     this.update((ex) => ex.filter((x, i) => i !== wantedIndex));
+  }
+
+  newElement(elem: ElemType<V>): Control<ElemType<V>, M> {
+    return newControl(elem, elem, this.setup.elems);
   }
 
   add(
@@ -223,38 +233,37 @@ class ControlImpl<V, M> implements Control<V, M> {
       return this.elems![0] as Control<ElemType<V>, M>;
     }
     const c = this.ensureArray();
-    const newChild = c.configureChild(controlBuilder()).build(child, child);
+    const newChild = newControl(child, child, this.setup.elems);
     if (typeof index === "object") {
-      index = c.elems.indexOf(index as any);
+      index = c.indexOf(index as any);
     }
-    let newElems = [...c.elems];
-    if (typeof index === "number" && index < c.elems.length) {
+    let newElems = [...c];
+    if (typeof index === "number" && index < c.length) {
       newElems.splice(index + (insertAfter ? 1 : 0), 0, newChild);
     } else {
       newElems.push(newChild);
     }
-    this.update((ex) => newElems);
+    this.update(() => newElems);
     return newChild;
   }
 
   isEqual(a: V, b: V): boolean {
-    if (this.equals) return this.equals(a, b);
+    if (this.setup.equals) return this.setup.equals(a, b);
     return a === b;
   }
 
   isValueEqual(v: V): boolean {
-    const c = this._children;
-    if (c) {
-      if (isArrayChildren(c)) {
-        if (!Array.isArray(v)) return false;
-        if (c.elems.length !== v.length) return false;
-        return c.elems.every((x, i) => x.isValueEqual(v[i]));
-      } else {
-        for (const k in c.fields) {
-          if (!c.fields[k]!.isValueEqual(v[k])) return false;
-        }
-        return true;
+    if (this._elems) {
+      const e = this._elems;
+      if (!Array.isArray(v)) return false;
+      if (e.length !== v.length) return false;
+      return e.every((x, i) => x.isValueEqual(v[i]));
+    } else if (this._fields) {
+      const f = this._fields;
+      for (const k in f) {
+        if (!f[k]!.isValueEqual(v[k])) return false;
       }
+      return true;
     }
     return this.isEqual(this.value, v);
   }
@@ -383,12 +392,8 @@ class ControlImpl<V, M> implements Control<V, M> {
     });
   }
 
-  doFieldsSync(
-    v: V,
-    children: FieldsChildren<V, M>,
-    setter: (c: Control<any, M>, v: any) => void
-  ) {
-    const childFields = children.fields;
+  doFieldsSync(v: V, setter: (c: Control<any, M>, v: any) => void) {
+    const childFields = this._fields!;
     const keys = new Set<string>();
     for (const k in v) {
       const child = childFields[k];
@@ -421,20 +426,19 @@ class ControlImpl<V, M> implements Control<V, M> {
           (ChildSyncFlags.ChildrenValues | ChildSyncFlags.ChildrenInitialValues)
         ) {
           this.groupedChanges(() => {
-            const c = this._children;
-            if (!c) return;
-            if (isArrayChildren(c)) {
+            if (this._elems) {
+              const e = this._elems;
               const valArr =
                 this._childSync & ChildSyncFlags.ChildrenValues
                   ? (this._value as any[])
-                  : (c.elems as any[]);
+                  : (e as any[]);
               const initialArr = this._initialValue as any[];
               const newChildren = createArrayChildren(
                 valArr,
                 initialArr,
                 (i, v, iv) => {
-                  if (i < c.elems.length) {
-                    const existing = c.elems[i];
+                  if (i < e.length) {
+                    const existing = e[i];
                     existing.groupedChanges(() => {
                       if (this._childSync & ChildSyncFlags.ChildrenValues) {
                         existing.setValue(v);
@@ -448,21 +452,18 @@ class ControlImpl<V, M> implements Control<V, M> {
                     return existing;
                   } else {
                     return this.attachParentListener(
-                      c.configureChild(controlBuilder()).build(v, iv)
+                      newControl(v, iv, this.setup.elems)
                     );
                   }
                 }
               );
-              this._children = {
-                ...c,
-                elems: newChildren as Control<ElemType<V>, M>[],
-              };
-            } else {
+              this._elems = newChildren as Control<ElemType<V>, M>[];
+            } else if (this._fields) {
               if (this._childSync & ChildSyncFlags.ChildrenValues) {
-                this.doFieldsSync(this._value, c, (x, v) => x.setValue(v));
+                this.doFieldsSync(this._value, (x, v) => x.setValue(v));
               }
               if (this._childSync & ChildSyncFlags.ChildrenInitialValues) {
-                this.doFieldsSync(this._initialValue, c, (x, v) =>
+                this.doFieldsSync(this._initialValue, (x, v) =>
                   x.setInitialValue(v)
                 );
               }
@@ -545,44 +546,26 @@ class ControlImpl<V, M> implements Control<V, M> {
     return c;
   }
 
-  ensureArray(): ArrayChildren<ElemType<V>, M> {
-    const c = this._children;
+  ensureArray(): Control<ElemType<V>, M>[] {
+    const c = this._elems;
     if (c) {
-      if (!isArrayChildren(c)) {
-        throw "Not an array";
-      }
       return c;
     } else {
       const valueArr = (this._value as any) ?? [];
       const initialArr = (this._initialValue as any) ?? [];
-      this._children = {
-        elems: createArrayChildren<ElemType<V>, M>(
-          valueArr,
-          initialArr,
-          (n, i, iv) =>
-            this.attachParentListener(
-              controlBuilder<ElemType<V>, M>().build(i, iv)
-            )
-        ),
-        configureChild: (x) => x,
-      } as ArrayChildren<ElemType<V>, M>;
+      this._elems = createArrayChildren<ElemType<V>, M>(
+        valueArr,
+        initialArr,
+        (n, i, iv) =>
+          this.attachParentListener(newControl(i, iv, this.setup.elems))
+      );
     }
-    return this._children;
+    return this._elems;
   }
 
-  ensureFields(): FieldsChildren<V, M> {
-    const c = this._children;
-    if (c) {
-      if (!("fields" in c)) {
-        throw "Not Fields";
-      }
-      return c;
-    }
-    this._children = {
-      fields: {},
-      configureChild: () => (x: ControlBuilder<any, any>) => x,
-    };
-    return this._children;
+  ensureFields(): { [K in keyof V]?: Control<V[K], M> } {
+    this._fields ??= {};
+    return this._fields;
   }
 
   get fields(): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
@@ -590,10 +573,10 @@ class ControlImpl<V, M> implements Control<V, M> {
       return this._value as any;
     }
     const children = this.ensureFields();
-    if (!children.fieldsProxy) {
+    if (!this._fieldsProxy) {
       const t = this;
-      children.fieldsProxy = new Proxy<FormControlFields<NonNullable<V>, M>>(
-        children.fields as FormControlFields<NonNullable<V>, M>,
+      this._fieldsProxy = new Proxy<FormControlFields<NonNullable<V>, M>>(
+        this._fields as FormControlFields<NonNullable<V>, M>,
         {
           get(
             target: { [k: string | symbol]: Control<any, M> },
@@ -606,8 +589,7 @@ class ControlImpl<V, M> implements Control<V, M> {
             const thisInitial = t.initialValue as any;
             const v = (t.value as any)[p];
             const iv = thisInitial?.[p];
-            const childConfigure = children.configureChild(p as string);
-            const newChild = childConfigure(controlBuilder()).build(v, iv);
+            const newChild = newControl(v, iv, t.setup.fields?.[p as keyof V]);
             newChild.setTouched(t.touched);
             newChild.setDisabled(t.disabled);
             t.attachParentListener(newChild);
@@ -617,24 +599,21 @@ class ControlImpl<V, M> implements Control<V, M> {
         }
       );
     }
-    return children.fieldsProxy;
+    return this._fieldsProxy;
   }
 
   get value(): V {
     if (!(this._childSync & ChildSyncFlags.Value)) return this._value;
 
-    const c = this._children;
-    if (c) {
-      if (isArrayChildren(c)) {
-        this._value = c.elems.map((x) => x.value) as any;
-      } else if ("fields" in c) {
-        const fieldsToSync = c.fields;
-        const newValue = { ...this._value };
-        for (const k in fieldsToSync) {
-          newValue[k] = fieldsToSync[k]!.value;
-        }
-        this._value = newValue;
+    if (this._elems) {
+      this._value = this._elems.map((x) => x.value) as any;
+    } else if (this._fields) {
+      const fieldsToSync = this._fields;
+      const newValue = { ...this._value };
+      for (const k in fieldsToSync) {
+        newValue[k] = fieldsToSync[k]!.value;
       }
+      this._value = newValue;
     }
     this._childSync &= ~ChildSyncFlags.Value;
     return this._value;
@@ -644,22 +623,19 @@ class ControlImpl<V, M> implements Control<V, M> {
     if (!(this._childSync & ChildSyncFlags.InitialValue))
       return this._initialValue;
 
-    const c = this._children;
-    if (c) {
-      if (isArrayChildren(c)) {
-        const initialValues = [...((this._initialValue as any[]) ?? [])];
-        if (Array.isArray(this.value)) {
-          c.elems.forEach((x, i) => (initialValues[i] = x.initialValue));
-        }
-        this._initialValue = initialValues as any;
-      } else {
-        const fieldsToSync = c.fields;
-        const newValue = { ...this._initialValue };
-        for (const k in fieldsToSync) {
-          newValue[k] = fieldsToSync[k]!.initialValue;
-        }
-        this._initialValue = newValue;
+    if (this._elems) {
+      const initialValues = [...((this._initialValue as any[]) ?? [])];
+      if (Array.isArray(this.value)) {
+        this._elems.forEach((x, i) => (initialValues[i] = x.initialValue));
       }
+      this._initialValue = initialValues as any;
+    } else if (this._fields) {
+      const fieldsToSync = this._fields;
+      const newValue = { ...this._initialValue };
+      for (const k in fieldsToSync) {
+        newValue[k] = fieldsToSync[k]!.initialValue;
+      }
+      this._initialValue = newValue;
     }
     this._childSync &= ~ChildSyncFlags.InitialValue;
     return this._initialValue;
@@ -671,11 +647,7 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   get elems(): Control<ElemType<V>, M>[] | RetainOptionality<V> {
     if (this._value == null) return this._value as any;
-    return this.ensureArray().elems;
-  }
-
-  get elementBuilder() {
-    return this.ensureArray().configureChild(controlBuilder());
+    return this.ensureArray();
   }
 
   get element(): HTMLElement | null {
@@ -691,13 +663,12 @@ class ControlImpl<V, M> implements Control<V, M> {
   }
 
   isAnyChildDirty(): boolean {
-    const c = this._children;
-    if (c) {
-      if (isArrayChildren(c)) {
-        const initialValues = (this.initialValue as any[]) ?? [];
-        if (c.elems.length !== initialValues.length) return true;
-        return c.elems.some((x, i) => !x.isValueEqual(initialValues[i]));
-      }
+    if (this._elems) {
+      const c = this._elems;
+      const initialValues = (this.initialValue as any[]) ?? [];
+      if (c.length !== initialValues.length) return true;
+      return c.some((x, i) => !x.isValueEqual(initialValues[i]));
+    } else if (this._fields) {
       return this.getChildControls().some(
         (x) => x.isAnyChildDirty() || x.dirty
       );
@@ -705,12 +676,16 @@ class ControlImpl<V, M> implements Control<V, M> {
     return false;
   }
 
+  get hasChildren(): boolean {
+    return Boolean(this._elems || this._fields);
+  }
+
   setInitialValue(v: V): Control<V, M> {
     if (this.isEqual(v, this.initialValue)) {
       return this;
     }
     this._initialValue = v;
-    if (!this._children || v == null) {
+    if (!this.hasChildren || v == null) {
       this._childSync &= ~ChildSyncFlags.InitialValue;
       return this.runChange(
         ControlChange.InitialValue |
@@ -742,8 +717,10 @@ class ControlImpl<V, M> implements Control<V, M> {
     this._value = v;
     const flags =
       ControlChange.Value |
-      (this.validator !== null ? this.updateError(this.validator?.(v)) : 0);
-    if (!this._children || v == null) {
+      (this.setup?.validator !== null
+        ? this.updateError(this.setup!.validator?.(v))
+        : 0);
+    if (!this.hasChildren || v == null) {
       this._childSync &= ~ChildSyncFlags.Value;
       return this.runChange(
         flags | this.updateDirty(!this.isEqual(v, this._initialValue))
@@ -804,12 +781,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   }
 
   protected getChildControls(): ControlImpl<any, M>[] {
-    const c = this._children;
-    return c
-      ? isArrayChildren(c)
-        ? this.elems ?? []
-        : Object.values(c.fields)
-      : [];
+    return this._elems ?? (this._fields ? Object.values(this._fields) : []);
   }
 
   /**
@@ -835,7 +807,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   addFields<OTHER extends { [p: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
   }): Control<V & OTHER, M> {
-    this._children = { ...this._children, ...v } as any;
+    this._fields = { ...this._fields, ...v } as any;
     return this.as();
   }
 
@@ -860,138 +832,9 @@ class ControlImpl<V, M> implements Control<V, M> {
 
 export type ControlDefType<T> = T extends () => Control<infer V> ? V : T;
 
-export class ControlBuilder<V, M> {
-  private doBuild?: (
-    value: any,
-    initialValue: any,
-    createImpl: () => ControlImpl<any, M>
-  ) => Control<any, M>;
-
-  constructor(
-    public validator?: ControlValidator<V>,
-    public meta?: Partial<M>,
-    public equals?: (v: V, v2: V) => boolean,
-    public parentMeta: Partial<M> = {},
-    public key?: string
-  ) {}
-
-  withValidator(v: ControlValidator<V> | undefined) {
-    this.validator = v;
-    return this;
-  }
-
-  withMetadata(m: M): ControlBuilder<V, M> {
-    this.meta = m;
-    return this;
-  }
-
-  withEquals(equals: (v: V, v2: V) => boolean): ControlBuilder<V, M> {
-    this.equals = equals;
-    return this;
-  }
-
-  withElements(
-    elemBuilder: ControlConfigure<ElemType<V>, M>
-  ): ControlBuilder<V, M> {
-    const builder = elemBuilder(controlBuilder<ElemType<V>, M>());
-    this.doBuild = (value, initialValue, make) => {
-      const c = make();
-      const elems = createArrayChildren<ElemType<V>, M>(
-        value ?? [],
-        initialValue ?? [],
-        (i, v, iv) => builder.build(v, iv)
-      );
-      c._children = { elems, configureChild: elemBuilder };
-      c._childSync = ChildSyncFlags.Valid | ChildSyncFlags.Dirty;
-      elems.forEach((x) => c.attachParentListener(x));
-      c.runChange(0);
-      return c;
-    };
-    return this;
-  }
-
-  withFields(fields: {
-    [K in keyof V]?: (b: ControlBuilder<V[K], M>) => ControlBuilder<V[K], M>;
-  }) {
-    this.doBuild = (v, iv, make) => {
-      const c = make();
-      const childEntries: [string, Control<any, M>][] = fields
-        ? Object.entries(fields).map(([k, b]) => [
-            k,
-            (b as (b: ControlBuilder<any, M>) => ControlBuilder<any, M>)(
-              controlBuilder<any, M>()
-            ).build(v[k], iv[k]),
-          ])
-        : [];
-      const childFields = Object.fromEntries(childEntries);
-
-      c._children = {
-        fields: childFields as {
-          [K in keyof V]?: Control<V[K], M>;
-        },
-        configureChild: () => configureNothing,
-      };
-      Object.values(childFields).forEach((x) => c.attachParentListener(x));
-      c._childSync = ChildSyncFlags.Valid | ChildSyncFlags.Dirty;
-      c.runChange(0);
-      return c;
-    };
-    return this;
-  }
-
-  withBuildFunc(
-    doBuild: (
-      value: any,
-      initialValue: any,
-      createImpl: () => ControlImpl<any, M>
-    ) => Control<any, M>
-  ) {
-    this.doBuild = doBuild;
-    return this;
-  }
-
-  build(value: V, initialValue: V): Control<V, M> {
-    let { error, flags } = setupValidator<V, BaseControlMetadata>(
-      value,
-      this.validator
-    );
-    flags |= (
-      this.equals ? !this.equals(value, initialValue) : value !== initialValue
-    )
-      ? ControlFlags.Dirty
-      : 0;
-
-    const make = () =>
-      new ControlImpl<any, M>(
-        value,
-        initialValue,
-        error,
-        this.meta ?? {},
-        flags,
-        this.validator,
-        this.equals
-      );
-    return (
-      this.doBuild ? this.doBuild(value, initialValue, make) : make()
-    ) as Control<V, M>;
-  }
-}
-
-function setupValidator<V, M>(
-  value: V,
-  validator?: ControlValidator<V>
-): {
-  error: string | undefined;
-  flags: ControlFlags;
-} {
-  const error = validator?.(value);
-  const flags = error ? 0 : ControlFlags.Valid;
-  return { error, flags };
-}
-
 /**
  * Define a form control containing values of type V
- * @deprecated Use useControl() and validated() instead.
+ * @deprecated Use useControl() instead.
  * @param value Initial value for control
  * @param validator An optional synchronous validator
  * @param equals An optional equality function
@@ -1001,33 +844,7 @@ export function control<V>(
   validator?: ((v: V) => string | undefined) | null,
   equals?: (a: V, b: V) => boolean
 ): () => Control<V> {
-  return () => {
-    const { error, flags } = setupValidator<V, BaseControlMetadata>(
-      value,
-      validator
-    );
-    return new ControlImpl<V, BaseControlMetadata>(
-      value,
-      value,
-      error,
-      {},
-      flags,
-      validator,
-      equals
-    );
-  };
-}
-
-function builderFormControl(child: any | (() => Control<any>)): Control<any> {
-  if (typeof child === "function") {
-    return child();
-  }
-  return control(child)();
-}
-
-function initChild<V, M>(c: Control<V, M>, v: V, iv: V) {
-  c.setValue(iv, true);
-  c.setValue(v);
+  return () => newControl(value, value, { validator, equals });
 }
 
 /**
@@ -1037,25 +854,59 @@ export function arrayControl<CHILD>(
   child: CHILD
 ): () => Control<(CHILD extends () => Control<infer V> ? V : CHILD)[]> {
   return () => {
-    return new ControlImpl<any[], BaseControlMetadata>(
-      [],
-      [],
-      undefined,
-      { element: null },
-      ControlFlags.Valid,
-      undefined,
-      undefined,
-      {
-        elems: [],
-        configureChild: (b) =>
-          b.withBuildFunc((i, iv) => {
-            const c = builderFormControl(child);
-            initChild(c, i, iv);
-            return c;
-          }),
-      } as ArrayChildren<any, BaseControlMetadata>
-    ) as any;
+    const create =
+      typeof child === "function"
+        ? (v: any, iv: any) => child().setValueAndInitial(v, iv)
+        : undefined;
+    return newControl([], [], { elems: { create } });
   };
+}
+
+function initialValidation<V, M>(
+  v: V,
+  setup?: ControlSetup<V, M>
+): [string | undefined, boolean] {
+  if (!setup) {
+    return [undefined, true];
+  }
+
+  const error = setup.validator?.(v);
+  if (error) {
+    return [error, false];
+  }
+  if (Array.isArray(v) && setup.elems) {
+    return [undefined, v.every((x) => initialValidation(x, setup.elems)[1])];
+  }
+  if (typeof v === "object" && v && setup.fields) {
+    return [
+      undefined,
+      Object.entries(setup.fields).every(
+        (x) =>
+          initialValidation(v[x[0] as keyof V], x[1] as ControlSetup<any, M>)[1]
+      ),
+    ];
+  }
+  return [undefined, true];
+}
+
+export function newControl<V, M = BaseControlMetadata>(
+  value: V,
+  initial: V,
+  setup?: ControlSetup<V, M>
+): Control<V, M> {
+  setup ??= {};
+  const builder = setup.create;
+  if (builder) {
+    return builder(value, initial, setup);
+  }
+  const [error, valid] = initialValidation(value, setup);
+  return new ControlImpl(
+    value,
+    initial,
+    error,
+    valid ? ControlFlags.Valid : 0,
+    setup
+  );
 }
 
 /**
@@ -1067,40 +918,25 @@ export function groupControl<DEF extends { [t: string]: any }>(
 ): () => Control<{
   [K in keyof DEF]: ControlDefType<DEF[K]>;
 }> {
-  const defEntries = Object.entries(children);
-  const builderProps: [string, Function][] = defEntries.filter(
-    ([p, v]) => typeof v === "function"
-  );
   return () => {
-    let allValid = true;
-    const simpleValues: [string, any][] = defEntries.filter(
-      ([p, v]) => typeof v !== "function"
-    );
-    const initialFields: [string, Control<any>][] = builderProps.map(
-      ([p, v]) => {
-        const fc = v() as Control<any>;
-        allValid &&= fc.valid;
-        simpleValues.push([p, fc.value]);
-        return [p, fc];
-      }
-    );
-    const v = Object.fromEntries(simpleValues);
-    const fields = Object.fromEntries(initialFields);
-    const c = new ControlImpl(
+    const v = children as {
+      [K in keyof DEF]: ControlDefType<DEF[K]>;
+    };
+    const fields = Object.entries(children)
+      .filter((x) => typeof x[1] === "function")
+      .map((x) => [x[0], x[1]()]);
+    return new ControlImpl(
       v,
       v,
       undefined,
+      ControlFlags.Valid,
       {},
-      allValid ? ControlFlags.Valid : 0,
-      undefined,
-      undefined,
-      {
-        fields,
-        configureChild: () => configureNothing,
-      }
+      Object.fromEntries(fields),
+      ChildSyncFlags.InitialValue |
+        ChildSyncFlags.Value |
+        ChildSyncFlags.Valid |
+        ChildSyncFlags.Dirty
     );
-    initialFields.forEach((x) => c.attachParentListener(x[1]));
-    return c as any;
   };
 }
 
@@ -1167,53 +1003,18 @@ function makeChildListener<V, M>(
 export function controlGroup<C extends { [k: string]: any }, M>(
   fields: C
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
-  const c = new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }, M>(
+  return new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }, M>(
     {} as any,
     {} as any,
     undefined,
+    ControlFlags.Valid,
     {},
-    ControlFlags.Valid
-  );
-  c._children = {
     fields,
-    configureChild: () => configureNothing,
-  };
-  c._childSync =
     ChildSyncFlags.InitialValue |
-    ChildSyncFlags.Value |
-    ChildSyncFlags.Valid |
-    ChildSyncFlags.Dirty;
-  c.runChange(0);
-  Object.values(fields).forEach((x) =>
-    x.addChangeListener(c.childListener[1], c.childListener[0])
+      ChildSyncFlags.Value |
+      ChildSyncFlags.Valid |
+      ChildSyncFlags.Dirty
   );
-  return c;
-}
-
-export function controlBuilder<V, M = BaseControlMetadata>(
-  m?: Partial<M>
-): ControlBuilder<V, M> {
-  return new ControlBuilder<V, M>(undefined, m);
-}
-
-export function defineFields<V, M = BaseControlMetadata>(fields: {
-  [K in keyof V]?: (b: ControlBuilder<V[K], M>) => ControlBuilder<V[K], M>;
-}): (b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
-  return (b) => b.withFields(fields);
-}
-
-export function defineElements<V, M = BaseControlMetadata>(
-  elemBuilder: (
-    b: ControlBuilder<ElemType<V>, M>
-  ) => ControlBuilder<ElemType<V>, M>
-): (b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
-  return (b) => b.withElements(elemBuilder);
-}
-
-export function validated<V>(
-  validator: ControlValidator<V>
-): <M>(b: ControlBuilder<V, M>) => ControlBuilder<V, M> {
-  return (b) => b.withValidator(validator);
 }
 
 export function notEmpty<V>(msg: string): (v: V) => string | undefined {
@@ -1277,12 +1078,6 @@ export type ArrayControl<C> = Control<ControlValue<C>[]>;
  */
 export type ParentControl<V> = Control<V>;
 
-function isArrayChildren<V, M>(
-  c: FieldsChildren<V, M> | ArrayChildren<ElemType<V>, M>
-): c is ArrayChildren<ElemType<V>, M> {
-  return "elems" in c;
-}
-
 function createArrayChildren<V, M>(
   valArr: V[],
   iArr: V[],
@@ -1295,10 +1090,6 @@ function createArrayChildren<V, M>(
     return syncChild(i, firstValue, haveInitial ? iArr[i] : firstValue);
   });
 }
-
-const configureNothing: (
-  b: ControlBuilder<any, any>
-) => ControlBuilder<any, any> = (x) => x;
 
 function debugSync(syncFlags: ChildSyncFlags) {
   const flags: string[] = [];

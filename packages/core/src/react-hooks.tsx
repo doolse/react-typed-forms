@@ -12,11 +12,11 @@ import React, {
 import {
   BaseControlMetadata,
   Control,
-  controlBuilder,
   ControlChange,
-  ControlConfigure,
   controlGroup,
+  ControlSetup,
   FormControlFields,
+  newControl,
   RetainOptionality,
 } from "./nodes";
 
@@ -222,12 +222,22 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
 }
 
 export function useControl<V, M = BaseControlMetadata>(
-  v: V,
-  configure?: ControlConfigure<V, M>
-): Control<V, M> {
+  initialState: V | (() => V),
+  configure?: ControlSetup<V, M>
+): Control<V, M>;
+
+export function useControl<V = undefined, M = BaseControlMetadata>(): Control<
+  V | undefined,
+  M
+>;
+
+export function useControl(
+  v?: any,
+  configure?: ControlSetup<any, any>
+): Control<any, any> {
   return useState(() => {
-    const builder = controlBuilder<V, M>();
-    return (configure ? configure(builder) : builder).build(v, v);
+    const rv = typeof v === "function" ? v() : v;
+    return newControl(rv, rv, configure);
   })[0];
 }
 
@@ -262,10 +272,9 @@ const defaultSelectionCreator: SelectionGroupSync<any, any> = (
   initialValue,
   creator
 ) => {
-  const selectionElems = elems.map((x, i) => {
+  return elems.map((x, i) => {
     return creator.makeGroup(true, true, x);
   });
-  return selectionElems;
 };
 
 export function ensureSelectableValues<V, M>(
@@ -304,12 +313,12 @@ export function useSelectableArray<V, M>(
     (c) => {
       const allControlElems = c.elems;
       if (updatedWithRef.current === allControlElems) return;
-      selectable.update((existing, builder) => {
+      selectable.update((existing) => {
         return groupSyncer(allControlElems, control.initialValue, {
-          makeElem: (v, iv) => c.elementBuilder.build(v, iv),
+          makeElem: (v, iv) => c.newElement(v, iv),
           makeGroup: (selected, wasSelected, value) =>
             controlGroup({
-              selected: controlBuilder().build(selected, wasSelected),
+              selected: newControl(selected, wasSelected),
               value,
             }) as Control<SelectionGroup<V>, M>,
         });

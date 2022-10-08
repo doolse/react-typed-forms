@@ -1,11 +1,8 @@
 import {
-  defineElements,
-  defineFields,
   FormArray,
   notEmpty,
   useControl,
   useOptionalFields,
-  validated,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
 import { Button } from "@material-ui/core";
@@ -20,12 +17,14 @@ type MyForm = {
 export default function CharliePage() {
   const fc = useControl<MyForm, { shit: string; element?: HTMLElement | null }>(
     {},
-    defineFields({
-      field1: validated(notEmpty("Please put it in")),
-      strings: defineElements((c) =>
-        c.withValidator(notEmpty("PLS")).withMetadata({ shit: "" })
-      ),
-    })
+    {
+      fields: {
+        field1: { validator: notEmpty("Please put it in") },
+        strings: {
+          elems: { validator: notEmpty("PLS"), meta: { shit: "" } },
+        },
+      },
+    }
   );
   const fields = fc.fields;
   const subFields = useOptionalFields(fields.subObject);
