@@ -136,10 +136,7 @@ export interface Control<V, M = BaseControlMetadata> {
     insertAfter?: boolean
   ): Control<ElemType<V>, M>;
 
-  newElement(
-    value: ElemType<V>,
-    initialValue: ElemType<V>
-  ): Control<ElemType<V>, M>;
+  newElement(value: ElemType<V>): Control<ElemType<V>, M>;
 
   markArrayClean(): void;
 
@@ -177,7 +174,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     private _fields?: { [K in keyof V]?: Control<V[K], M> },
     childSync?: ChildSyncFlags
   ) {
-    this.meta = setup.meta ?? {};
+    this.meta = { ...setup.meta };
     if (childSync !== undefined) {
       this._childSync = childSync;
       this.runChange(0);
