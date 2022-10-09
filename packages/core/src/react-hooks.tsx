@@ -315,7 +315,7 @@ export function useSelectableArray<V, M>(
       if (updatedWithRef.current === allControlElems) return;
       selectable.update((existing) => {
         return groupSyncer(allControlElems, control.initialValue, {
-          makeElem: (v, iv) => c.newElement(v, iv),
+          makeElem: (v, iv) => c.newElement(v).setInitialValue(iv),
           makeGroup: (selected, wasSelected, value) =>
             controlGroup({
               selected: newControl(selected, wasSelected),
