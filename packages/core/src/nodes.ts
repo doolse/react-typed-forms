@@ -39,13 +39,19 @@ export interface BaseControlMetadata {
   element?: HTMLElement | null;
 }
 
-export type FormControlFields<V, M> = V extends {
+export type FormControlFields<V, M> = NonNullable<V> extends {
   [k: string]: any;
 }
-  ? { [K in keyof V]-?: Control<V[K], M> }
-  : {};
+  ?
+      | { [K in keyof NonNullable<V>]-?: Control<NonNullable<V>[K], M> }
+      | RetainOptionality<V>
+  : never;
 
-type ElemType<V, O = any> = NonNullable<V> extends (infer E)[] ? E : O;
+type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : never;
+
+type ElemsType<V, M> = NonNullable<V> extends (infer E)[]
+  ? Control<E, M>[] | RetainOptionality<V>
+  : never;
 
 export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
@@ -101,7 +107,7 @@ export interface Control<V, M = BaseControlMetadata> {
   toObject(): V;
 
   // fields
-  readonly fields: FormControlFields<NonNullable<V>, M> | RetainOptionality<V>;
+  readonly fields: FormControlFields<V, M>;
 
   addFields<OTHER extends { [k: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
@@ -113,10 +119,10 @@ export interface Control<V, M = BaseControlMetadata> {
    * @param select
    */
   subGroup<OUT extends { [k: string]: Control<any> }>(
-    select: (fields: FormControlFields<NonNullable<V>, M>) => OUT
+    select: (fields: FormControlFields<V, M>) => OUT
   ): Control<{ [K in keyof OUT]: ControlValue<OUT[K]> }>;
 
-  readonly elems: Control<ElemType<V>, M>[] | RetainOptionality<V>;
+  readonly elems: ElemsType<V, M>;
 
   update(
     cb: (elems: Control<ElemType<V>, M>[]) => Control<ElemType<V>, M>[]
@@ -125,13 +131,13 @@ export interface Control<V, M = BaseControlMetadata> {
   remove(child: number | Control<ElemType<V>, M>): void;
 
   add(
-    child: ElemType<V, never>,
+    child: ElemType<V>,
     index?: number | Control<ElemType<V>, M>,
     insertAfter?: boolean
   ): Control<ElemType<V>, M>;
 
   newElement(
-    value: ElemType<V, never>,
+    value: ElemType<V>,
     initialValue: ElemType<V>
   ): Control<ElemType<V>, M>;
 
@@ -564,7 +570,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     return this._fields;
   }
 
-  get fields(): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
+  get fields(): FormControlFields<V, M> {
     if (this._value == null) {
       return this._value as any;
     }
@@ -595,7 +601,7 @@ class ControlImpl<V, M> implements Control<V, M> {
         }
       );
     }
-    return this._fieldsProxy;
+    return this._fieldsProxy as FormControlFields<V, M>;
   }
 
   get value(): V {
@@ -641,9 +647,9 @@ class ControlImpl<V, M> implements Control<V, M> {
     this.setValueAndInitial(this.value, this.value);
   }
 
-  get elems(): Control<ElemType<V>, M>[] | RetainOptionality<V> {
+  get elems(): ElemsType<V, M> {
     if (this._value == null) return this._value as any;
-    return this.ensureArray();
+    return this.ensureArray() as any;
   }
 
   get element(): HTMLElement | null {
@@ -812,7 +818,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   }
 
   subGroup<OUT extends { [k: string]: Control<any> }>(
-    select: (fields: FormControlFields<NonNullable<V>, M>) => OUT
+    select: (fields: FormControlFields<V, M>) => OUT
   ): Control<{ [K in keyof OUT]: ControlValue<OUT[K]> }> {
     return controlGroup(select(this.fields!)).as();
   }
@@ -854,7 +860,7 @@ export function arrayControl<CHILD>(
       typeof child === "function"
         ? (v: any, iv: any) => child().setValueAndInitial(v, iv)
         : undefined;
-    return newControl([], [], { elems: { create } });
+    return newControl<any[]>([], [], { elems: { create } });
   };
 }
 

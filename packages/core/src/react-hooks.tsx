@@ -243,7 +243,7 @@ export function useControl(
 
 export function useOptionalFields<V, M>(
   c: Control<V, M>
-): FormControlFields<NonNullable<V>, M> | RetainOptionality<V> {
+): FormControlFields<V, M> {
   return useControlState(c, (c) => c.fields, ControlChange.Value);
 }
 
