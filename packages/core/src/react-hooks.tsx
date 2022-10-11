@@ -223,7 +223,8 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
 
 export function useControl<V, M = BaseControlMetadata>(
   initialState: V | (() => V),
-  configure?: ControlSetup<V, M>
+  configure?: ControlSetup<V, M>,
+  afterInit?: (c: Control<V, M>) => void
 ): Control<V, M>;
 
 export function useControl<V = undefined, M = BaseControlMetadata>(): Control<
@@ -233,11 +234,13 @@ export function useControl<V = undefined, M = BaseControlMetadata>(): Control<
 
 export function useControl(
   v?: any,
-  configure?: ControlSetup<any, any>
+  configure?: ControlSetup<any, any>,
+  afterInit?: (c: Control<any, any>) => void
 ): Control<any, any> {
   return useState(() => {
     const rv = typeof v === "function" ? v() : v;
-    return newControl(rv, rv, configure);
+    const c = newControl(rv, rv, configure);
+    return afterInit?.(c) ?? c;
   })[0];
 }
 

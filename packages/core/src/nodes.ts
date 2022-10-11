@@ -109,6 +109,11 @@ export interface Control<V, M = BaseControlMetadata> {
   // fields
   readonly fields: FormControlFields<V, M>;
 
+  replaceField<K extends keyof V>(
+    k: K,
+    control: Control<V[K], M>
+  ): Control<V, M>;
+
   addFields<OTHER extends { [k: string]: any }>(v: {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
   }): Control<V & OTHER, M>;
@@ -567,6 +572,24 @@ class ControlImpl<V, M> implements Control<V, M> {
     return this._fields;
   }
 
+  replaceField<K extends keyof V>(
+    k: K,
+    control: Control<V[K], M>
+  ): Control<V, M> {
+    const exFields = this.ensureFields();
+    const exField = exFields[k];
+    if (exField) {
+      this.removeChangeListener(this.childListener[1]);
+    }
+    exFields[k] = control;
+    this._childSync |=
+      ChildSyncFlags.Value |
+      ChildSyncFlags.InitialValue |
+      ChildSyncFlags.Dirty |
+      ChildSyncFlags.Valid;
+    return this.runChange(0);
+  }
+
   get fields(): FormControlFields<V, M> {
     if (this._value == null) {
       return this._value as any;
@@ -896,7 +919,7 @@ export function newControl<V, M = BaseControlMetadata>(
   setup ??= {};
   const builder = setup.create;
   if (builder) {
-    return builder(value, initial, setup);
+    builder(value, initial, setup);
   }
   const [error, valid] = initialValidation(value, setup);
   return new ControlImpl(
