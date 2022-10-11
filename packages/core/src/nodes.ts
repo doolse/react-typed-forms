@@ -582,6 +582,7 @@ class ControlImpl<V, M> implements Control<V, M> {
       this.removeChangeListener(this.childListener[1]);
     }
     exFields[k] = control;
+    this.attachParentListener(control);
     this._childSync |=
       ChildSyncFlags.Value |
       ChildSyncFlags.InitialValue |
