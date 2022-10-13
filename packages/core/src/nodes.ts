@@ -155,8 +155,10 @@ export interface ControlSetup<V, M = BaseControlMetadata> {
   meta?: Partial<M>;
   validator?: ControlValidator<V>;
   equals?: (a: V, b: V) => boolean;
-  elems?: ControlSetup<ElemType<V>, M>;
-  fields?: { [K in keyof V]?: ControlSetup<V[K], M> };
+  elems?: ControlSetup<ElemType<V>, M> | (() => ControlSetup<ElemType<V>, M>);
+  fields?: {
+    [K in keyof V]?: ControlSetup<V[K], M> | (() => ControlSetup<V[K], M>);
+  };
   create?: (value: V, initial: V, setup: ControlSetup<V, M>) => Control<V, M>;
 }
 
@@ -887,12 +889,12 @@ export function arrayControl<CHILD>(
 
 function initialValidation<V, M>(
   v: V,
-  setup?: ControlSetup<V, M>
+  _setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>)
 ): [string | undefined, boolean] {
-  if (!setup) {
+  if (!_setup) {
     return [undefined, true];
   }
-
+  const setup = getSetup(_setup);
   const error = setup.validator?.(v);
   if (error) {
     return [error, false];
@@ -912,23 +914,29 @@ function initialValidation<V, M>(
   return [undefined, true];
 }
 
+function getSetup<V, M>(
+  setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>)
+) {
+  return setup ? (typeof setup === "function" ? setup() : setup) : {};
+}
+
 export function newControl<V, M = BaseControlMetadata>(
   value: V,
   initial: V,
-  setup?: ControlSetup<V, M>
+  setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>)
 ): Control<V, M> {
-  setup ??= {};
-  const builder = setup.create;
+  const realSetup = getSetup(setup);
+  const builder = realSetup.create;
   if (builder) {
-    builder(value, initial, setup);
+    builder(value, initial, realSetup);
   }
-  const [error, valid] = initialValidation(value, setup);
+  const [error, valid] = initialValidation(value, realSetup);
   return new ControlImpl(
     value,
     initial,
     error,
     valid ? ControlFlags.Valid : 0,
-    setup
+    realSetup
   );
 }
 
