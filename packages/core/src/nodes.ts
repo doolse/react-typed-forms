@@ -58,7 +58,13 @@ export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
   | (null extends V ? null : never);
 
-export interface Control<V, M = BaseControlMetadata> {
+export type ReadonlyControl<V, M> = ReadableControl<
+  V,
+  M,
+  ReadonlyControl<V, M>
+>;
+
+export interface ReadableControl<V, M = BaseControlMetadata, C = any> {
   readonly uniqueId: number;
   readonly stateVersion: number;
   readonly value: V;
@@ -69,7 +75,20 @@ export interface Control<V, M = BaseControlMetadata> {
   readonly disabled: boolean;
   readonly touched: boolean;
   meta: Partial<M>;
+  addChangeListener(
+    listener: (control: C, change: ControlChange) => void,
+    mask?: ControlChange
+  ): void;
+  removeChangeListener(
+    listener: (control: C, change: ControlChange) => void
+  ): void;
+  setTouched(showValidation: boolean): void;
+  setError(error?: string | null): C;
+  setDisabled(disabled: boolean): C;
+}
 
+export interface Control<V, M = BaseControlMetadata>
+  extends ReadableControl<V, M, Control<V, M>> {
   setValue(v: V, initial?: boolean): Control<V, M>;
   setInitialValue(v: V): Control<V, M>;
   setValueAndInitial(v: V, iv: V): Control<V, M>;
@@ -77,18 +96,8 @@ export interface Control<V, M = BaseControlMetadata> {
   isValueEqual(v: V): boolean;
   unfreeze(): void;
   freeze(): void;
-  addChangeListener(
-    listener: (control: Control<V, M>, change: ControlChange) => void,
-    mask?: ControlChange
-  ): void;
-  removeChangeListener(
-    listener: (control: Control<V, M>, change: ControlChange) => void
-  ): void;
-  setError(error?: string | null): Control<V, M>;
   validate(): Control<V, M>;
 
-  setDisabled(disabled: boolean): Control<V, M>;
-  setTouched(showValidation: boolean): void;
   markAsClean(): void;
   clearErrors(): void;
   lookupControl(path: (string | number)[]): Control<any, M> | undefined;

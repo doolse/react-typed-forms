@@ -6,6 +6,8 @@ import {
   renderAll,
   useControl,
   useControlStateComponent,
+  useMappedControl,
+  useValueChangeEffect,
 } from "@react-typed-forms/core";
 import React, { ReactElement } from "react";
 
@@ -29,12 +31,18 @@ export default function SimpleExample() {
     (c, v?: number) => (v ?? -1) + 1,
     ControlChange.Structure
   );
+  const StringsJoined = useControlStateComponent(
+    useMappedControl(formState, (v) => v.stringChildren.join(",")),
+    (c) => c.value
+  );
+  useValueChangeEffect(formState, (v) => console.log(v));
   const { fields } = formState;
   return (
     <div>
       <StructureCount>
         {(count) => <h2>{count} notifications</h2>}
       </StructureCount>
+      <StringsJoined children={(s) => <div>{s}</div>} />
       <FormArray state={fields.stringChildren}>
         {(s) =>
           s.map((x) => (

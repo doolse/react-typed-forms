@@ -17,25 +17,27 @@ import {
   ControlSetup,
   FormControlFields,
   newControl,
-  RetainOptionality,
+  ReadableControl,
+  ReadonlyControl,
 } from "./nodes";
 
-export function useControlChangeEffect<V, M>(
-  control: Control<V, M>,
-  changeEffect: (control: Control<V, M>, change: ControlChange) => void,
+export function useControlChangeEffect<C extends ReadableControl<any>>(
+  control: C,
+  changeEffect: (control: C, change: ControlChange) => void,
   mask?: ControlChange,
   deps?: any[],
   runInitial?: boolean
 ) {
-  const effectRef = useRef<
-    [(control: Control<V, M>, change: ControlChange) => void, Control<V, M>]
-  >([changeEffect, control]);
+  const effectRef = useRef<[(control: C, change: ControlChange) => void, C]>([
+    changeEffect,
+    control,
+  ]);
   effectRef.current[0] = changeEffect;
   useEffect(() => {
     if (runInitial || control !== effectRef.current[1])
       effectRef.current[0](control, 0);
     effectRef.current[1] = control;
-    const changeListener = (c: Control<V, M>, m: ControlChange) => {
+    const changeListener = (c: C, m: ControlChange) => {
       effectRef.current[0](c, m);
     };
     control.addChangeListener(changeListener, mask);
@@ -43,8 +45,8 @@ export function useControlChangeEffect<V, M>(
   }, deps ?? [control, mask]);
 }
 
-export function useValueChangeEffect<V, M>(
-  control: Control<V, M>,
+export function useValueChangeEffect<V>(
+  control: ReadableControl<V>,
   changeEffect: (control: V) => void,
   debounce?: number,
   runInitial?: boolean
@@ -57,7 +59,7 @@ export function useValueChangeEffect<V, M>(
   effectRef.current[0] = changeEffect;
   effectRef.current[2] = debounce;
   useEffect(() => {
-    const updater = (c: Control<V, M>) => {
+    const updater = (c: ReadableControl<V>) => {
       const r = effectRef.current;
       if (r[2]) {
         if (r[1]) clearTimeout(r[1]);
@@ -74,9 +76,9 @@ export function useValueChangeEffect<V, M>(
   }, [control]);
 }
 
-export function useControlState<V, M, S>(
-  control: Control<V, M>,
-  toState: (state: Control<V, M>, previous?: S) => S,
+export function useControlState<C extends ReadableControl<any>, S>(
+  control: C,
+  toState: (state: C, previous?: S) => S,
   mask?: ControlChange,
   deps?: any[]
 ): S {
@@ -90,20 +92,20 @@ export function useControlState<V, M, S>(
   return state;
 }
 
-export function useControlValue<A>(control: Control<A>) {
+export function useControlValue<A>(control: ReadableControl<A>) {
   return useControlState(control, (n) => n.value, ControlChange.Value);
 }
 
-export function useControlStateVersion<V>(
-  control: Control<V>,
+export function useControlStateVersion(
+  control: ReadableControl<any>,
   mask?: ControlChange
 ) {
   return useControlState(control, (c) => c.stateVersion, mask);
 }
 
-export function useControlStateComponent<V, M, S>(
-  control: Control<V, M>,
-  toState: (state: Control<V, M>) => S,
+export function useControlStateComponent<C extends ReadableControl<any>, S>(
+  control: C,
+  toState: (state: C) => S,
   mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
@@ -117,7 +119,7 @@ export function useControlStateComponent<V, M, S>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: Control<any>;
+  state: ReadableControl<any>;
   children: (validForm: boolean) => ReactElement;
 }
 
@@ -149,14 +151,14 @@ export function renderAll<V, M>(
   return (e) => e.map(render);
 }
 
-export function useAsyncValidator<V, M>(
-  control: Control<V, M>,
+export function useAsyncValidator<C extends ReadableControl<any>>(
+  control: C,
   validator: (
-    control: Control<V, M>,
+    control: C,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue: (control: Control<V, M>) => any = (c) => control.value
+  validCheckValue: (control: C) => any = (c) => control.value
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
@@ -352,4 +354,21 @@ export function useSelectableArray<V, M>(
     ControlChange.Value
   );
   return selectable;
+}
+
+export function useMappedControl<V, V2, M>(
+  control: ReadableControl<V, M>,
+  mapFn: (v: V) => V2
+): ReadonlyControl<V2, M> {
+  return useControlState(
+    control,
+    (c, p?: Control<V2, M>) => {
+      if (p) {
+        p.setValueAndInitial(mapFn(c.value), mapFn(c.initialValue));
+        return p;
+      }
+      return newControl(mapFn(c.value), mapFn(c.initialValue));
+    },
+    ControlChange.Value
+  );
 }
