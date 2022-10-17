@@ -15,6 +15,7 @@ import {
   ControlChange,
   controlGroup,
   ControlSetup,
+  ControlValue,
   FormControlFields,
   newControl,
   ReadableControl,
@@ -372,4 +373,10 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
     },
     mask ?? ControlChange.Value
   );
+}
+
+export function useControlGroup<C extends { [k: string]: any }, M>(
+  fields: C
+): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
+  return useMemo(() => controlGroup(fields), Object.values(fields));
 }

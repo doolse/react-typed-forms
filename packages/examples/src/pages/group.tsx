@@ -1,13 +1,12 @@
 import {
-  buildGroup,
   ControlChange,
-  controlGroup,
   useControl,
   useControlChangeEffect,
+  useControlGroup,
   useValueChangeEffect,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
 interface FullGroup {
   firstName: string;
@@ -22,10 +21,10 @@ export default function GroupTest() {
     anotherField: "",
   });
   const { fields } = formState;
-  const subForm = useMemo(
-    () => controlGroup({ age: fields.age, firstName: fields.firstName }),
-    [formState]
-  );
+  const subForm = useControlGroup({
+    age: fields.age,
+    firstName: fields.firstName,
+  });
   const [parentUpdates, setParentUpdates] = useState(0);
   const [valueUpdates, setValueUpdates] = useState(0);
   const [debouncedUpdates, setDebouncedUpdates] = useState(0);
