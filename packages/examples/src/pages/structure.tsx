@@ -3,6 +3,7 @@ import {
   ControlChange,
   Finput,
   FormArray,
+  ReadonlyControl,
   renderAll,
   useControl,
   useControlStateComponent,
@@ -31,10 +32,10 @@ export default function SimpleExample() {
     (c, v?: number) => (v ?? -1) + 1,
     ControlChange.Structure
   );
-  const StringsJoined = useControlStateComponent(
-    useMappedControl(formState, (v) => v.stringChildren.join(",")),
-    (c) => c.value
+  const mapped: ReadonlyControl<string> = useMappedControl(formState, (v) =>
+    v.value.stringChildren.join(",")
   );
+  const StringsJoined = useControlStateComponent(mapped, (c) => c.value);
   useValueChangeEffect(formState, (v) => console.log(v));
   const { fields } = formState;
   return (

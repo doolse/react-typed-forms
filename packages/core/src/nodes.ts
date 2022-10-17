@@ -58,7 +58,7 @@ export type RetainOptionality<V> =
   | (undefined extends V ? undefined : never)
   | (null extends V ? null : never);
 
-export type ReadonlyControl<V, M> = ReadableControl<
+export type ReadonlyControl<V, M = BaseControlMetadata> = ReadableControl<
   V,
   M,
   ReadonlyControl<V, M>

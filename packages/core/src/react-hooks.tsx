@@ -356,19 +356,20 @@ export function useSelectableArray<V, M>(
   return selectable;
 }
 
-export function useMappedControl<V, V2, M>(
-  control: ReadableControl<V, M>,
-  mapFn: (v: V) => V2
-): ReadonlyControl<V2, M> {
+export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
+  control: C,
+  mapFn: (v: C) => V,
+  mask?: ControlChange
+): ReadonlyControl<V, M> {
   return useControlState(
     control,
-    (c, p?: Control<V2, M>) => {
+    (c, p?: Control<V, M>) => {
+      const v = mapFn(c);
       if (p) {
-        p.setValueAndInitial(mapFn(c.value), mapFn(c.initialValue));
-        return p;
+        return p.setValue(v);
       }
-      return newControl(mapFn(c.value), mapFn(c.initialValue));
+      return newControl(v, v);
     },
-    ControlChange.Value
+    mask ?? ControlChange.Value
   );
 }
