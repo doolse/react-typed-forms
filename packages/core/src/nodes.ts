@@ -23,7 +23,8 @@ export enum ControlChange {
   InitialValue = 32,
   Error = 64,
   All = Value | Valid | Touched | Disabled | Error | Dirty | InitialValue,
-  Validate = 128,
+  Structure = 128,
+  Validate = 256,
 }
 
 export type ControlValidator<V> = ((v: V) => string | undefined) | null;
@@ -202,7 +203,7 @@ class ControlImpl<V, M> implements Control<V, M> {
       this._elems = newElems;
       this._childSync |=
         ChildSyncFlags.Value | ChildSyncFlags.Dirty | ChildSyncFlags.Valid;
-      this.runChange(ControlChange.Value);
+      this.runChange(ControlChange.Value | ControlChange.Structure);
     }
   }
 
@@ -431,57 +432,58 @@ class ControlImpl<V, M> implements Control<V, M> {
           needsChangeSync &
           (ChildSyncFlags.ChildrenValues | ChildSyncFlags.ChildrenInitialValues)
         ) {
-          this.groupedChanges(() => {
-            if (this._elems) {
-              const e = this._elems;
-              const valArr =
-                this._childSync & ChildSyncFlags.ChildrenValues
-                  ? (this._value as any[])
-                  : (e as any[]);
-              const initialArr = this._initialValue as any[];
-              const newChildren = createArrayChildren(
-                valArr,
-                initialArr,
-                (i, v, iv) => {
-                  if (i < e.length) {
-                    const existing = e[i];
-                    existing.groupedChanges(() => {
-                      if (this._childSync & ChildSyncFlags.ChildrenValues) {
-                        existing.setValue(v);
-                      }
-                      if (
-                        this._childSync & ChildSyncFlags.ChildrenInitialValues
-                      ) {
-                        existing.setInitialValue(iv);
-                      }
-                    });
-                    return existing;
-                  } else {
-                    return this.attachParentListener(
-                      newControl(v, iv, this.setup.elems)
-                    );
-                  }
+          this.freezeCount = 1;
+          if (this._elems) {
+            const e = this._elems;
+            const valArr =
+              this._childSync & ChildSyncFlags.ChildrenValues
+                ? (this._value as any[])
+                : (e as any[]);
+            const initialArr = this._initialValue as any[];
+            const newChildren = createArrayChildren(
+              valArr,
+              initialArr,
+              (i, v, iv) => {
+                if (i < e.length) {
+                  const existing = e[i];
+                  existing.groupedChanges(() => {
+                    if (this._childSync & ChildSyncFlags.ChildrenValues) {
+                      existing.setValue(v);
+                    }
+                    if (
+                      this._childSync & ChildSyncFlags.ChildrenInitialValues
+                    ) {
+                      existing.setInitialValue(iv);
+                    }
+                  });
+                  return existing;
+                } else {
+                  return this.attachParentListener(
+                    newControl(v, iv, this.setup.elems)
+                  );
                 }
-              );
-              this._elems = newChildren as Control<ElemType<V>, M>[];
-            } else if (this._fields) {
-              if (this._childSync & ChildSyncFlags.ChildrenValues) {
-                this.doFieldsSync(this._value, (x, v) => x.setValue(v));
               }
-              if (this._childSync & ChildSyncFlags.ChildrenInitialValues) {
-                this.doFieldsSync(this._initialValue, (x, v) =>
-                  x.setInitialValue(v)
-                );
-              }
+            );
+            this._elems = newChildren as Control<ElemType<V>, M>[];
+            changed |= ControlChange.Structure;
+          } else if (this._fields) {
+            if (this._childSync & ChildSyncFlags.ChildrenValues) {
+              this.doFieldsSync(this._value, (x, v) => x.setValue(v));
             }
-            this._childSync =
-              (this._childSync &
-                ~(
-                  ChildSyncFlags.ChildrenValues |
-                  ChildSyncFlags.ChildrenInitialValues
-                )) |
-              (ChildSyncFlags.Dirty | ChildSyncFlags.Valid);
-          });
+            if (this._childSync & ChildSyncFlags.ChildrenInitialValues) {
+              this.doFieldsSync(this._initialValue, (x, v) =>
+                x.setInitialValue(v)
+              );
+            }
+          }
+          this._childSync =
+            (this._childSync &
+              ~(
+                ChildSyncFlags.ChildrenValues |
+                ChildSyncFlags.ChildrenInitialValues
+              )) |
+            (ChildSyncFlags.Dirty | ChildSyncFlags.Valid);
+          this.freezeCount = 0;
         }
         if (this._childSync & ChildSyncFlags.Valid) {
           this._childSync &= ~ChildSyncFlags.Valid;
@@ -833,7 +835,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     [K in keyof OTHER]-?: Control<OTHER[K], M>;
   }): Control<V & OTHER, M> {
     this._fields = { ...this._fields, ...v } as any;
-    return this.as();
+    return this.runChange(ControlChange.Value | ControlChange.Structure).as();
   }
 
   as<NV extends V>(): Control<NV, M> {
@@ -873,7 +875,7 @@ export function control<V>(
 }
 
 /**
- * @deprecated Use withElems instead
+ * @deprecated Use useControl() instead
  */
 export function arrayControl<CHILD>(
   child: CHILD
@@ -928,7 +930,7 @@ export function newControl<V, M = BaseControlMetadata>(
   const realSetup = getSetup(setup);
   const builder = realSetup.create;
   if (builder) {
-    builder(value, initial, realSetup);
+    return builder(value, initial, realSetup);
   }
   const [error, valid] = initialValidation(value, realSetup);
   return new ControlImpl(
@@ -941,7 +943,7 @@ export function newControl<V, M = BaseControlMetadata>(
 }
 
 /**
- * @deprecated Use withElems() instead
+ * @deprecated Use useControl() instead
  * @param children
  */
 export function groupControl<DEF extends { [t: string]: any }>(
@@ -994,7 +996,8 @@ function makeChildListener<V, M>(
       ControlChange.Valid |
       ControlChange.Touched |
       ControlChange.InitialValue |
-      ControlChange.Dirty,
+      ControlChange.Dirty |
+      ControlChange.Structure,
     (child, change) => {
       if (!pc.isLiveChild(child)) {
         return;
@@ -1005,9 +1008,7 @@ function makeChildListener<V, M>(
       ) {
         return;
       }
-      const beforeSync = pc._childSync;
-      const beforeFlags = pc.flags;
-      let flags: ControlChange = 0;
+      let flags: ControlChange = change & ControlChange.Structure;
       if (change & ControlChange.Value) {
         flags |= ControlChange.Value;
         pc._childSync |= ChildSyncFlags.Value | ChildSyncFlags.Dirty;
@@ -1019,8 +1020,6 @@ function makeChildListener<V, M>(
         pc._childSync |= ChildSyncFlags.Valid;
       }
       if (change & ControlChange.Dirty) {
-        // if (!(pc._childSync & ChildSyncFlags.Dirty) && !pc.dirty && child.dirty)
-        //   flags |= pc.updateDirty(true);
         pc._childSync |= ChildSyncFlags.Dirty;
       }
       if (change & ControlChange.Touched) {

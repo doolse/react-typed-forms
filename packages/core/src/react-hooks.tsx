@@ -27,12 +27,16 @@ export function useControlChangeEffect<V, M>(
   deps?: any[],
   runInitial?: boolean
 ) {
-  const effectRef = useRef(changeEffect);
-  effectRef.current = changeEffect;
+  const effectRef = useRef<
+    [(control: Control<V, M>, change: ControlChange) => void, Control<V, M>]
+  >([changeEffect, control]);
+  effectRef.current[0] = changeEffect;
   useEffect(() => {
-    if (runInitial) effectRef.current(control, 0);
+    if (runInitial || control !== effectRef.current[1])
+      effectRef.current[0](control, 0);
+    effectRef.current[1] = control;
     const changeListener = (c: Control<V, M>, m: ControlChange) => {
-      effectRef.current(c, m);
+      effectRef.current[0](c, m);
     };
     control.addChangeListener(changeListener, mask);
     return () => control.removeChangeListener(changeListener);
@@ -81,8 +85,7 @@ export function useControlState<V, M, S>(
     control,
     (control) => setState((p) => toState(control, p)),
     mask,
-    deps,
-    true
+    deps
   );
   return state;
 }
@@ -136,8 +139,14 @@ export function FormArray<V, M = BaseControlMetadata>({
   state,
   children,
 }: FormArrayProps<V, M>) {
-  const elems = useControlState(state, (c) => c.elems, ControlChange.Value);
+  const elems = useControlState(state, (c) => c.elems, ControlChange.Structure);
   return <>{elems ? children(elems) : undefined}</>;
+}
+
+export function renderAll<V, M>(
+  render: (c: Control<V, M>, index: number) => ReactNode
+): (elems: Control<V, M>[]) => ReactNode {
+  return (e) => e.map(render);
 }
 
 export function useAsyncValidator<V, M>(
