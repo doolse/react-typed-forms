@@ -18,7 +18,6 @@ import {
   FormControlFields,
   newControl,
   ReadableControl,
-  ReadonlyControl,
 } from "./nodes";
 
 export function useControlChangeEffect<C extends ReadableControl<any>>(
@@ -359,8 +358,9 @@ export function useSelectableArray<V, M>(
 export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
   control: C,
   mapFn: (v: C) => V,
-  mask?: ControlChange
-): ReadonlyControl<V, M> {
+  mask?: ControlChange,
+  controlSetup?: ControlSetup<V, M>
+): Control<V, M> {
   return useControlState(
     control,
     (c, p?: Control<V, M>) => {
@@ -368,7 +368,7 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
       if (p) {
         return p.setValue(v);
       }
-      return newControl(v, v);
+      return newControl(v, v, controlSetup);
     },
     mask ?? ControlChange.Value
   );
