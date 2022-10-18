@@ -4,6 +4,7 @@ import {
   useControl,
   useControlChangeEffect,
   useControlStateComponent,
+  useMappedControl,
   useMappedControls,
   useValueChangeEffect,
 } from "@react-typed-forms/core";
@@ -28,7 +29,13 @@ export default function MappedTest() {
     firstName: mappedWith(fields.firstName, (c) => c.value.toUpperCase()),
   });
 
+  const combined = useMappedControl(
+    subForm,
+    ({ value: { firstName, age } }) => `${firstName} is ${age} years old`
+  );
+
   const MappedValues = useControlStateComponent(subForm, (c) => c.value);
+  const MappedValue = useControlStateComponent(combined, (c) => c.value);
 
   return (
     <div className="container">
@@ -82,6 +89,11 @@ export default function MappedTest() {
       <MappedValues
         children={(v) => (
           <pre id="mappedJson">{JSON.stringify(v, null, 2)}</pre>
+        )}
+      />
+      <MappedValue
+        children={(v) => (
+          <pre id="mappedJson2">{JSON.stringify(v, null, 2)}</pre>
         )}
       />
     </div>

@@ -371,17 +371,23 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
   mask?: ControlChange,
   controlSetup?: ControlSetup<V, M>
 ): Control<V, M> {
-  return useControlState(
-    control,
-    (c, p?: Control<V, M>) => {
-      const v = mapFn(c);
-      if (p) {
-        return p.setValue(v);
-      }
-      return newControl(v, v, controlSetup);
-    },
-    mask ?? ControlChange.Value
+  const changeRef = useRef<ChangeListenerFunc<C>>();
+  const c = useControl(
+    () => mapFn(control),
+    controlSetup,
+    (after) => {
+      changeRef.current = (c) => {
+        after.setValue(mapFn(c));
+      };
+      control.addChangeListener(changeRef.current, mask);
+    }
   );
+  useEffect(() => {
+    return () => {
+      control.removeChangeListener(changeRef.current!);
+    };
+  }, [changeRef.current]);
+  return c;
 }
 
 export function useControlGroup<C extends { [k: string]: any }, M>(
