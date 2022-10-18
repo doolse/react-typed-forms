@@ -1,5 +1,6 @@
 import React, {
   ChangeEvent,
+  DependencyList,
   FC,
   PropsWithChildren,
   ReactElement,
@@ -12,7 +13,6 @@ import React, {
 } from "react";
 import {
   BaseControlMetadata,
-  ChangeListener,
   ChangeListenerFunc,
   Control,
   ControlChange,
@@ -371,29 +371,24 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
   mask?: ControlChange,
   controlSetup?: ControlSetup<V, M>
 ): Control<V, M> {
-  const changeRef = useRef<ChangeListenerFunc<C>>();
-  const c = useControl(
-    () => mapFn(control),
-    controlSetup,
-    (after) => {
-      changeRef.current = (c) => {
-        after.setValue(mapFn(c));
-      };
-      control.addChangeListener(changeRef.current, mask);
-    }
+  const mappedControl = useControl(() => mapFn(control), controlSetup);
+  useControlChangeEffect(
+    control,
+    (c) => mappedControl.setValue(mapFn(c)),
+    mask
   );
-  useEffect(() => {
-    return () => {
-      control.removeChangeListener(changeRef.current!);
-    };
-  }, [changeRef.current]);
-  return c;
+  return mappedControl;
 }
 
 export function useControlGroup<C extends { [k: string]: any }, M>(
-  fields: C
+  fields: C,
+  deps?: DependencyList
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
-  return useState(() => controlGroup(fields))[0];
+  const newControl = useState(() => controlGroup(fields))[0];
+  useEffect(() => {
+    newControl.setFields(fields);
+  }, deps ?? Object.values(fields));
+  return newControl;
 }
 
 type ControlMapped<V, V2, M> =
@@ -421,68 +416,28 @@ export function mappedWith<V, V2, M>(
 export function useMappedControls<
   C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
   M extends BaseControlMetadata & { listeners?: ChildListeners }
->(
-  control: C | (() => C)
-): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M> {
-  function valueForMapping(c: Control<any, any> | ControlMapped<any, any, M>) {
-    if (Array.isArray(c)) {
-      return c[1](c[0]);
-    } else {
-      return c.value;
-    }
-  }
-  function changesForMapping(
-    c: ControlMapped<any, any, M>
-  ): ControlChange | undefined {
-    return Array.isArray(c) ? c[2] : ControlChange.Value;
-  }
-
-  const mappedFields = useRef<C | undefined>(undefined);
-
-  const mappedControl = useControl<any, M>(
-    () => {
-      mappedFields.current =
-        typeof control === "function" ? control() : control;
-      return Object.fromEntries(
-        Object.entries(mappedFields.current!).map(([f, cm]) => {
-          return [f, valueForMapping(cm as any)];
-        })
-      );
-    },
-    undefined,
-    (c) => {
-      c.meta.listeners = Object.entries(mappedFields.current!).map(
-        ([f, cm]) => {
-          const [childField, mapperFunc] = Array.isArray(cm)
-            ? cm
-            : [cm, (c: Control<any, any>) => c.value];
-          const listener = (child: Control<any, any>) => {
-            c.fields![f].setValue(mapperFunc(child));
-          };
-          childField.addChangeListener(listener, changesForMapping(cm as any));
-          return [childField, listener];
-        }
-      );
-    }
-  );
-  useEffect(() => {
-    return () => {
-      mappedControl.meta.listeners!.forEach(([c, l]) =>
-        c.removeChangeListener(l)
-      );
-    };
-  }, [mappedControl.meta.listeners]);
+>(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M> {
+  const mappedControl = useControl<any, M>(() => {
+    return Object.fromEntries(
+      Object.entries(controlMapping).map(([f, cm]) => {
+        const [c, mapFn] = controlAndMapFn(cm);
+        return [f, mapFn(c)];
+      })
+    );
+  });
+  Object.entries(controlMapping).forEach(([f, cm]) => {
+    const [control, mapFn, change] = controlAndMapFn(cm);
+    useControlChangeEffect(
+      control,
+      (c) => mappedControl.fields![f].setValue(mapFn(c)),
+      change
+    );
+  });
   return mappedControl;
 
-  // return useControlState(
-  //     control,
-  //     (c, p?: Control<V, M>) => {
-  //       const v = mapFn(c);
-  //       if (p) {
-  //         return p.setValue(v);
-  //       }
-  //       return newControl(v, v, controlSetup);
-  //     },
-  //     mask ?? ControlChange.Value
-  // );
+  function controlAndMapFn(
+    c: Control<any, any> | ControlMapped<any, any, any>
+  ): ControlMapped<any, any, any> {
+    return Array.isArray(c) ? c : [c, (c) => c.value, ControlChange.Value];
+  }
 }
