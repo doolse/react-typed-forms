@@ -112,12 +112,13 @@ export default function ArraySelectionsExample() {
         <button
           id="setValue"
           className="btn btn-primary"
-          onClick={() =>
+          onClick={() => {
+            // debugger;
             allFormState.fields.people.setValue([
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },
-            ])
-          }
+            ]);
+          }}
         >
           Set Value
         </button>

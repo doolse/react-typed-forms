@@ -4,6 +4,7 @@ import React, {
   PropsWithChildren,
   ReactElement,
   ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -11,6 +12,8 @@ import React, {
 } from "react";
 import {
   BaseControlMetadata,
+  ChangeListener,
+  ChangeListenerFunc,
   Control,
   ControlChange,
   controlGroup,
@@ -322,36 +325,42 @@ export function useSelectableArray<V, M>(
 ): Control<SelectionGroup<V>[], M> {
   const selectable = useControl<SelectionGroup<V>[], M>([]);
   const updatedWithRef = useRef<Control<V, M>[] | undefined>(undefined);
+  const selectChangeListener = useCallback(() => {
+    const selectedElems = selectable.elems
+      .filter((x) => x.fields.selected.value)
+      .map((x) => x.fields.value);
+    updatedWithRef.current = selectedElems;
+    control.update(() => selectedElems);
+  }, [selectable, updatedWithRef, control]);
   useControlChangeEffect(
     control,
     (c) => {
       const allControlElems = c.elems;
       if (updatedWithRef.current === allControlElems) return;
-      selectable.update((existing) => {
-        return groupSyncer(allControlElems, control.initialValue, {
+      const selectableElems = groupSyncer(
+        allControlElems,
+        control.initialValue,
+        {
           makeElem: (v, iv) => c.newElement(v).setInitialValue(iv),
-          makeGroup: (selected, wasSelected, value) =>
-            controlGroup({
-              selected: newControl(selected, wasSelected),
+          makeGroup: (isSelected, wasSelected, value) => {
+            const selected = newControl(isSelected, wasSelected);
+            selected.addChangeListener(
+              selectChangeListener,
+              ControlChange.Value
+            );
+            return controlGroup({
+              selected,
               value,
-            }) as Control<SelectionGroup<V>, M>,
-        });
-      });
+            });
+          },
+        }
+      );
+      selectable.update(() => selectableElems);
+      updatedWithRef.current = allControlElems;
     },
     ControlChange.Value | ControlChange.InitialValue,
     undefined,
     true
-  );
-  useControlChangeEffect(
-    selectable,
-    (c) => {
-      const selectedElems = selectable.elems
-        .filter((x) => x.fields.selected.value)
-        .map((x) => x.fields.value);
-      updatedWithRef.current = selectedElems;
-      control.update((ex) => selectedElems);
-    },
-    ControlChange.Value
   );
   return selectable;
 }
@@ -378,5 +387,96 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
 export function useControlGroup<C extends { [k: string]: any }, M>(
   fields: C
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
-  return useMemo(() => controlGroup(fields), Object.values(fields));
+  return useState(() => controlGroup(fields))[0];
+}
+
+type ControlMapped<V, V2, M> =
+  | [Control<V, M>, (v: Control<V, M>) => V2, ControlChange | undefined];
+
+type ControlMapValue<C> = C extends Control<infer V, any>
+  ? V
+  : C extends ControlMapped<infer V, infer V2, any>
+  ? V2
+  : never;
+
+type ChildListeners = [
+  Control<any, any>,
+  ChangeListenerFunc<Control<any, any>>
+][];
+
+export function mappedWith<V, V2, M>(
+  c: Control<V, M>,
+  mapFn: (c: Control<V, M>) => V2,
+  controlChange?: ControlChange
+): ControlMapped<V, V2, M> {
+  return [c, mapFn, controlChange];
+}
+
+export function useMappedControls<
+  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
+  M extends BaseControlMetadata & { listeners?: ChildListeners }
+>(
+  control: C | (() => C)
+): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M> {
+  function valueForMapping(c: Control<any, any> | ControlMapped<any, any, M>) {
+    if (Array.isArray(c)) {
+      return c[1](c[0]);
+    } else {
+      return c.value;
+    }
+  }
+  function changesForMapping(
+    c: ControlMapped<any, any, M>
+  ): ControlChange | undefined {
+    return Array.isArray(c) ? c[2] : ControlChange.Value;
+  }
+
+  const mappedFields = useRef<C | undefined>(undefined);
+
+  const mappedControl = useControl<any, M>(
+    () => {
+      mappedFields.current =
+        typeof control === "function" ? control() : control;
+      return Object.fromEntries(
+        Object.entries(mappedFields.current!).map(([f, cm]) => {
+          return [f, valueForMapping(cm as any)];
+        })
+      );
+    },
+    undefined,
+    (c) => {
+      c.meta.listeners = Object.entries(mappedFields.current!).map(
+        ([f, cm]) => {
+          const [childField, mapperFunc] = Array.isArray(cm)
+            ? cm
+            : [cm, (c: Control<any, any>) => c.value];
+          const listener = (child: Control<any, any>) => {
+            c.fields![f].setValue(mapperFunc(child));
+          };
+          childField.addChangeListener(listener, changesForMapping(cm as any));
+          return [childField, listener];
+        }
+      );
+    }
+  );
+  useEffect(() => {
+    return () => {
+      mappedControl.meta.listeners!.forEach(([c, l]) =>
+        c.removeChangeListener(l)
+      );
+    };
+  }, [mappedControl.meta.listeners]);
+  return mappedControl;
+
+  // return useControlState(
+  //     control,
+  //     (c, p?: Control<V, M>) => {
+  //       const v = mapFn(c);
+  //       if (p) {
+  //         return p.setValue(v);
+  //       }
+  //       return newControl(v, v, controlSetup);
+  //     },
+  //     mask ?? ControlChange.Value
+  // );
 }
