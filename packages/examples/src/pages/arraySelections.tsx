@@ -105,7 +105,9 @@ export default function ArraySelectionsExample() {
         <button
           id="clean"
           className="btn btn-primary"
-          onClick={() => formState.markAsClean()}
+          onClick={() => {
+            formState.markAsClean();
+          }}
         >
           Mark Clean
         </button>{" "}
@@ -113,7 +115,6 @@ export default function ArraySelectionsExample() {
           id="setValue"
           className="btn btn-primary"
           onClick={() => {
-            // debugger;
             allFormState.fields.people.setValue([
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },

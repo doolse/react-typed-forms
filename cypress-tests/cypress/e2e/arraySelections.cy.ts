@@ -32,6 +32,7 @@ describe("Array Selections", () => {
       ])
     );
     cy.get("#clean").click();
+    cy.contains("#dirtyFlag", "false");
     cy.get(".row_2 .lastField").type("This won't matter");
     cy.contains("#dirtyFlag", "false");
   });

@@ -10,7 +10,7 @@ describe("Groups", () => {
     cy.get("#updateCount").should("have.text", "8");
     cy.get("#updateParentCount").should("have.text", "10");
     cy.get("#resetData").click();
-    cy.get("#updateCount").should("have.text", "9");
+    cy.get("#updateCount").should("have.text", "10");
     cy.get("#resetSubData").click();
     cy.get("#updateParentCount").should("have.text", "12");
     cy.get("#updateDebouncedCount").should("have.text", "1");
