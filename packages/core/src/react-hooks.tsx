@@ -90,7 +90,8 @@ export function useControlState<C extends ReadableControl<any>, S>(
     control,
     (control) => setState((p) => toState(control, p)),
     mask,
-    deps
+    deps,
+    Boolean(deps)
   );
   return state;
 }
