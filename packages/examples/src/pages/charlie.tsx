@@ -5,7 +5,7 @@ import {
   useOptionalFields,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 
 type MyForm = {
   field1?: string;

@@ -1,13 +1,17 @@
-import { TextField, TextFieldProps } from "@material-ui/core";
-import React, { ReactElement, useEffect, useState } from "react";
+import { TextField, TextFieldProps } from "@mui/material";
+import React, { FC, ReactElement, useEffect, useState } from "react";
 
 import {
   useControlStateVersion,
-  FormControl,
+  Control,
   createRenderer,
 } from "@react-typed-forms/core";
 
-export const FTextField = createRenderer<
+export type FTextFieldProps = TextFieldProps & {
+  state: Control<string | undefined | null>;
+};
+
+export const FTextField: FC<FTextFieldProps> = createRenderer<
   string | undefined | null,
   TextFieldProps,
   HTMLInputElement | HTMLTextAreaElement
@@ -22,7 +26,7 @@ export const FTextField = createRenderer<
 ));
 
 export type FNumberFieldProps = {
-  state: FormControl<number | null | undefined>;
+  state: Control<number | null | undefined>;
   invalidError?: string | undefined;
   blankError?: string | undefined;
 } & TextFieldProps;

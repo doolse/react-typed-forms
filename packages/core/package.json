@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "3.0.0-dev.33",
+  "version": "3.0.0-dev.35",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -34,12 +34,12 @@
     "forms"
   ],
   "peerDependencies": {
-    "react": "^16.8.0 || ^17",
-    "react-dom": "^16.8.0 || ^17"
+    "react": "^16.8.0 || ^17 || ^18",
+    "react-dom": "^16.8.0 || ^17 || ^18"
   },
   "devDependencies": {
     "typescript": "^4.8.3",
-    "@types/react": "^17.0.39",
+    "@types/react": "^18.0.22",
     "rimraf": "^3.0.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6"
