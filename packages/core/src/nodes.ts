@@ -91,6 +91,7 @@ const pendingChangeSet: Set<ControlImpl<any, any>> = new Set<
   ControlImpl<any, any>
 >();
 let freezeCount = 0;
+let runningListeners = 0;
 
 export function groupedChanges<A>(change: () => A) {
   freezeCount++;
@@ -103,17 +104,35 @@ export function groupedChanges<A>(change: () => A) {
 
   function checkChanges() {
     if (freezeCount) return;
-    while (freezeCount === 0) {
+    while (freezeCount === 0 && pendingChangeSet.size > 0) {
       const firstValue = pendingChangeSet.values().next().value;
-      if (!firstValue) return;
       pendingChangeSet.delete(firstValue);
       firstValue.applyChanges(firstValue.pendingChanges);
     }
+    runAfterCallbacks();
+  }
+}
+
+const afterChanges: (() => void)[] = [];
+
+export function addAfterChangesCallback(callback: () => void) {
+  afterChanges.push(callback);
+}
+
+function runAfterCallbacks() {
+  while (
+    freezeCount === 0 &&
+    pendingChangeSet.size === 0 &&
+    runningListeners === 0 &&
+    afterChanges.length > 0
+  ) {
+    afterChanges.shift()!();
   }
 }
 
 export interface Control<V, M = BaseControlMetadata>
-  extends ReadableControl<V, M, Control<V, M>> {
+  extends Omit<ReadableControl<V, M, Control<V, M>>, "value"> {
+  value: V;
   setValue(v: V, initial?: boolean): Control<V, M>;
   setInitialValue(v: V): Control<V, M>;
   setValueAndInitial(v: V, iv: V): Control<V, M>;
@@ -415,9 +434,14 @@ class ControlImpl<V, M> implements Control<V, M> {
   private runListeners(changed: ControlChange) {
     this.pendingChanges = 0;
     this.stateVersion++;
-    this.listeners.forEach(([m, cb]) => {
-      if ((m & changed) !== 0) cb(this, changed);
-    });
+    runningListeners++;
+    try {
+      this.listeners.forEach(([m, cb]) => {
+        if ((m & changed) !== 0) cb(this, changed);
+      });
+    } finally {
+      runningListeners--;
+    }
   }
 
   doFieldsSync(v: V, setter: (c: Control<any, M>, v: any) => void) {
@@ -444,6 +468,7 @@ class ControlImpl<V, M> implements Control<V, M> {
     if (changed || this.needsChildSync) {
       if (freezeCount === 0) {
         this.applyChanges(changed);
+        runAfterCallbacks();
       } else {
         this.pendingChanges |= changed;
         pendingChangeSet.add(this);
@@ -644,6 +669,10 @@ class ControlImpl<V, M> implements Control<V, M> {
       );
     }
     return this._fieldsProxy as FormControlFields<V, M>;
+  }
+
+  set value(v: V) {
+    this.setValue(v);
   }
 
   get value(): V {
@@ -886,10 +915,6 @@ class ControlImpl<V, M> implements Control<V, M> {
   toObject(): V {
     return this.value;
   }
-
-  isLiveChild(v: Control<any, M>): boolean {
-    return this.getChildControls().includes(v as any);
-  }
 }
 
 export type ControlDefType<T> = T extends () => Control<infer V> ? V : T;
@@ -1034,10 +1059,6 @@ function makeChildListener<V, M>(
       ControlChange.Dirty |
       ControlChange.Structure,
     (child, change) => {
-      if (!pc.isLiveChild(child)) {
-        console.log("It hasn't been detached");
-        return;
-      }
       let flags: ControlChange = change & ControlChange.Structure;
       if (change & ControlChange.Value) {
         flags |= ControlChange.Value;

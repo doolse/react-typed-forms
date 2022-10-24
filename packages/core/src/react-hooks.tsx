@@ -12,6 +12,7 @@ import React, {
   useState,
 } from "react";
 import {
+  addAfterChangesCallback,
   BaseControlMetadata,
   ChangeListenerFunc,
   Control,
@@ -416,25 +417,55 @@ export function mappedWith<V, V2, M>(
 
 export function useMappedControls<
   C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
+  M extends BaseControlMetadata & { listeners?: ChildListeners },
+  V
+>(
+  controlMapping: C,
+  mapFn: (v: { [K in keyof C]: ControlMapValue<C[K]> }) => V
+): Control<V, M>;
+
+export function useMappedControls<
+  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
   M extends BaseControlMetadata & { listeners?: ChildListeners }
->(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M> {
-  const mappedControl = useControl<any, M>(() => {
-    return Object.fromEntries(
+>(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M>;
+
+export function useMappedControls<
+  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
+  M extends BaseControlMetadata & { listeners?: ChildListeners }
+>(
+  controlMapping: C,
+  mapFn: (v: { [K: string]: any }) => any = (v) => ({ ...v })
+): Control<any, M> {
+  const [valueField] = useState(() =>
+    Object.fromEntries(
       Object.entries(controlMapping).map(([f, cm]) => {
         const [c, mapFn] = controlAndMapFn(cm);
         return [f, mapFn(c)];
       })
-    );
-  });
+    )
+  );
+  const mappedControl = useControl<any, M>(() => mapFn(valueField));
+  const cbAddedRef = useRef(false);
   Object.entries(controlMapping).forEach(([f, cm]) => {
     const [control, mapFn, change] = controlAndMapFn(cm);
     useControlChangeEffect(
       control,
-      (c) => mappedControl.fields![f].setValue(mapFn(c)),
+      (c) => {
+        valueField[f] = mapFn(c);
+        if (!cbAddedRef.current) {
+          cbAddedRef.current = true;
+          addAfterChangesCallback(runMapper);
+        }
+      },
       change
     );
   });
   return mappedControl;
+
+  function runMapper() {
+    cbAddedRef.current = false;
+    mappedControl.value = mapFn(valueField);
+  }
 
   function controlAndMapFn(
     c: Control<any, any> | ControlMapped<any, any, any>
