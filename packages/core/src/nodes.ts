@@ -310,6 +310,8 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   isValueEqual(v: V): boolean {
     this.checkChildSync();
+    if (this._value == null) return v == null;
+    if (v == null) return false;
     if (this._elems) {
       const e = this._elems;
       if (!Array.isArray(v)) return false;
