@@ -23,6 +23,7 @@ import {
   FormControlFields,
   newControl,
   ReadableControl,
+  ReadonlyControl,
 } from "./nodes";
 
 export function useControlChangeEffect<C extends ReadableControl<any>>(
@@ -106,6 +107,12 @@ export function useControlStateVersion(
   mask?: ControlChange
 ) {
   return useControlState(control, (c) => c.stateVersion, mask);
+}
+
+export function useControlComponent<V>(
+  control: ReadonlyControl<V>
+): FC<{ children: (formState: V) => ReactElement }> {
+  return useControlStateComponent(control, (c) => c.value, ControlChange.Value);
 }
 
 export function useControlStateComponent<C extends ReadableControl<any>, S>(
@@ -452,6 +459,7 @@ export function useMappedControls<
       control,
       (c) => {
         valueField[f] = mapFn(c);
+        console.log(valueField);
         if (!cbAddedRef.current) {
           cbAddedRef.current = true;
           addAfterChangesCallback(runMapper);
@@ -464,6 +472,7 @@ export function useMappedControls<
 
   function runMapper() {
     cbAddedRef.current = false;
+    console.log({ valueField });
     mappedControl.value = mapFn(valueField);
   }
 
