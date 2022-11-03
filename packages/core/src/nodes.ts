@@ -509,9 +509,9 @@ class ControlImpl<V, M> implements Control<V, M> {
       const e = this._elems;
       const valArr =
         childSync & ChildSyncFlags.ChildrenValues
-          ? (this._value as any[])
-          : (e as any[]);
-      const initialArr = this._initialValue as any[];
+          ? (this._value as any[]) ?? []
+          : (e as any[]) ?? [];
+      const initialArr = (this._initialValue as any[]) ?? [];
       const newChildren = createArrayChildren(
         valArr,
         initialArr,
