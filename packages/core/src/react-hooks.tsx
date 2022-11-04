@@ -459,7 +459,6 @@ export function useMappedControls<
       control,
       (c) => {
         valueField[f] = mapFn(c);
-        console.log(valueField);
         if (!cbAddedRef.current) {
           cbAddedRef.current = true;
           addAfterChangesCallback(runMapper);
@@ -472,7 +471,6 @@ export function useMappedControls<
 
   function runMapper() {
     cbAddedRef.current = false;
-    console.log({ valueField });
     mappedControl.value = mapFn(valueField);
   }
 
