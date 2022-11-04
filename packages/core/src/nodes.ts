@@ -139,6 +139,7 @@ export interface Control<V, M = BaseControlMetadata>
   groupedChanges(run: () => void): Control<V, M>;
   isValueEqual(v: V): boolean;
   validate(): Control<V, M>;
+  isNotNull(): this is Control<NonNullable<V>, M>;
 
   markAsClean(): void;
   clearErrors(): void;
@@ -916,6 +917,10 @@ class ControlImpl<V, M> implements Control<V, M> {
 
   toObject(): V {
     return this.value;
+  }
+
+  isNotNull(): this is Control<NonNullable<V>, M> {
+    return this._value != null;
   }
 }
 

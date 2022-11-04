@@ -13,6 +13,7 @@ function typeWithUndefined<A extends { id: string } | undefined>(
   // @ts-expect-error
   c.fields.id;
   c.fields?.id;
+  c.isNotNull() && c.fields.id;
 }
 
 function nonArray(c: Control<string>) {
@@ -28,6 +29,7 @@ function takesArray<A>(c: Control<A[] | undefined>) {
   // @ts-expect-error
   c.elems[0];
   c.elems?.[0];
+  c.isNotNull() && c.elems[0];
 }
 
 function anyControl(c: Control<any>) {
