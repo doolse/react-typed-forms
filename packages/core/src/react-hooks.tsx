@@ -262,7 +262,7 @@ export function useControl(
 ): Control<any, any> {
   return useState(() => {
     const rv = typeof v === "function" ? v() : v;
-    const c = newControl(rv, rv, configure);
+    const c = newControl(rv, configure);
     return afterInit?.(c) ?? c;
   })[0];
 }
@@ -352,7 +352,7 @@ export function useSelectableArray<V, M>(
         {
           makeElem: (v, iv) => c.newElement(v).setInitialValue(iv),
           makeGroup: (isSelected, wasSelected, value) => {
-            const selected = newControl(isSelected, wasSelected);
+            const selected = newControl(isSelected, undefined, wasSelected);
             selected.addChangeListener(
               selectChangeListener,
               ControlChange.Value

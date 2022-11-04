@@ -277,7 +277,7 @@ class ControlImpl<V, M> implements Control<V, M> {
   }
 
   newElement(elem: ElemType<V>): Control<ElemType<V>, M> {
-    return newControl(elem, elem, this.setup.elems);
+    return newControl(elem, this.setup.elems);
   }
 
   add(
@@ -290,7 +290,7 @@ class ControlImpl<V, M> implements Control<V, M> {
       return this.elems![0] as Control<ElemType<V>, M>;
     }
     const c = this.ensureArray();
-    const newChild = newControl(child, child, this.setup.elems);
+    const newChild = newControl(child, this.setup.elems);
     if (typeof index === "object") {
       index = c.indexOf(index as any);
     }
@@ -528,7 +528,7 @@ class ControlImpl<V, M> implements Control<V, M> {
             return existing;
           } else {
             return this.attachParentListener(
-              newControl(v, iv, this.setup.elems)
+              newControl(v, this.setup.elems, iv)
             );
           }
         }
@@ -629,7 +629,7 @@ class ControlImpl<V, M> implements Control<V, M> {
         valueArr,
         initialArr,
         (n, i, iv) =>
-          this.attachParentListener(newControl(i, iv, this.setup.elems))
+          this.attachParentListener(newControl(i, this.setup.elems, iv))
       );
     }
     return this._elems;
@@ -661,7 +661,7 @@ class ControlImpl<V, M> implements Control<V, M> {
             const thisInitial = t.initialValue as any;
             const v = (t.value as any)[p];
             const iv = thisInitial?.[p];
-            const newChild = newControl(v, iv, t.setup.fields?.[p as keyof V]);
+            const newChild = newControl(v, t.setup.fields?.[p as keyof V], iv);
             newChild.setTouched(t.touched);
             newChild.setDisabled(t.disabled);
             t.attachParentListener(newChild);
@@ -938,7 +938,7 @@ export function control<V>(
   validator?: ((v: V) => string | undefined) | null,
   equals?: (a: V, b: V) => boolean
 ): () => Control<V> {
-  return () => newControl(value, value, { validator, equals });
+  return () => newControl(value, { validator, equals });
 }
 
 /**
@@ -952,7 +952,7 @@ export function arrayControl<CHILD>(
       typeof child === "function"
         ? (v: any, iv: any) => child().setValueAndInitial(v, iv)
         : undefined;
-    return newControl<any[]>([], [], { elems: { create } });
+    return newControl<any[]>([], { elems: { create } });
   };
 }
 
@@ -991,10 +991,11 @@ function getSetup<V, M>(
 
 export function newControl<V, M = BaseControlMetadata>(
   value: V,
-  initial: V,
-  setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>)
+  setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>),
+  initialValue?: V
 ): Control<V, M> {
   const realSetup = getSetup(setup);
+  const initial = arguments.length > 2 ? initialValue! : value;
   const builder = realSetup.create;
   if (builder) {
     return builder(value, initial, realSetup);
