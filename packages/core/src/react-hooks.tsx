@@ -480,3 +480,50 @@ export function useMappedControls<
     return Array.isArray(c) ? c : [c, (c) => c.value, ControlChange.Value];
   }
 }
+
+export function usePreviousValue<V>(
+  control: Control<V, any>
+): Control<{ previous?: V; current: V }> {
+  const withPrev = useControl<{ previous?: V; current: V }>(() => ({
+    current: control.value,
+  }));
+  useControlChangeEffect(
+    control,
+    (c) =>
+      (withPrev.value = { previous: withPrev.value.current, current: c.value }),
+    ControlChange.Value
+  );
+  return withPrev;
+}
+
+export function useFlattenedControl<V, M>(
+  control: Control<Control<V, any>, any>
+): Control<V> {
+  const prevRef = useRef<[Control<V, any>, () => void]>();
+  const flattened = useControl(() => control.value.value);
+  useControlChangeEffect(
+    control,
+    (c) => {
+      const newControl = c.value;
+      if (prevRef.current) {
+        if (prevRef.current[0] === newControl) {
+          return;
+        }
+        prevRef.current[1]();
+      }
+      const updateFlattened = () => {
+        flattened.value = newControl.value;
+      };
+      updateFlattened();
+      newControl.addChangeListener(updateFlattened, ControlChange.Value);
+      prevRef.current = [
+        newControl,
+        () => newControl.removeChangeListener(updateFlattened),
+      ];
+    },
+    ControlChange.Value,
+    undefined,
+    true
+  );
+  return flattened;
+}

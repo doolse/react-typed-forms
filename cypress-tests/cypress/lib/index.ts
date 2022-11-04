@@ -1,5 +1,5 @@
 export function compareJson(
-  compare: object
+  compare: any
 ): (jq: JQuery<HTMLPreElement>) => void {
   return (jq) => {
     expect(JSON.parse(jq[0].textContent)).to.deep.equal(compare);

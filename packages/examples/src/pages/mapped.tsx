@@ -1,15 +1,15 @@
 import {
-  ControlChange,
+  Control,
   mappedWith,
   useControl,
-  useControlChangeEffect,
   useControlStateComponent,
+  useFlattenedControl,
   useMappedControl,
   useMappedControls,
-  useValueChangeEffect,
+  usePreviousValue,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
-import React, { useState } from "react";
+import React from "react";
 
 interface FullGroup {
   firstName: string;
@@ -36,7 +36,15 @@ export default function MappedTest() {
 
   const MappedValues = useControlStateComponent(subForm, (c) => c.value);
   const MappedValue = useControlStateComponent(combined, (c) => c.value);
-
+  const selected = useControl<Control<any>>(fields.firstName);
+  const FlattenedValue = useControlStateComponent(
+    useFlattenedControl(selected),
+    (c) => c.value
+  );
+  const PreviousValue = useControlStateComponent(
+    usePreviousValue(formState),
+    (c) => c.value
+  );
   return (
     <div className="container">
       <h2>Mapped control test</h2>
@@ -46,6 +54,9 @@ export default function MappedTest() {
           id="firstName"
           state={fields.firstName}
         />
+        <button id="sel1" onClick={() => selected.setValue(fields.firstName)}>
+          Select
+        </button>
       </div>
       <div>
         <FTextField
@@ -53,6 +64,12 @@ export default function MappedTest() {
           id="anotherField"
           state={fields.anotherField}
         />
+        <button
+          id="sel2"
+          onClick={() => selected.setValue(fields.anotherField)}
+        >
+          Select
+        </button>
       </div>
       <div>
         <FNumberField id="age" label="Age" state={fields.age} />
@@ -94,6 +111,14 @@ export default function MappedTest() {
       <MappedValue
         children={(v) => (
           <pre id="mappedJson2">{JSON.stringify(v, null, 2)}</pre>
+        )}
+      />
+      <FlattenedValue
+        children={(c) => <pre id="selectedValue">{JSON.stringify(c)}</pre>}
+      />
+      <PreviousValue
+        children={(c) => (
+          <pre id="previousValue">{JSON.stringify(c, null, 2)}</pre>
         )}
       />
     </div>

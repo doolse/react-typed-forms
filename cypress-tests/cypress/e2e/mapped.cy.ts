@@ -20,5 +20,24 @@ describe("Mapped", () => {
         age: 10,
       })
     );
+    cy.get("#previousValue").should(
+      compareJson({
+        previous: {
+          firstName: "doolse",
+          age: 23,
+          anotherField: "OK",
+        },
+        current: {
+          firstName: "Reset",
+          age: 10,
+          anotherField: "WOW",
+        },
+      })
+    );
+    cy.get("#selectedValue").should(compareJson("Reset"));
+    cy.get("#sel2").click();
+    cy.get("#selectedValue").should(compareJson("WOW"));
+    cy.get("#anotherField").type("OK");
+    cy.get("#selectedValue").should(compareJson("WOWOK"));
   });
 });
