@@ -792,9 +792,12 @@ class ControlImpl<V, M> implements Control<V, M> {
     if (this.isEqual(v, this.value)) {
       return this;
     }
+    const structureChange =
+      v == null || this._value == null ? ControlChange.Structure : 0;
     this._value = v;
     const change =
       ControlChange.Value |
+      structureChange |
       (this.setup?.validator !== null
         ? this.updateError(this.setup!.validator?.(v))
         : 0);
