@@ -1,4 +1,9 @@
-import { Finput, notEmpty, useControl } from "@react-typed-forms/core";
+import {
+  Finput,
+  getFields,
+  notEmpty,
+  useControl,
+} from "@react-typed-forms/core";
 import React, { useState } from "react";
 
 interface SimpleForm {
@@ -11,7 +16,7 @@ export default function SimpleExample() {
     { firstName: "", lastName: "" },
     { fields: { lastName: { validator: notEmpty("Required field") } } }
   );
-  const { fields } = formState;
+  const fields = getFields(formState);
   const [formData, setFormData] = useState<SimpleForm>();
   return (
     <form

@@ -1,4 +1,10 @@
-import { buildGroup, control, Finput, Fselect } from "@react-typed-forms/core";
+import {
+  buildGroup,
+  control,
+  Finput,
+  Fselect,
+  getFields,
+} from "@react-typed-forms/core";
 import React, { useRef, useState } from "react";
 
 type SimpleForm = {
@@ -20,7 +26,7 @@ let renders = 0;
 export default function BasicFormExample() {
   renders++;
   const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const fields = getFields(formState);
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
   return (

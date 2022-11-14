@@ -1,6 +1,7 @@
 import {
   ControlChange,
   Finput,
+  getFields,
   useControl,
   useControlStateComponent,
   useMappedControls,
@@ -8,7 +9,7 @@ import {
 
 export default function ChangesPage() {
   const form = useControl({ child1: 0, child2: 0 });
-  const { child1, child2 } = form.fields;
+  const { child1, child2 } = getFields(form);
   const ChangeMapped = useControlStateComponent(
     useMappedControls({ child1, child2 }),
     (c, p?: number) => (p ?? -1) + 1,

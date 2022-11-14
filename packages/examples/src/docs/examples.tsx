@@ -3,6 +3,7 @@ import {
   ControlChange,
   ControlType,
   Finput,
+  getFields,
   groupControl,
   useControlStateComponent,
   ValueTypeForControl,
@@ -18,12 +19,12 @@ type SimpleForm = ValueTypeForControl<ControlType<typeof FormDef>>;
 
 export default function SimpleExample() {
   const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const fields = getFields(formState);
 
   return (
     <div>
-      <Finput type="text" state={formState.fields.firstName} />
-      <Finput type="text" state={formState.fields.lastName} />
+      <Finput type="text" state={fields.firstName} />
+      <Finput type="text" state={fields.lastName} />
     </div>
   );
 }

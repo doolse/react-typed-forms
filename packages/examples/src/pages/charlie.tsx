@@ -1,8 +1,10 @@
 import {
+  addElement,
   FormArray,
+  getFields,
   notEmpty,
   useControl,
-  useOptionalFields,
+  useFields,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
 import { Button } from "@mui/material";
@@ -26,8 +28,8 @@ export default function CharliePage() {
       },
     }
   );
-  const fields = fc.fields;
-  const subFields = useOptionalFields(fields.subObject);
+  const fields = getFields(fc);
+  const subFields = useFields(fields.subObject);
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />
@@ -35,7 +37,7 @@ export default function CharliePage() {
       <FormArray state={fields.strings}>
         {(elems) => elems.map((v) => <FTextField state={v} label="Strings" />)}
       </FormArray>
-      <Button onClick={() => fields.strings.add("")}>Add string</Button>
+      <Button onClick={() => addElement(fields.strings, "")}>Add string</Button>
       {subFields && <FTextField state={subFields.coolBeans} label={"Beans"} />}
       <Button onClick={() => fields.subObject.setValue(undefined)}>
         Clear sub

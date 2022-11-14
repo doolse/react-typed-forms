@@ -4,7 +4,9 @@ import {
   Finput,
   FormArray,
   FormControl,
+  getFields,
   notEmpty,
+  removeElement,
   SelectionGroup,
   useControl,
   useControlStateComponent,
@@ -44,7 +46,7 @@ export default function ArraySelectionsExample() {
     }
   );
   const formState = useSelectableArray(
-    allFormState.fields.people,
+    getFields(allFormState).people,
     ensureSelectableValues(allDefaults, (x) => x.first)
   );
   const [formData, setFormData] = useState<RowForm[]>();
@@ -65,7 +67,7 @@ export default function ArraySelectionsExample() {
                 state={x}
                 key={x.uniqueId}
                 index={idx}
-                onDelete={() => formState.remove(x)}
+                onDelete={() => removeElement(formState, x)}
               />
             ))
           }
@@ -97,7 +99,7 @@ export default function ArraySelectionsExample() {
           id="submit"
           className="btn btn-primary"
           onClick={() => {
-            setFormData(allFormState.fields.people.toArray());
+            setFormData(getFields(allFormState).people.toArray());
           }}
         >
           toObject()
@@ -115,7 +117,7 @@ export default function ArraySelectionsExample() {
           id="setValue"
           className="btn btn-primary"
           onClick={() => {
-            allFormState.fields.people.setValue([
+            getFields(allFormState).people.setValue([
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },
             ]);
@@ -140,12 +142,12 @@ function StructuredRow({
   index: number;
   onDelete: () => void;
 }) {
-  const c = state.fields.value.fields;
+  const c = getFields(getFields(state).value);
   return (
     <div className={`form-inline row_${index}`}>
       <div className="form-group mb-2">
         <label className="mx-2">Enabled:</label>
-        <Fcheckbox state={state.fields.selected} className="enabled" />
+        <Fcheckbox state={getFields(state).selected} className="enabled" />
       </div>
       <div className="form-group mb-2">
         <label className="mx-2">First:</label>

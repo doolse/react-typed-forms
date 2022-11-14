@@ -1,10 +1,10 @@
 import React from "react";
-import { ControlChange, Control } from "../nodes";
 import {
   genericProps,
   useControlChangeEffect,
   useControlStateVersion,
 } from "../react-hooks";
+import { Control, ControlChange } from "../types";
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {

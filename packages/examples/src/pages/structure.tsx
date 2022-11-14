@@ -1,9 +1,11 @@
 import {
+  addElement,
   Control,
   ControlChange,
   Finput,
   FormArray,
-  ReadonlyControl,
+  getElems,
+  getFields,
   renderAll,
   useControl,
   useControlStateComponent,
@@ -32,12 +34,12 @@ export default function SimpleExample() {
     (c, v?: number) => (v ?? -1) + 1,
     ControlChange.Structure
   );
-  const mapped: ReadonlyControl<string> = useMappedControl(formState, (v) =>
+  const mapped = useMappedControl(formState, (v) =>
     v.value.stringChildren.join(",")
   );
   const StringsJoined = useControlStateComponent(mapped, (c) => c.value);
   useValueChangeEffect(formState, (v) => console.log(v));
-  const { fields } = formState;
+  const fields = getFields(formState);
   return (
     <div>
       <StructureCount>
@@ -55,8 +57,9 @@ export default function SimpleExample() {
       </FormArray>
       <button
         onClick={() =>
-          fields.stringChildren.add(
-            "child " + (fields.stringChildren.elems.length + 1)
+          addElement(
+            fields.stringChildren,
+            "child " + (getElems(fields.stringChildren).length + 1)
           )
         }
       >
@@ -75,15 +78,16 @@ function TreeStructure({
 }: {
   state: Control<SubStructure>;
 }): ReactElement {
+  const fields = getFields(state);
   return (
     <div>
       <div>
         <label>ID:</label>
-        <Finput state={state.fields.id} />
+        <Finput state={fields.id} />
       </div>
       <div style={{ paddingLeft: 10, margin: 10 }}>
         <FormArray
-          state={state.fields.children}
+          state={fields.children}
           children={renderAll((x) => (
             <TreeStructure state={x} />
           ))}
@@ -91,7 +95,7 @@ function TreeStructure({
       </div>
       <div>
         <button
-          onClick={() => state.fields.children.add({ id: "", children: [] })}
+          onClick={() => addElement(fields.children, { id: "", children: [] })}
         >
           Add Child
         </button>

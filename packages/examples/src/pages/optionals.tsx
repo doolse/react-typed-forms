@@ -1,7 +1,9 @@
 import {
+  addElement,
   FormArray,
+  getFields,
   useControl,
-  useOptionalFields,
+  useFields,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState } from "react";
@@ -21,13 +23,13 @@ export default function OptionalsTest() {
     nested: { optional: undefined },
     nullableStruct: null,
   });
-  const { fields } = formState;
+  const fields = getFields(formState);
   const [formData, setFormData] = useState<Form>();
 
-  const nestedFields = fields.nested.fields;
+  const nestedFields = useFields(fields.nested);
   const optionalArray = fields.optionalStrings;
 
-  const nullableFields = useOptionalFields(fields.nullableStruct);
+  const nullableFields = useFields(fields.nullableStruct);
   return (
     <div className="container">
       <h2>Optionals Test</h2>
@@ -64,7 +66,7 @@ export default function OptionalsTest() {
       <div>
         <button
           onClick={() => {
-            optionalArray.add("");
+            addElement(optionalArray, "");
           }}
         >
           Add optional string

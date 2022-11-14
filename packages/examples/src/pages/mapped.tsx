@@ -1,5 +1,6 @@
 import {
   Control,
+  getFields,
   mappedWith,
   useControl,
   useControlStateComponent,
@@ -23,7 +24,7 @@ export default function MappedTest() {
     firstName: "",
     anotherField: "",
   });
-  const { fields } = formState;
+  const fields = getFields(formState);
   const subForm = useMappedControls({
     age: fields.age,
     firstName: mappedWith(fields.firstName, (c) => c.value.toUpperCase()),

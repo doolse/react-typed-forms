@@ -13,36 +13,38 @@ import React, {
 } from "react";
 import {
   addAfterChangesCallback,
-  BaseControlMetadata,
+  controlGroup,
+  getElems,
+  getFields,
+  newControl,
+  newElement,
+  setFields,
+  updateElems,
+} from "./controlImpl";
+import {
   ChangeListenerFunc,
   Control,
   ControlChange,
-  controlGroup,
   ControlSetup,
   ControlValue,
-  FormControlFields,
-  newControl,
-  ReadableControl,
-  ReadonlyControl,
-} from "./nodes";
+} from "./types";
 
-export function useControlChangeEffect<C extends ReadableControl<any>>(
-  control: C,
-  changeEffect: (control: C, change: ControlChange) => void,
+export function useControlChangeEffect<V>(
+  control: Control<V>,
+  changeEffect: (control: Control<V>, change: ControlChange) => void,
   mask?: ControlChange,
   deps?: any[],
   runInitial?: boolean
 ) {
-  const effectRef = useRef<[(control: C, change: ControlChange) => void, C]>([
-    changeEffect,
-    control,
-  ]);
+  const effectRef = useRef<
+    [(control: Control<V>, change: ControlChange) => void, Control<V>]
+  >([changeEffect, control]);
   effectRef.current[0] = changeEffect;
   useEffect(() => {
     if (runInitial || control !== effectRef.current[1])
       effectRef.current[0](control, 0);
     effectRef.current[1] = control;
-    const changeListener = (c: C, m: ControlChange) => {
+    const changeListener = (c: Control<V>, m: ControlChange) => {
       effectRef.current[0](c, m);
     };
     control.addChangeListener(changeListener, mask);
@@ -51,7 +53,7 @@ export function useControlChangeEffect<C extends ReadableControl<any>>(
 }
 
 export function useValueChangeEffect<V>(
-  control: ReadableControl<V>,
+  control: Control<V>,
   changeEffect: (control: V) => void,
   debounce?: number,
   runInitial?: boolean
@@ -64,7 +66,7 @@ export function useValueChangeEffect<V>(
   effectRef.current[0] = changeEffect;
   effectRef.current[2] = debounce;
   useEffect(() => {
-    const updater = (c: ReadableControl<V>) => {
+    const updater = (c: Control<V>) => {
       const r = effectRef.current;
       if (r[2]) {
         if (r[1]) clearTimeout(r[1]);
@@ -81,9 +83,9 @@ export function useValueChangeEffect<V>(
   }, [control]);
 }
 
-export function useControlState<C extends ReadableControl<any>, S>(
-  control: C,
-  toState: (state: C, previous?: S) => S,
+export function useControlState<V, S>(
+  control: Control<V>,
+  toState: (state: Control<V>, previous?: S) => S,
   mask?: ControlChange,
   deps?: any[]
 ): S {
@@ -98,26 +100,26 @@ export function useControlState<C extends ReadableControl<any>, S>(
   return state;
 }
 
-export function useControlValue<A>(control: ReadableControl<A>) {
+export function useControlValue<A>(control: Control<A>) {
   return useControlState(control, (n) => n.value, ControlChange.Value);
 }
 
 export function useControlStateVersion(
-  control: ReadableControl<any>,
+  control: Control<any>,
   mask?: ControlChange
 ) {
   return useControlState(control, (c) => c.stateVersion, mask);
 }
 
 export function useControlComponent<V>(
-  control: ReadonlyControl<V>
+  control: Control<V>
 ): FC<{ children: (formState: V) => ReactElement }> {
   return useControlStateComponent(control, (c) => c.value, ControlChange.Value);
 }
 
-export function useControlStateComponent<C extends ReadableControl<any>, S>(
-  control: C,
-  toState: (state: C) => S,
+export function useControlStateComponent<V, S>(
+  control: Control<V>,
+  toState: (state: Control<V>) => S,
   mask?: ControlChange
 ): FC<{ children: (formState: S) => ReactElement }> {
   return useMemo(
@@ -131,7 +133,7 @@ export function useControlStateComponent<C extends ReadableControl<any>, S>(
 }
 
 export interface FormValidAndDirtyProps {
-  state: ReadableControl<any>;
+  state: Control<any>;
   children: (validForm: boolean) => ReactElement;
 }
 
@@ -144,33 +146,34 @@ export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
   return children(validForm);
 }
 
-export interface FormArrayProps<V, M> {
-  state: Control<V[] | undefined, M>;
-  children: (elems: Control<V, M>[]) => ReactNode;
+export interface FormArrayProps<V> {
+  state: Control<V[] | undefined>;
+  children: (elems: Control<V>[]) => ReactNode;
 }
 
-export function FormArray<V, M = BaseControlMetadata>({
-  state,
-  children,
-}: FormArrayProps<V, M>) {
-  const elems = useControlState(state, (c) => c.elems, ControlChange.Structure);
+export function FormArray<V>({ state, children }: FormArrayProps<V>) {
+  const elems = useControlState(
+    state,
+    (c) => (c.isNonNull() ? getElems(c) : undefined),
+    ControlChange.Structure
+  );
   return <>{elems ? children(elems) : undefined}</>;
 }
 
-export function renderAll<V, M>(
-  render: (c: Control<V, M>, index: number) => ReactNode
-): (elems: Control<V, M>[]) => ReactNode {
+export function renderAll<V>(
+  render: (c: Control<V>, index: number) => ReactNode
+): (elems: Control<V>[]) => ReactNode {
   return (e) => e.map(render);
 }
 
-export function useAsyncValidator<C extends ReadableControl<any>>(
-  control: C,
+export function useAsyncValidator<V>(
+  control: Control<V>,
   validator: (
-    control: C,
+    control: Control<V>,
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue: (control: C) => any = (c) => control.value
+  validCheckValue: (control: Control<V>) => any = (c) => control.value
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
@@ -244,22 +247,19 @@ export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
   };
 }
 
-export function useControl<V, M = BaseControlMetadata>(
+export function useControl<V, M = any>(
   initialState: V | (() => V),
   configure?: ControlSetup<V, M>,
-  afterInit?: (c: Control<V, M>) => void
-): Control<V, M>;
+  afterInit?: (c: Control<V>) => void
+): Control<V>;
 
-export function useControl<V = undefined, M = BaseControlMetadata>(): Control<
-  V | undefined,
-  M
->;
+export function useControl<V = undefined>(): Control<V | undefined>;
 
 export function useControl(
   v?: any,
   configure?: ControlSetup<any, any>,
-  afterInit?: (c: Control<any, any>) => void
-): Control<any, any> {
+  afterInit?: (c: Control<any>) => void
+): Control<any> {
   return useState(() => {
     const rv = typeof v === "function" ? v() : v;
     const c = newControl(rv, configure);
@@ -267,10 +267,14 @@ export function useControl(
   })[0];
 }
 
-export function useOptionalFields<V, M>(
-  c: Control<V, M>
-): FormControlFields<V, M> {
-  return useControlState(c, (c) => c.fields, ControlChange.Value);
+export function useFields<V extends { [k: string]: any } | undefined | null>(
+  c: Control<V>
+) {
+  return useControlState(
+    c,
+    (c) => (c.isNonNull() ? getFields(c) : undefined),
+    ControlChange.Value
+  );
 }
 
 export interface SelectionGroup<V> {
@@ -278,22 +282,22 @@ export interface SelectionGroup<V> {
   value: V;
 }
 
-interface SelectionGroupCreator<V, M> {
-  makeElem: (v: V, iv: V) => Control<V, M>;
+interface SelectionGroupCreator<V> {
+  makeElem: (v: V, iv: V) => Control<V>;
   makeGroup: (
     selected: boolean,
     wasSelected: boolean,
-    value: Control<V, M>
-  ) => Control<SelectionGroup<V>, M>;
+    value: Control<V>
+  ) => Control<SelectionGroup<V>>;
 }
 
-type SelectionGroupSync<V, M> = (
-  elems: Control<V, M>[],
+type SelectionGroupSync<V> = (
+  elems: Control<V>[],
   initialValue: V[],
-  groupCreator: SelectionGroupCreator<V, M>
-) => Control<SelectionGroup<V>, M>[];
+  groupCreator: SelectionGroupCreator<V>
+) => Control<SelectionGroup<V>>[];
 
-const defaultSelectionCreator: SelectionGroupSync<any, any> = (
+const defaultSelectionCreator: SelectionGroupSync<any> = (
   elems,
   initialValue,
   creator
@@ -303,19 +307,16 @@ const defaultSelectionCreator: SelectionGroupSync<any, any> = (
   });
 };
 
-export function ensureSelectableValues<V, M>(
+export function ensureSelectableValues<V>(
   values: V[],
   key: (v: V) => any,
-  parentSync: SelectionGroupSync<
-    V,
-    M
-  > = defaultSelectionCreator as unknown as SelectionGroupSync<V, M>
-): SelectionGroupSync<V, M> {
+  parentSync: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>
+): SelectionGroupSync<V> {
   return (elems, initialValue, groupCreator) => {
     const newFields = parentSync(elems, initialValue, groupCreator);
     values.forEach((av) => {
       const thisKey = key(av);
-      if (!newFields.some((x) => thisKey === key(x.fields.value.value))) {
+      if (!newFields.some((x) => thisKey === key(getFields(x).value.value))) {
         newFields.push(
           groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
         );
@@ -325,32 +326,29 @@ export function ensureSelectableValues<V, M>(
   };
 }
 
-export function useSelectableArray<V, M>(
-  control: Control<V[], M>,
-  groupSyncer: SelectionGroupSync<
-    V,
-    M
-  > = defaultSelectionCreator as unknown as SelectionGroupSync<V, M>
-): Control<SelectionGroup<V>[], M> {
-  const selectable = useControl<SelectionGroup<V>[], M>([]);
-  const updatedWithRef = useRef<Control<V, M>[] | undefined>(undefined);
+export function useSelectableArray<V>(
+  control: Control<V[]>,
+  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>
+): Control<SelectionGroup<V>[]> {
+  const selectable = useControl<SelectionGroup<V>[]>([]);
+  const updatedWithRef = useRef<Control<V>[] | undefined>(undefined);
   const selectChangeListener = useCallback(() => {
-    const selectedElems = selectable.elems
-      .filter((x) => x.fields.selected.value)
-      .map((x) => x.fields.value);
+    const selectedElems = getElems(selectable)
+      .filter((x) => getFields(x).selected.value)
+      .map((x) => getFields(x).value);
     updatedWithRef.current = selectedElems;
-    control.update(() => selectedElems);
+    updateElems(control, () => selectedElems);
   }, [selectable, updatedWithRef, control]);
   useControlChangeEffect(
     control,
     (c) => {
-      const allControlElems = c.elems;
+      const allControlElems = getElems(c);
       if (updatedWithRef.current === allControlElems) return;
       const selectableElems = groupSyncer(
         allControlElems,
         control.initialValue,
         {
-          makeElem: (v, iv) => c.newElement(v).setInitialValue(iv),
+          makeElem: (v, iv) => newElement(c, v).setInitialValue(iv),
           makeGroup: (isSelected, wasSelected, value) => {
             const selected = newControl(isSelected, undefined, wasSelected);
             selected.addChangeListener(
@@ -364,7 +362,7 @@ export function useSelectableArray<V, M>(
           },
         }
       );
-      selectable.update(() => selectableElems);
+      updateElems(selectable, () => selectableElems);
       updatedWithRef.current = allControlElems;
     },
     ControlChange.Value | ControlChange.InitialValue,
@@ -374,12 +372,12 @@ export function useSelectableArray<V, M>(
   return selectable;
 }
 
-export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
-  control: C,
-  mapFn: (v: C) => V,
+export function useMappedControl<V2, V>(
+  control: Control<V2>,
+  mapFn: (v: Control<V2>) => V,
   mask?: ControlChange,
-  controlSetup?: ControlSetup<V, M>
-): Control<V, M> {
+  controlSetup?: ControlSetup<V, any>
+): Control<V> {
   const mappedControl = useControl(() => mapFn(control), controlSetup);
   useControlChangeEffect(
     control,
@@ -389,60 +387,54 @@ export function useMappedControl<C extends ReadableControl<any, M>, V, M>(
   return mappedControl;
 }
 
-export function useControlGroup<C extends { [k: string]: any }, M>(
+export function useControlGroup<C extends { [k: string]: any }>(
   fields: C,
   deps?: DependencyList
-): Control<{ [K in keyof C]: ControlValue<C[K]> }, M> {
+): Control<{ [K in keyof C]: ControlValue<C[K]> }> {
   const newControl = useState(() => controlGroup(fields))[0];
   useEffect(() => {
-    newControl.setFields(fields);
+    setFields(newControl, fields);
   }, deps ?? Object.values(fields));
   return newControl;
 }
 
-type ControlMapped<V, V2, M> =
-  | [Control<V, M>, (v: Control<V, M>) => V2, ControlChange | undefined];
+type ControlMapped<V, V2> =
+  | [Control<V>, (v: Control<V>) => V2, ControlChange | undefined];
 
-type ControlMapValue<C> = C extends Control<infer V, any>
+type ControlMapValue<C> = C extends Control<infer V>
   ? V
-  : C extends ControlMapped<infer V, infer V2, any>
+  : C extends ControlMapped<infer V, infer V2>
   ? V2
   : never;
 
-type ChildListeners = [
-  Control<any, any>,
-  ChangeListenerFunc<Control<any, any>>
-][];
+type ChildListeners = [Control<any>, ChangeListenerFunc<Control<any>>][];
 
-export function mappedWith<V, V2, M>(
-  c: Control<V, M>,
-  mapFn: (c: Control<V, M>) => V2,
+export function mappedWith<V, V2>(
+  c: Control<V>,
+  mapFn: (c: Control<V>) => V2,
   controlChange?: ControlChange
-): ControlMapped<V, V2, M> {
+): ControlMapped<V, V2> {
   return [c, mapFn, controlChange];
 }
 
 export function useMappedControls<
-  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
-  M extends BaseControlMetadata & { listeners?: ChildListeners },
+  C extends { [k: string]: Control<any> | ControlMapped<any, any> },
   V
 >(
   controlMapping: C,
   mapFn: (v: { [K in keyof C]: ControlMapValue<C[K]> }) => V
-): Control<V, M>;
+): Control<V>;
 
 export function useMappedControls<
-  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
-  M extends BaseControlMetadata & { listeners?: ChildListeners }
->(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }, M>;
+  C extends { [k: string]: Control<any> | ControlMapped<any, any> }
+>(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }>;
 
 export function useMappedControls<
-  C extends { [k: string]: Control<any, any> | ControlMapped<any, any, any> },
-  M extends BaseControlMetadata & { listeners?: ChildListeners }
+  C extends { [k: string]: Control<any> | ControlMapped<any, any> }
 >(
   controlMapping: C,
   mapFn: (v: { [K: string]: any }) => any = (v) => ({ ...v })
-): Control<any, M> {
+): Control<any> {
   const [valueField] = useState(() =>
     Object.fromEntries(
       Object.entries(controlMapping).map(([f, cm]) => {
@@ -451,7 +443,7 @@ export function useMappedControls<
       })
     )
   );
-  const mappedControl = useControl<any, M>(() => mapFn(valueField));
+  const mappedControl = useControl<any>(() => mapFn(valueField));
   const cbAddedRef = useRef(false);
   Object.entries(controlMapping).forEach(([f, cm]) => {
     const [control, mapFn, change] = controlAndMapFn(cm);
@@ -475,14 +467,14 @@ export function useMappedControls<
   }
 
   function controlAndMapFn(
-    c: Control<any, any> | ControlMapped<any, any, any>
-  ): ControlMapped<any, any, any> {
+    c: Control<any> | ControlMapped<any, any>
+  ): ControlMapped<any, any> {
     return Array.isArray(c) ? c : [c, (c) => c.value, ControlChange.Value];
   }
 }
 
 export function usePreviousValue<V>(
-  control: Control<V, any>
+  control: Control<V>
 ): Control<{ previous?: V; current: V }> {
   const withPrev = useControl<{ previous?: V; current: V }>(() => ({
     current: control.value,
@@ -496,10 +488,10 @@ export function usePreviousValue<V>(
   return withPrev;
 }
 
-export function useFlattenedControl<V, M>(
-  control: Control<Control<V, any>, any>
+export function useFlattenedControl<V>(
+  control: Control<Control<V>>
 ): Control<V> {
-  const prevRef = useRef<[Control<V, any>, () => void]>();
+  const prevRef = useRef<[Control<V>, () => void]>();
   const flattened = useControl(() => control.value.value);
   useControlChangeEffect(
     control,

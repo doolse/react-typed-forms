@@ -1,9 +1,14 @@
-import { Control } from "@react-typed-forms/core";
+import {
+  addElement,
+  Control,
+  getElems,
+  getFields,
+} from "@react-typed-forms/core";
 
 function typeWithNull<A extends { id: string } | null>(c: Control<A>) {
   // @ts-expect-error
-  c.fields.id;
-  c.fields?.id;
+  getFields(c).id;
+  c.isNonNull() && getFields(c).id;
 }
 
 function typeWithUndefined<A extends { id: string } | undefined>(
@@ -11,43 +16,30 @@ function typeWithUndefined<A extends { id: string } | undefined>(
   k: keyof A
 ) {
   // @ts-expect-error
-  c.fields.id;
-  c.fields?.id;
-  c.isNonNull() && c.fields.id;
+  getFields(c).id;
+  c.isNonNull() && getFields(c).id;
 }
 
 function nonArray(c: Control<string>) {
   // @ts-expect-error
-  c.fields.id;
+  getFields(c).id;
   // @ts-expect-error
-  c.add("");
+  addElement(c, "");
   // @ts-expect-error
-  c.newElement("", "");
+  newElement(c, "", "");
 }
 
 function takesArray<A>(c: Control<A[] | undefined>) {
   // @ts-expect-error
-  c.elems[0];
-  c.elems?.[0];
-  c.isNonNull() && c.elems[0];
+  getElems(c)[0];
+  c.isNonNull() && getElems(c)[0];
 }
 
 function anyControl(c: Control<any>) {
-  // @ts-expect-error
-  c.fields[""];
-  c.add({});
+  getFields(c)[""];
+  addElement(c, {});
   nonArray(c);
-  c.fields?.["id"].add("");
+  addElement(getFields(c)?.["id"], "");
   typeWithNull(c);
   takesArray(c);
-}
-
-export function isChildOf<T extends { children?: T[] }>(
-  node: Control<T>,
-  child: Control<T>
-): boolean {
-  node.fields.children.elems!.forEach((x) => x.elems);
-  return Boolean(
-    node.fields.children.elems?.some((x) => x === child || isChildOf(x, child))
-  );
 }

@@ -4,6 +4,7 @@ import {
   Fcheckbox,
   Finput,
   Fselect,
+  getFields,
 } from "@react-typed-forms/core";
 import React, { useRef, useState } from "react";
 
@@ -21,7 +22,7 @@ const FormDef = buildGroup<SimpleForm>()({
 
 export default function BasicFormExample() {
   const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const fields = getFields(formState);
 
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);

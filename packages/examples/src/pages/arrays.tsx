@@ -1,9 +1,14 @@
 import {
+  addElement,
   Control,
   ControlSetup,
   Finput,
   FormArray,
+  getElems,
+  getFields,
   notEmpty,
+  removeElement,
+  updateElems,
   useControl,
   useControlStateComponent,
 } from "@react-typed-forms/core";
@@ -42,7 +47,7 @@ export default function ArraysExample() {
     },
     FormDef
   );
-  const { fields } = formState;
+  const fields = getFields(formState);
   const [formData, setFormData] = useState<MainForm>();
   const Dirty = useControlStateComponent(fields.structured, (c) => {
     // console.log(c, c.dirty);
@@ -51,8 +56,8 @@ export default function ArraysExample() {
   const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
   function moveUp(fa: Control<any[]>, index: number) {
-    if (index > 0 && index < fa.elems.length)
-      fa.update((fields) =>
+    if (index > 0 && index < getElems(fa).length)
+      updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx - 1]
@@ -63,8 +68,8 @@ export default function ArraysExample() {
       );
   }
   function moveDown(fa: Control<any[]>, index: number) {
-    if (index >= 0 && index < fa.elems.length - 1)
-      fa.update((fields) =>
+    if (index >= 0 && index < getElems(fa).length - 1)
+      updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx + 1]
@@ -95,21 +100,21 @@ export default function ArraysExample() {
                   <button
                     className="btn mx-2"
                     id={`rem-${idx + 1}`}
-                    onClick={() => fields.strings.remove(idx)}
+                    onClick={() => removeElement(fields.strings, idx)}
                   >
                     X
                   </button>
                   <button
                     className="btn mx-2"
                     id={`before-${idx + 1}`}
-                    onClick={() => fields.strings.add("Before", c)}
+                    onClick={() => addElement(fields.strings, "Before", c)}
                   >
                     Insert before
                   </button>
                   <button
                     className="btn mx-2"
                     id={`after-${idx + 1}`}
-                    onClick={() => fields.strings.add("After", c, true)}
+                    onClick={() => addElement(fields.strings, "After", c, true)}
                   >
                     Insert After
                   </button>
@@ -122,14 +127,14 @@ export default function ArraysExample() {
           <button
             id="addString"
             className="btn"
-            onClick={() => fields.strings.add("")}
+            onClick={() => addElement(fields.strings, "")}
           >
             Add
           </button>{" "}
           <button
             id="addStartString"
             className="btn"
-            onClick={() => fields.strings.add("", 0)}
+            onClick={() => addElement(fields.strings, "", 0)}
           >
             Add to start
           </button>{" "}
@@ -139,14 +144,18 @@ export default function ArraysExample() {
         <h5>Structured elements</h5>
         <FormArray state={fields.structured}>
           {(elems) =>
-            elems.map(({ fields: c, uniqueId }, idx) => (
-              <div id={`obj-${idx + 1}`} key={uniqueId} className="form-inline">
+            elems.map((c, idx) => (
+              <div
+                id={`obj-${idx + 1}`}
+                key={c.uniqueId}
+                className="form-inline"
+              >
                 <div className="form-group mb-2">
                   <label className="mx-2">Id:</label>
                   <Finput
                     type="text"
                     className="idField form-control"
-                    state={c.id}
+                    state={getFields(c).id}
                   />
                 </div>
                 <div className="form-group mb-2">
@@ -154,13 +163,13 @@ export default function ArraysExample() {
                   <Finput
                     type="text"
                     className="nameField form-control"
-                    state={c.name}
+                    state={getFields(c).name}
                   />
                 </div>
                 <div>
                   <button
                     className="btn mx-2 remove"
-                    onClick={() => fields.structured.remove(idx)}
+                    onClick={() => removeElement(fields.structured, idx)}
                   >
                     X
                   </button>
@@ -185,7 +194,7 @@ export default function ArraysExample() {
           <button
             id="addObj"
             className="btn"
-            onClick={() => fields.structured.add(defaultRow)}
+            onClick={() => addElement(fields.structured, defaultRow)}
           >
             Add
           </button>{" "}

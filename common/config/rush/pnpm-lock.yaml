@@ -73,13 +73,13 @@ importers:
   ../../packages/mui:
     specifiers:
       '@mui/material': ^5
-      '@react-typed-forms/core': workspace:*
+      '@react-typed-forms/core': 3.0.0-dev.43
       '@types/react': ^18.0.22
       react: ^18.2.0
       react-dom: ^18.2.0
       rimraf: ^3.0.2
     dependencies:
-      '@react-typed-forms/core': link:../core
+      '@react-typed-forms/core': 3.0.0-dev.43_react-dom@18.2.0+react@18.2.0
     devDependencies:
       '@mui/material': 5.10.10_dc814835b1afd6d75f665817c1b1a67f
       '@types/react': 18.0.22
@@ -723,6 +723,16 @@ packages:
 
   /@popperjs/core/2.11.6:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
+
+  /@react-typed-forms/core/3.0.0-dev.43_react-dom@18.2.0+react@18.2.0:
+    resolution: {integrity: sha512-D5zajNqpiClEMu9ZWYi+B3BqBVTL+x3cklIyRIG5vZmOBvB4t9OocQ7Qmr94lcTCsIaUxjw7sTmSlHIhuCdOaQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18
+      react-dom: ^16.8.0 || ^17 || ^18
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
 
   /@swc/helpers/0.4.11:
     resolution: {integrity: sha512-rEUrBSGIoSFuYxwBYtlUFMlE2CwGhmW+w9355/5oduSw8e5h2+Tj4UrAGNNgP9915++wj5vkQo0UuOBqOAq4nw==}

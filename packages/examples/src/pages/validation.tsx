@@ -7,6 +7,8 @@ import {
   FormArray,
   FormValidAndDirty,
   useControlState,
+  getFields,
+  addElement,
 } from "@react-typed-forms/core";
 import React, { useState, useRef } from "react";
 import { FormInput } from "../bootstrap";
@@ -39,7 +41,7 @@ export default function ValidationExample() {
   const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
   const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const fields = getFields(formState);
   const valid = useControlState(formState, (c) => c.valid);
 
   useAsyncValidator(
@@ -71,7 +73,7 @@ export default function ValidationExample() {
       <FormArray state={fields.array}>
         {(elems) =>
           elems.map((s) => (
-            <FormInput state={s.fields.notBlank} label="Not blank" />
+            <FormInput state={getFields(s).notBlank} label="Not blank" />
           ))
         }
       </FormArray>
@@ -93,7 +95,7 @@ export default function ValidationExample() {
           id="add"
           className="btn btn-secndary"
           onClick={() => {
-            fields.array.add({ notBlank: "" });
+            addElement(fields.array, { notBlank: "" });
             formState.setTouched(true);
           }}
         >
