@@ -89,7 +89,7 @@ export interface Control<V> {
   toArray(): V;
 }
 
-export interface ControlSetup<V, M = BaseControlMetadata> {
+export interface ControlSetup<V, M = object> {
   meta?: M;
   validator?: ControlValidator<V>;
   equals?: (a: V, b: V) => boolean;
@@ -102,7 +102,3 @@ export interface ControlSetup<V, M = BaseControlMetadata> {
 
 export type ChangeListenerFunc<C> = (control: C, cb: ControlChange) => void;
 export type ChangeListener<V> = [ControlChange, ChangeListenerFunc<Control<V>>];
-
-export interface BaseControlMetadata {
-  element?: HTMLElement | null;
-}
