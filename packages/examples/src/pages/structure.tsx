@@ -6,10 +6,11 @@ import {
   FormArray,
   getElems,
   getFields,
+  Render,
   renderAll,
+  RenderValue,
+  useComputed,
   useControl,
-  useControlStateComponent,
-  useMappedControl,
   useValueChangeEffect,
 } from "@react-typed-forms/core";
 import React, { ReactElement } from "react";
@@ -29,23 +30,17 @@ export default function SimpleExample() {
     stringChildren: [],
     substructure: { id: "root", children: [] },
   });
-  const StructureCount = useControlStateComponent(
-    formState,
-    (c, v?: number) => (v ?? -1) + 1,
-    ControlChange.Structure
-  );
-  const mapped = useMappedControl(formState, (v) =>
-    v.value.stringChildren.join(",")
-  );
-  const StringsJoined = useControlStateComponent(mapped, (c) => c.value);
+
+  const mapped = useComputed(() => formState.value.stringChildren.join(","));
   useValueChangeEffect(formState, (v) => console.log(v));
   const fields = getFields(formState);
   return (
     <div>
-      <StructureCount>
-        {(count) => <h2>{count} notifications</h2>}
-      </StructureCount>
-      <StringsJoined children={(s) => <div>{s}</div>} />
+      <RenderValue
+        toValue={(v?: number) => (v ?? -1) + 1}
+        children={(count) => <h2>{count} notifications</h2>}
+      />
+      <Render children={() => <div>{mapped.value}</div>} />
       <FormArray state={fields.stringChildren}>
         {(s) =>
           s.map((x) => (

@@ -22,6 +22,9 @@ let controlCount = 0;
 const pendingChangeSet: Set<ControlImpl<any>> = new Set<ControlImpl<any>>();
 let freezeCount = 0;
 let runningListeners = 0;
+let collectChange:
+  | ((control: Control<any>, change: ControlChange) => void)
+  | undefined;
 
 export function groupedChanges<A>(change: () => A) {
   freezeCount++;
@@ -70,13 +73,12 @@ class ControlImpl<V> implements Control<V> {
   public _fieldsProxy?: { [k: string]: Control<any> };
   public _elems?: Control<any>[];
 
-  stateVersion: number = 0;
   pendingChanges: ControlChange = 0;
 
   constructor(
     public _value: V,
     public _initialValue: V,
-    public error: string | undefined,
+    public _error: string | undefined,
     public flags: ControlFlags,
     public setup: ControlSetup<V, any>,
     public _fields?: { [k: string]: Control<any> },
@@ -114,15 +116,20 @@ class ControlImpl<V> implements Control<V> {
       }
       return true;
     }
-    return this.isEqual(this.value, v);
+    return this.isEqual(getValueInternal(this), v);
+  }
+
+  get error() {
+    collectChange?.(this, ControlChange.Error);
+    return this._error;
   }
 
   /**
    * @internal
    */
   updateError(error?: string | null): ControlChange {
-    if (this.error !== error) {
-      this.error = error ? error : undefined;
+    if (this._error !== error) {
+      this._error = error ? error : undefined;
       this._childSync |= ChildSyncFlags.Valid;
       return ControlChange.Error;
     }
@@ -150,18 +157,22 @@ class ControlImpl<V> implements Control<V> {
   }
 
   get valid() {
+    collectChange?.(this, ControlChange.Valid);
     return Boolean(this.flags & ControlFlags.Valid);
   }
 
   get dirty() {
+    collectChange?.(this, ControlChange.Dirty);
     return Boolean(this.flags & ControlFlags.Dirty);
   }
 
   get disabled() {
+    collectChange?.(this, ControlChange.Disabled);
     return Boolean(this.flags & ControlFlags.Disabled);
   }
 
   get touched() {
+    collectChange?.(this, ControlChange.Touched);
     return Boolean(this.flags & ControlFlags.Touched);
   }
 
@@ -225,7 +236,6 @@ class ControlImpl<V> implements Control<V> {
    */
   private runListeners(changed: ControlChange) {
     this.pendingChanges = 0;
-    this.stateVersion++;
     runningListeners++;
     try {
       this.listeners.forEach(([m, cb]) => {
@@ -412,29 +422,18 @@ class ControlImpl<V> implements Control<V> {
   }
 
   get value(): V {
-    if (!(this._childSync & ChildSyncFlags.Value)) return this._value;
-
-    if (this._elems) {
-      this._value = this._elems.map((x) => x.value) as any;
-    } else if (this._fields) {
-      const fieldsToSync = this._fields;
-      const newValue = { ...this._value };
-      for (const k in fieldsToSync) {
-        newValue[k as keyof V] = fieldsToSync[k]!.value;
-      }
-      this._value = newValue;
-    }
-    this._childSync &= ~ChildSyncFlags.Value;
-    return this._value;
+    collectChange?.(this, ControlChange.Value);
+    return getValueInternal(this);
   }
 
   get initialValue(): V {
+    collectChange?.(this, ControlChange.InitialValue);
     if (!(this._childSync & ChildSyncFlags.InitialValue))
       return this._initialValue;
 
     if (this._elems) {
       const initialValues = [...((this._initialValue as any[]) ?? [])];
-      if (Array.isArray(this.value)) {
+      if (Array.isArray(getValueInternal(this))) {
         this._elems.forEach((x, i) => (initialValues[i] = x.initialValue));
       }
       this._initialValue = initialValues as any;
@@ -627,10 +626,12 @@ class ControlImpl<V> implements Control<V> {
   }
 
   isNonNull(): this is Control<NonNullable<V>> {
+    collectChange?.(this, ControlChange.Structure);
     return this._value != null;
   }
 
   isNull(): boolean {
+    collectChange?.(this, ControlChange.Structure);
     return this._value == null;
   }
 }
@@ -904,7 +905,7 @@ export function getFields<E extends { [k: string]: any }>(
           return target[p];
         }
         const thisInitial = c.initialValue;
-        const v = c.value[p as string];
+        const v = getValueInternal(c)[p as string];
         const iv = thisInitial?.[p as string];
         const newChild = newControl(v, c.setup.fields?.[p as string], iv);
         newChild.setTouched(c.touched);
@@ -919,6 +920,7 @@ export function getFields<E extends { [k: string]: any }>(
 }
 
 export function getElems<V>(control: Control<V[]>): Control<V>[] {
+  collectChange?.(control, ControlChange.Structure);
   const c = control as ControlImpl<V[]>;
   const e = c._elems;
   if (e) {
@@ -1098,4 +1100,44 @@ function debugChange(syncFlags: ControlChange) {
     flags.push("Dirty");
   }
   return flags.length === 0 ? "None" : flags.join("|");
+}
+
+export function collectChanges<V>(
+  compute: () => V
+): [V, (Control<any> | ControlChange)[]] {
+  const controlAndChanges: (Control<any> | ControlChange)[] = [];
+  const prevChange = collectChange;
+  try {
+    collectChange = (c, ch) => {
+      const ex = controlAndChanges.indexOf(c);
+      if (ex >= 0) (controlAndChanges[ex + 1] as ControlChange) |= ch;
+      else controlAndChanges.push(c, ch);
+    };
+    const ret = compute();
+    return [ret, controlAndChanges];
+  } finally {
+    collectChange = prevChange;
+  }
+}
+
+export function trackControlChange(c: Control<any>, change: ControlChange) {
+  collectChange?.(c, change);
+}
+
+function getValueInternal<V>(control: Control<V>) {
+  const c = control as ControlImpl<V>;
+  if (!(c._childSync & ChildSyncFlags.Value)) return c._value;
+
+  if (c._elems) {
+    c._value = c._elems.map((x) => x.value) as any;
+  } else if (c._fields) {
+    const fieldsToSync = c._fields;
+    const newValue = { ...c._value };
+    for (const k in fieldsToSync) {
+      newValue[k as keyof V] = getValueInternal(fieldsToSync[k]!);
+    }
+    c._value = newValue;
+  }
+  c._childSync &= ~ChildSyncFlags.Value;
+  return c._value;
 }

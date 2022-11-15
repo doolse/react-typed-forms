@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  genericProps,
-  useControlChangeEffect,
-  useControlStateVersion,
-} from "../react-hooks";
-import { Control, ControlChange } from "../types";
+import { RenderForm, useControlEffect } from "../react-hooks";
+import { Control } from "../types";
 
 // Only allow strings and numbers
 export type FinputProps<V extends string | number> =
@@ -16,25 +12,24 @@ export function Finput<V extends string | number>({
   state,
   ...others
 }: FinputProps<V>) {
-  // Re-render on value or disabled state change
-  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
-
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useControlChangeEffect(
-    state,
-    (s) =>
-      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
-    ControlChange.Error
+  useControlEffect(
+    () => state.error,
+    (s) => (state.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
-  const { errorText, ...theseProps } = genericProps(state);
   return (
-    <input
-      {...theseProps}
-      ref={(r) => {
-        state.element = r;
-        if (r) r.setCustomValidity(state.error ?? "");
-      }}
-      {...others}
+    <RenderForm
+      control={state}
+      children={({ errorText, ...theseProps }) => (
+        <input
+          {...theseProps}
+          ref={(r) => {
+            state.element = r;
+            if (r) r.setCustomValidity(state.error ?? "");
+          }}
+          {...others}
+        />
+      )}
     />
   );
 }

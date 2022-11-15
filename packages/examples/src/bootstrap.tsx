@@ -1,5 +1,5 @@
-import { FormControl, useControlStateVersion } from "@react-typed-forms/core";
 import React, { ReactNode } from "react";
+import { Control, RenderForm } from "@react-typed-forms/core";
 
 export function FormInput({
   state,
@@ -8,31 +8,32 @@ export function FormInput({
   id,
   ...others
 }: React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
+  state: Control<string | number>;
   label: ReactNode;
   showValid?: boolean;
 }) {
-  useControlStateVersion(state);
   return (
-    <div className="form-group" id={id}>
-      {label && <label>{label}</label>}
-      <input
-        value={state.value}
-        disabled={state.disabled}
-        onChange={(e) => state.setValue(e.currentTarget.value)}
-        onBlur={() => state.setTouched(true)}
-        className={`form-control ${
-          state.touched
-            ? state.valid
-              ? showValid
-                ? "is-valid"
+    <RenderForm
+      control={state}
+      children={(formProps) => (
+        <div className="form-group" id={id}>
+          {label && <label>{label}</label>}
+          <input
+            {...formProps}
+            className={`form-control ${
+              state.touched
+                ? state.valid
+                  ? showValid
+                    ? "is-valid"
+                    : ""
+                  : "is-invalid"
                 : ""
-              : "is-invalid"
-            : ""
-        }`}
-        {...others}
-      />
-      <span className="invalid-feedback">{state.error}</span>
-    </div>
+            }`}
+            {...others}
+          />
+          <span className="invalid-feedback">{state.error}</span>
+        </div>
+      )}
+    />
   );
 }

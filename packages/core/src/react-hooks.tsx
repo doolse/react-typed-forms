@@ -2,54 +2,42 @@ import React, {
   ChangeEvent,
   DependencyList,
   FC,
-  PropsWithChildren,
-  ReactElement,
   ReactNode,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 import {
   addAfterChangesCallback,
+  collectChanges,
   controlGroup,
   getElems,
   getFields,
   newControl,
   newElement,
   setFields,
+  trackControlChange,
   updateElems,
 } from "./controlImpl";
-import {
-  ChangeListenerFunc,
-  Control,
-  ControlChange,
-  ControlSetup,
-  ControlValue,
-} from "./types";
+import { Control, ControlChange, ControlSetup, ControlValue } from "./types";
 
-export function useControlChangeEffect<V>(
-  control: Control<V>,
-  changeEffect: (control: Control<V>, change: ControlChange) => void,
-  mask?: ControlChange,
-  deps?: any[],
-  runInitial?: boolean
+export function useControlEffect<V>(
+  compute: () => V,
+  onChange: (value: V) => void,
+  initial?: ((value: V) => void) | boolean
 ) {
-  const effectRef = useRef<
-    [(control: Control<V>, change: ControlChange) => void, Control<V>]
-  >([changeEffect, control]);
-  effectRef.current[0] = changeEffect;
-  useEffect(() => {
-    if (runInitial || control !== effectRef.current[1])
-      effectRef.current[0](control, 0);
-    effectRef.current[1] = control;
-    const changeListener = (c: Control<V>, m: ControlChange) => {
-      effectRef.current[0](c, m);
-    };
-    control.addChangeListener(changeListener, mask);
-    return () => control.removeChangeListener(changeListener);
-  }, deps ?? [control, mask]);
+  const [res, deps] = collectChanges(compute);
+  useAfterChangesEffect(
+    () =>
+      typeof initial === "function"
+        ? initial(res)
+        : initial
+        ? onChange(res)
+        : undefined,
+    () => onChange(compute()),
+    deps
+  );
 }
 
 export function useValueChangeEffect<V>(
@@ -83,81 +71,17 @@ export function useValueChangeEffect<V>(
   }, [control]);
 }
 
-export function useControlState<V, S>(
-  control: Control<V>,
-  toState: (state: Control<V>, previous?: S) => S,
-  mask?: ControlChange,
-  deps?: any[]
-): S {
-  const [state, setState] = useState(() => toState(control));
-  useControlChangeEffect(
-    control,
-    (control) => setState((p) => toState(control, p)),
-    mask,
-    deps,
-    Boolean(deps)
-  );
-  return state;
-}
-
-export function useControlValue<A>(control: Control<A>) {
-  return useControlState(control, (n) => n.value, ControlChange.Value);
-}
-
-export function useControlStateVersion(
-  control: Control<any>,
-  mask?: ControlChange
-) {
-  return useControlState(control, (c) => c.stateVersion, mask);
-}
-
-export function useControlComponent<V>(
-  control: Control<V>
-): FC<{ children: (formState: V) => ReactElement }> {
-  return useControlStateComponent(control, (c) => c.value, ControlChange.Value);
-}
-
-export function useControlStateComponent<V, S>(
-  control: Control<V>,
-  toState: (state: Control<V>) => S,
-  mask?: ControlChange
-): FC<{ children: (formState: S) => ReactElement }> {
-  return useMemo(
-    () =>
-      ({ children }) => {
-        const state = useControlState(control, toState, mask);
-        return children(state);
-      },
-    []
-  );
-}
-
-export interface FormValidAndDirtyProps {
-  state: Control<any>;
-  children: (validForm: boolean) => ReactElement;
-}
-
-export function FormValidAndDirty({ state, children }: FormValidAndDirtyProps) {
-  const validForm = useControlState(
-    state,
-    (c) => c.valid && c.dirty,
-    ControlChange.Valid | ControlChange.Dirty
-  );
-  return children(validForm);
-}
-
 export interface FormArrayProps<V> {
   state: Control<V[] | undefined>;
   children: (elems: Control<V>[]) => ReactNode;
 }
 
 export function FormArray<V>({ state, children }: FormArrayProps<V>) {
-  const elems = useControlState(
-    state,
-    (c) => (c.isNonNull() ? getElems(c) : undefined),
-    ControlChange.Structure
+  return (
+    <>
+      {useValue(() => (state.isNonNull() ? children(getElems(state)) : null))}
+    </>
   );
-  return <>{elems ? children(elems) : undefined}</>;
 }
 
 export function renderAll<V>(
@@ -177,24 +101,26 @@ export function useAsyncValidator<V>(
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
-  useControlChangeEffect(
-    control,
-    (n) => {
+  useControlEffect(
+    () => {
+      trackControlChange(control, ControlChange.Validate);
+      return validCheckValue(control);
+    },
+    (currentVersion) => {
       if (handler.current) {
         window.clearTimeout(handler.current);
       }
       if (abortController.current) {
         abortController.current.abort();
       }
-      let currentVersion = validCheckValue(n);
       handler.current = window.setTimeout(() => {
         const aborter = new AbortController();
         abortController.current = aborter;
-        validator(n, aborter.signal)
+        validator(control, aborter.signal)
           .then((error) => {
-            if (validCheckValue(n) === currentVersion) {
-              n.setTouched(true);
-              n.setError(error);
+            if (validCheckValue(control) === currentVersion) {
+              control.setTouched(true);
+              control.setError(error);
             }
           })
           .catch((e) => {
@@ -205,8 +131,7 @@ export function useAsyncValidator<V>(
             }
           });
       }, delay);
-    },
-    ControlChange.Value | ControlChange.Validate
+    }
   );
 }
 
@@ -222,28 +147,17 @@ export interface FormControlProps<V, E extends HTMLElement> {
 export function genericProps<V, E extends HTMLElement>(
   state: Control<V>
 ): FormControlProps<V, E> {
+  const error = state.error;
+  const valid = state.valid;
   return {
     ref: (elem) => {
       state.element = elem;
     },
     value: state.value,
     disabled: state.disabled,
-    errorText: state.touched && !state.valid ? state.error : undefined,
+    errorText: state.touched && !valid ? error : undefined,
     onBlur: () => state.setTouched(true),
     onChange: (e) => state.setValue(e.target.value),
-  };
-}
-
-export function createRenderer<V, P, E extends HTMLElement = HTMLElement>(
-  render: (
-    props: PropsWithChildren<P & { state: Control<V> }>,
-    genProps: FormControlProps<V, E>
-  ) => ReactElement,
-  mask?: ControlChange
-): FC<P & { state: Control<V> }> {
-  return (props) => {
-    useControlStateVersion(props.state, mask);
-    return render(props, genericProps(props.state));
   };
 }
 
@@ -265,16 +179,6 @@ export function useControl(
     const c = newControl(rv, configure);
     return afterInit?.(c) ?? c;
   })[0];
-}
-
-export function useFields<V extends { [k: string]: any } | undefined | null>(
-  c: Control<V>
-) {
-  return useControlState(
-    c,
-    (c) => (c.isNonNull() ? getFields(c) : undefined),
-    ControlChange.Value
-  );
 }
 
 export interface SelectionGroup<V> {
@@ -339,16 +243,16 @@ export function useSelectableArray<V>(
     updatedWithRef.current = selectedElems;
     updateElems(control, () => selectedElems);
   }, [selectable, updatedWithRef, control]);
-  useControlChangeEffect(
-    control,
-    (c) => {
-      const allControlElems = getElems(c);
+  useControlEffect(
+    () => [control.value, control.initialValue],
+    () => {
+      const allControlElems = getElems(control);
       if (updatedWithRef.current === allControlElems) return;
       const selectableElems = groupSyncer(
         allControlElems,
         control.initialValue,
         {
-          makeElem: (v, iv) => newElement(c, v).setInitialValue(iv),
+          makeElem: (v, iv) => newElement(control, v).setInitialValue(iv),
           makeGroup: (isSelected, wasSelected, value) => {
             const selected = newControl(isSelected, undefined, wasSelected);
             selected.addChangeListener(
@@ -365,26 +269,62 @@ export function useSelectableArray<V>(
       updateElems(selectable, () => selectableElems);
       updatedWithRef.current = allControlElems;
     },
-    ControlChange.Value | ControlChange.InitialValue,
-    undefined,
     true
   );
   return selectable;
 }
 
-export function useMappedControl<V2, V>(
-  control: Control<V2>,
-  mapFn: (v: Control<V2>) => V,
-  mask?: ControlChange,
-  controlSetup?: ControlSetup<V, any>
-): Control<V> {
-  const mappedControl = useControl(() => mapFn(control), controlSetup);
-  useControlChangeEffect(
-    control,
-    (c) => mappedControl.setValue(mapFn(c)),
-    mask
+function useAfterChangesEffect(
+  initial: () => void,
+  changeEffect: () => void,
+  deps: (Control<any> | ControlChange)[]
+) {
+  useEffect(() => {
+    initial();
+    let afterCbAdded = false;
+    const listener = (s: Control<any>, ch: ControlChange) => {
+      if (!afterCbAdded) {
+        afterCbAdded = true;
+        addAfterChangesCallback(() => {
+          changeEffect();
+          afterCbAdded = false;
+        });
+      }
+    };
+    for (let i = 0; i < deps.length; i++) {
+      const depC = deps[i++] as Control<any>;
+      const depChange = deps[i] as ControlChange;
+      depC.addChangeListener(listener, depChange);
+    }
+    return () => {
+      for (let i = 0; i < deps.length; i++) {
+        const depC = deps[i++] as Control<any>;
+        depC.removeChangeListener(listener);
+      }
+    };
+  }, deps);
+}
+
+export function useValue<V>(stateValue: (previous?: V) => V) {
+  const [initial, deps] = collectChanges(stateValue);
+  const [value, setValue] = useState(initial);
+  useAfterChangesEffect(
+    () => setValue(initial),
+    () => setValue(stateValue),
+    deps
   );
-  return mappedControl;
+  return value;
+}
+
+export function useComputed<V>(compute: () => V): Control<V> {
+  const [res, deps] = collectChanges(compute);
+  const c = useControl(res);
+  useAfterChangesEffect(
+    () => (c.value = res),
+    () => (c.value = compute()),
+    deps
+  );
+  return c;
 }
 
 export function useControlGroup<C extends { [k: string]: any }>(
@@ -398,124 +338,45 @@ export function useControlGroup<C extends { [k: string]: any }>(
   return newControl;
 }
 
-type ControlMapped<V, V2> =
-  | [Control<V>, (v: Control<V>) => V2, ControlChange | undefined];
-
-type ControlMapValue<C> = C extends Control<infer V>
-  ? V
-  : C extends ControlMapped<infer V, infer V2>
-  ? V2
-  : never;
-
-type ChildListeners = [Control<any>, ChangeListenerFunc<Control<any>>][];
-
-export function mappedWith<V, V2>(
-  c: Control<V>,
-  mapFn: (c: Control<V>) => V2,
-  controlChange?: ControlChange
-): ControlMapped<V, V2> {
-  return [c, mapFn, controlChange];
-}
-
-export function useMappedControls<
-  C extends { [k: string]: Control<any> | ControlMapped<any, any> },
-  V
->(
-  controlMapping: C,
-  mapFn: (v: { [K in keyof C]: ControlMapValue<C[K]> }) => V
-): Control<V>;
-
-export function useMappedControls<
-  C extends { [k: string]: Control<any> | ControlMapped<any, any> }
->(controlMapping: C): Control<{ [K in keyof C]: ControlMapValue<C[K]> }>;
-
-export function useMappedControls<
-  C extends { [k: string]: Control<any> | ControlMapped<any, any> }
->(
-  controlMapping: C,
-  mapFn: (v: { [K: string]: any }) => any = (v) => ({ ...v })
-): Control<any> {
-  const [valueField] = useState(() =>
-    Object.fromEntries(
-      Object.entries(controlMapping).map(([f, cm]) => {
-        const [c, mapFn] = controlAndMapFn(cm);
-        return [f, mapFn(c)];
-      })
-    )
-  );
-  const mappedControl = useControl<any>(() => mapFn(valueField));
-  const cbAddedRef = useRef(false);
-  Object.entries(controlMapping).forEach(([f, cm]) => {
-    const [control, mapFn, change] = controlAndMapFn(cm);
-    useControlChangeEffect(
-      control,
-      (c) => {
-        valueField[f] = mapFn(c);
-        if (!cbAddedRef.current) {
-          cbAddedRef.current = true;
-          addAfterChangesCallback(runMapper);
-        }
-      },
-      change
-    );
-  });
-  return mappedControl;
-
-  function runMapper() {
-    cbAddedRef.current = false;
-    mappedControl.value = mapFn(valueField);
-  }
-
-  function controlAndMapFn(
-    c: Control<any> | ControlMapped<any, any>
-  ): ControlMapped<any, any> {
-    return Array.isArray(c) ? c : [c, (c) => c.value, ControlChange.Value];
-  }
-}
-
 export function usePreviousValue<V>(
   control: Control<V>
 ): Control<{ previous?: V; current: V }> {
   const withPrev = useControl<{ previous?: V; current: V }>(() => ({
     current: control.value,
   }));
-  useControlChangeEffect(
-    control,
-    (c) =>
-      (withPrev.value = { previous: withPrev.value.current, current: c.value }),
-    ControlChange.Value
+  useControlEffect(
+    () => control.value,
+    (nextValue) =>
+      (withPrev.value = {
+        previous: withPrev.value.current,
+        current: nextValue,
+      })
   );
   return withPrev;
 }
 
-export function useFlattenedControl<V>(
-  control: Control<Control<V>>
-): Control<V> {
-  const prevRef = useRef<[Control<V>, () => void]>();
-  const flattened = useControl(() => control.value.value);
-  useControlChangeEffect(
-    control,
-    (c) => {
-      const newControl = c.value;
-      if (prevRef.current) {
-        if (prevRef.current[0] === newControl) {
-          return;
-        }
-        prevRef.current[1]();
-      }
-      const updateFlattened = () => {
-        flattened.value = newControl.value;
-      };
-      updateFlattened();
-      newControl.addChangeListener(updateFlattened, ControlChange.Value);
-      prevRef.current = [
-        newControl,
-        () => newControl.removeChangeListener(updateFlattened),
-      ];
-    },
-    ControlChange.Value,
-    undefined,
-    true
-  );
-  return flattened;
+export function Render({ children }: { children: () => ReactNode }) {
+  const v = useValue(children);
+  return <>{v}</>;
+}
+
+export function RenderValue<V>({
+  toValue,
+  children,
+}: {
+  toValue: (previous?: V) => V;
+  children: (v: V) => ReactNode;
+}) {
+  const v = useValue(toValue);
+  return <>{children(v)}</>;
+}
+
+export function RenderForm<V, E extends HTMLElement = HTMLElement>({
+  control,
+  children,
+}: {
+  control: Control<V>;
+  children: (fcp: FormControlProps<V, E>) => ReactNode;
+}) {
+  return <>{useValue(() => children(genericProps<V, E>(control)))}</>;
 }

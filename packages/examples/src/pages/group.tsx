@@ -2,7 +2,7 @@ import {
   ControlChange,
   getFields,
   useControl,
-  useControlChangeEffect,
+  useControlEffect,
   useControlGroup,
   useValueChangeEffect,
 } from "@react-typed-forms/core";
@@ -30,15 +30,13 @@ export default function GroupTest() {
   const [valueUpdates, setValueUpdates] = useState(0);
   const [debouncedUpdates, setDebouncedUpdates] = useState(0);
 
-  useControlChangeEffect(
-    subForm,
-    () => setValueUpdates((x) => x + 1),
-    ControlChange.Value
+  useControlEffect(
+    () => subForm.value,
+    () => setValueUpdates((x) => x + 1)
   );
-  useControlChangeEffect(
-    formState,
-    () => setParentUpdates((x) => x + 1),
-    ControlChange.Value
+  useControlEffect(
+    () => formState.value,
+    () => setParentUpdates((x) => x + 1)
   );
   useValueChangeEffect(subForm, () => setDebouncedUpdates((x) => x + 1), 1000);
 

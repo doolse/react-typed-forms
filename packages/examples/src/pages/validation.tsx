@@ -1,16 +1,15 @@
 import {
-  useAsyncValidator,
+  addElement,
+  arrayControl,
   buildGroup,
   control,
-  arrayControl,
-  groupControl,
   FormArray,
-  FormValidAndDirty,
-  useControlState,
   getFields,
-  addElement,
+  groupControl,
+  useAsyncValidator,
+  useValue,
 } from "@react-typed-forms/core";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { FormInput } from "../bootstrap";
 import { useRouter } from "next/router";
 
@@ -42,7 +41,7 @@ export default function ValidationExample() {
   const [formData, setFormData] = useState<ValidationForm>();
   const [formState] = useState(FormDef);
   const fields = getFields(formState);
-  const valid = useControlState(formState, (c) => c.valid);
+  const valid = useValue(() => formState.valid);
 
   useAsyncValidator(
     fields.async,

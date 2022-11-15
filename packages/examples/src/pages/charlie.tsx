@@ -4,7 +4,7 @@ import {
   getFields,
   notEmpty,
   useControl,
-  useFields,
+  useValue,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
 import { Button } from "@mui/material";
@@ -29,7 +29,9 @@ export default function CharliePage() {
     }
   );
   const fields = getFields(fc);
-  const subFields = useFields(fields.subObject);
+  const subFields = useValue(() =>
+    fields.subObject.isNonNull() ? getFields(fields.subObject) : undefined
+  );
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />

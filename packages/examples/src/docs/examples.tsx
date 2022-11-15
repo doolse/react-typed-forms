@@ -1,11 +1,10 @@
 import {
   control,
-  ControlChange,
   ControlType,
   Finput,
   getFields,
   groupControl,
-  useControlStateComponent,
+  Render,
   ValueTypeForControl,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -31,20 +30,15 @@ export default function SimpleExample() {
 
 function AnotherExample() {
   const [formState] = useState(FormDef);
-  const FormValid = useControlStateComponent(
-    formState,
-    (c) => c.valid,
-    ControlChange.Valid
-  );
   // ...render form...
   return (
-    <FormValid>
-      {(formValid) => (
-        <button disabled={!formValid} onClick={() => save()}>
+    <Render>
+      {() => (
+        <button disabled={!formState.valid} onClick={() => save()}>
           Save
         </button>
       )}
-    </FormValid>
+    </Render>
   );
 
   function save() {}

@@ -37,7 +37,10 @@ describe("Mapped", () => {
     cy.get("#selectedValue").should(compareJson("Reset"));
     cy.get("#sel2").click();
     cy.get("#selectedValue").should(compareJson("WOW"));
+    cy.get("#sel1").click();
+    cy.get("#selectedValue").should(compareJson("Reset"));
     cy.get("#anotherField").type("OK");
+    cy.get("#sel2").click();
     cy.get("#selectedValue").should(compareJson("WOWOK"));
   });
 });

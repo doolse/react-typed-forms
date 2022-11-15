@@ -1,12 +1,9 @@
 import {
   Control,
   getFields,
-  mappedWith,
+  Render,
+  useComputed,
   useControl,
-  useControlStateComponent,
-  useFlattenedControl,
-  useMappedControl,
-  useMappedControls,
   usePreviousValue,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -19,33 +16,27 @@ interface FullGroup {
 }
 
 export default function MappedTest() {
+  console.log("Mapped Test");
   const formState = useControl<FullGroup>({
     age: 0,
     firstName: "",
     anotherField: "",
   });
   const fields = getFields(formState);
-  const subForm = useMappedControls({
-    age: fields.age,
-    firstName: mappedWith(fields.firstName, (c) => c.value.toUpperCase()),
-  });
+  const subForm = useComputed(() => ({
+    age: fields.age.value,
+    firstName: fields.firstName.value.toUpperCase(),
+  }));
 
-  const combined = useMappedControl(
-    subForm,
-    ({ value: { firstName, age } }) => `${firstName} is ${age} years old`
+  const combined = useComputed(
+    () =>
+      `${getFields(subForm).firstName.value} is ${
+        getFields(subForm).age.value
+      } years old`
   );
 
-  const MappedValues = useControlStateComponent(subForm, (c) => c.value);
-  const MappedValue = useControlStateComponent(combined, (c) => c.value);
   const selected = useControl<Control<any>>(fields.firstName);
-  const FlattenedValue = useControlStateComponent(
-    useFlattenedControl(selected),
-    (c) => c.value
-  );
-  const PreviousValue = useControlStateComponent(
-    usePreviousValue(formState),
-    (c) => c.value
-  );
+  const previousValueControl = usePreviousValue(formState);
   return (
     <div className="container">
       <h2>Mapped control test</h2>
@@ -104,22 +95,26 @@ export default function MappedTest() {
           Reset Sub data
         </button>
       </div>
-      <MappedValues
-        children={(v) => (
-          <pre id="mappedJson">{JSON.stringify(v, null, 2)}</pre>
+      <Render
+        children={() => (
+          <pre id="mappedJson">{JSON.stringify(subForm.value, null, 2)}</pre>
         )}
       />
-      <MappedValue
-        children={(v) => (
-          <pre id="mappedJson2">{JSON.stringify(v, null, 2)}</pre>
+      <Render
+        children={() => (
+          <pre id="mappedJson2">{JSON.stringify(combined.value, null, 2)}</pre>
         )}
       />
-      <FlattenedValue
-        children={(c) => <pre id="selectedValue">{JSON.stringify(c)}</pre>}
+      <Render
+        children={() => (
+          <pre id="selectedValue">{JSON.stringify(selected.value.value)}</pre>
+        )}
       />
-      <PreviousValue
-        children={(c) => (
-          <pre id="previousValue">{JSON.stringify(c, null, 2)}</pre>
+      <Render
+        children={() => (
+          <pre id="previousValue">
+            {JSON.stringify(previousValueControl.value, null, 2)}
+          </pre>
         )}
       />
     </div>

@@ -1,37 +1,34 @@
-import {
-  ControlChange,
-  FormControl,
-  useControlChangeEffect,
-  useControlStateVersion,
-} from "@react-typed-forms/core";
+import { Control, RenderForm, useControlEffect } from "@react-typed-forms/core";
+import React from "react";
 
 // Only allow strings and numbers
-export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
-};
+export type FinputProps<V extends string | number> =
+  React.InputHTMLAttributes<HTMLInputElement> & {
+    state: Control<V>;
+  };
 
-export function Finput({ state, ...others }: FinputProps) {
-  // Re-render on value or disabled state change
-  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
-
+export function Finput<V extends string | number>({
+  state,
+  ...others
+}: FinputProps<V>) {
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useControlChangeEffect(
-    state,
-    (s) =>
-      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
-    ControlChange.Error
+  useControlEffect(
+    () => state.error,
+    (s) => (state.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
   return (
-    <input
-      ref={(r) => {
-        state.element = r;
-        if (r) r.setCustomValidity(state.error ?? "");
-      }}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
-      {...others}
+    <RenderForm
+      control={state}
+      children={({ errorText, ...theseProps }) => (
+        <input
+          {...theseProps}
+          ref={(r) => {
+            state.element = r;
+            if (r) r.setCustomValidity(state.error ?? "");
+          }}
+          {...others}
+        />
+      )}
     />
   );
 }

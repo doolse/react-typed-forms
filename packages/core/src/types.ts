@@ -24,7 +24,6 @@ export type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : never;
 
 export interface Control<V> {
   readonly uniqueId: number;
-  readonly stateVersion: number;
   value: V;
   readonly initialValue: V;
   readonly error?: string;

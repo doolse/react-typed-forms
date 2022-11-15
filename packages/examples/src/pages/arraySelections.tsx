@@ -7,9 +7,9 @@ import {
   getFields,
   notEmpty,
   removeElement,
+  Render,
   SelectionGroup,
   useControl,
-  useControlStateComponent,
   useSelectableArray,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -50,11 +50,6 @@ export default function ArraySelectionsExample() {
     ensureSelectableValues(allDefaults, (x) => x.first)
   );
   const [formData, setFormData] = useState<RowForm[]>();
-  const Dirty = useControlStateComponent(allFormState, (c) => {
-    return c.dirty;
-  });
-  const Valid = useControlStateComponent(allFormState, (c) => c.valid);
-
   return (
     <div className="container">
       <h2>Array Selections Example - {renders} render(s)</h2>
@@ -72,20 +67,20 @@ export default function ArraySelectionsExample() {
             ))
           }
         </FormArray>
-        <Dirty>
-          {(dirty) => (
+        <Render>
+          {() => (
             <span>
-              Dirty: <span id="dirtyFlag">{dirty.toString()}</span>
+              Dirty: <span id="dirtyFlag">{allFormState.dirty.toString()}</span>
             </span>
           )}
-        </Dirty>{" "}
-        <Valid>
-          {(valid) => (
+        </Render>{" "}
+        <Render>
+          {() => (
             <span>
-              Valid: <span id="validFlag">{valid.toString()}</span>
+              Valid: <span id="validFlag">{allFormState.valid.toString()}</span>
             </span>
           )}
-        </Valid>
+        </Render>
       </div>
       <div>
         <button

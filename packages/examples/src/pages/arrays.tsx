@@ -8,9 +8,9 @@ import {
   getFields,
   notEmpty,
   removeElement,
+  Render,
   updateElems,
   useControl,
-  useControlStateComponent,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
@@ -49,11 +49,6 @@ export default function ArraysExample() {
   );
   const fields = getFields(formState);
   const [formData, setFormData] = useState<MainForm>();
-  const Dirty = useControlStateComponent(fields.structured, (c) => {
-    // console.log(c, c.dirty);
-    return c.dirty;
-  });
-  const Valid = useControlStateComponent(fields.structured, (c) => c.valid);
 
   function moveUp(fa: Control<any[]>, index: number) {
     if (index > 0 && index < getElems(fa).length)
@@ -226,20 +221,22 @@ export default function ArraysExample() {
           >
             Set different
           </button>{" "}
-          <Dirty>
-            {(dirty) => (
+          <Render>
+            {() => (
               <span>
-                Dirty: <span id="dirtyFlag">{dirty.toString()}</span>
+                Dirty:{" "}
+                <span id="dirtyFlag">{fields.structured.dirty.toString()}</span>
               </span>
             )}
-          </Dirty>{" "}
-          <Valid>
-            {(valid) => (
+          </Render>{" "}
+          <Render>
+            {() => (
               <span>
-                Valid: <span id="validFlag">{valid.toString()}</span>
+                Valid:{" "}
+                <span id="validFlag">{fields.structured.valid.toString()}</span>
               </span>
             )}
-          </Valid>
+          </Render>
         </div>
       </div>
       <div>

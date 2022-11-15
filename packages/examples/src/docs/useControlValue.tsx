@@ -1,9 +1,8 @@
-import { control, Finput, useControlValue } from "@react-typed-forms/core";
-import { useState } from "react";
+import { Finput, useControl, useValue } from "@react-typed-forms/core";
 
 function UseControlValueComponent() {
-  const [titleField] = useState(control(""));
-  const title = useControlValue(titleField);
+  const titleField = useControl("");
+  const title = useValue(() => titleField.value);
   return (
     <div>
       Title: <Finput state={titleField} type="text" />

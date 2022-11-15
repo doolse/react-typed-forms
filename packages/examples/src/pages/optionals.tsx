@@ -2,8 +2,8 @@ import {
   addElement,
   FormArray,
   getFields,
+  Render,
   useControl,
-  useFields,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
 import React, { useState } from "react";
@@ -26,10 +26,9 @@ export default function OptionalsTest() {
   const fields = getFields(formState);
   const [formData, setFormData] = useState<Form>();
 
-  const nestedFields = useFields(fields.nested);
+  const nested = fields.nested;
   const optionalArray = fields.optionalStrings;
-
-  const nullableFields = useFields(fields.nullableStruct);
+  const nullable = fields.nullableStruct;
   return (
     <div className="container">
       <h2>Optionals Test</h2>
@@ -43,15 +42,19 @@ export default function OptionalsTest() {
       <div>
         <FNumberField id="age" label="Age" state={fields.age} />
       </div>
-      {nestedFields && (
-        <div>
-          <FTextField
-            id="optionalField"
-            label="Optional"
-            state={nestedFields.optional}
-          />
-        </div>
-      )}
+      <Render
+        children={() =>
+          nested.isNonNull() && (
+            <div>
+              <FTextField
+                id="optionalField"
+                label="Optional"
+                state={getFields(nested).optional}
+              />
+            </div>
+          )
+        }
+      />
       <FormArray state={optionalArray}>
         {(elems) => (
           <>
@@ -72,11 +75,15 @@ export default function OptionalsTest() {
           Add optional string
         </button>
       </div>
-      {nullableFields && (
-        <div>
-          <FTextField state={nullableFields.id} label="Nullable" />
-        </div>
-      )}
+      <Render
+        children={() =>
+          nullable.isNonNull() && (
+            <div>
+              <FTextField state={getFields(nullable).id} label="Nullable" />
+            </div>
+          )
+        }
+      />
       <div>
         <button
           id="clearStrings"

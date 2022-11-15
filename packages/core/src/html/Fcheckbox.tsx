@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  genericProps,
-  useControlChangeEffect,
-  useControlStateVersion,
-} from "../react-hooks";
-import { Control, ControlChange } from "../types";
+import { RenderForm, useControlEffect } from "../react-hooks";
+import { Control } from "../types";
 
 export type FcheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
   state: Control<boolean>;
@@ -16,28 +12,27 @@ export function Fcheckbox({
   type = "checkbox",
   ...others
 }: FcheckboxProps) {
-  // Re-render on value or disabled state change
-  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
-
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useControlChangeEffect(
-    state,
-    (s) =>
-      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
-    ControlChange.Error
+  useControlEffect(
+    () => state.error,
+    (s) => (state.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
-  const { value, onChange, errorText, ...theseProps } = genericProps(state);
   return (
-    <input
-      {...theseProps}
-      checked={value}
-      ref={(r) => {
-        state.element = r;
-        if (r) r.setCustomValidity(state.error ?? "");
-      }}
-      onChange={(e) => state.setValue(!value)}
-      type={type}
-      {...others}
+    <RenderForm
+      control={state}
+      children={({ value, onChange, errorText, ...theseProps }) => (
+        <input
+          {...theseProps}
+          checked={value}
+          ref={(r) => {
+            state.element = r;
+            if (r) r.setCustomValidity(state.error ?? "");
+          }}
+          onChange={(e) => state.setValue(!value)}
+          type={type}
+          {...others}
+        />
+      )}
     />
   );
 }
