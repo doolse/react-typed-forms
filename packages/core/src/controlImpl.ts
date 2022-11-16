@@ -903,6 +903,16 @@ export function getFields<E extends { [k: string]: any }>(
   return c._fieldsProxy as { [K in keyof E]-?: Control<E[K]> };
 }
 
+export function getFieldValues<
+  V extends { [k: string]: any },
+  K extends keyof V
+>(c: Control<V>, ...keys: K[]): { [NK in K]: V[NK] } {
+  const fields = getFields(c);
+  return Object.fromEntries(keys.map((k) => [k, fields[k].value])) as {
+    [NK in K]: V[NK];
+  };
+}
+
 export function getElems<V>(control: Control<V[]>): Control<V>[] {
   collectChange?.(control, ControlChange.Structure);
   return getElemsInternal(control);
