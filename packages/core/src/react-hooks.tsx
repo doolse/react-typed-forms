@@ -2,9 +2,11 @@ import React, {
   ChangeEvent,
   DependencyList,
   FC,
+  ReactElement,
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -379,4 +381,55 @@ export function RenderForm<V, E extends HTMLElement = HTMLElement>({
   children: (fcp: FormControlProps<V, E>) => ReactNode;
 }) {
   return <>{useValue(() => children(genericProps<V, E>(control)))}</>;
+}
+
+/**
+ * @deprecated
+ */
+export function useControlValue<V>(c: Control<V>): V {
+  return useValue(() => c.value);
+}
+
+/**
+ * @deprecated
+ */
+export function useControlState<V, S>(
+  control: Control<V>,
+  toState: (state: Control<V>, previous?: S) => S
+): S {
+  return useValue((p) => toState(control, p));
+}
+
+/**
+ * @deprecated
+ */
+export function useControlStateComponent<V, S>(
+  control: Control<V>,
+  toState: (state: Control<V>) => S
+): FC<{ children: (formState: S) => ReactElement }> {
+  return useMemo(
+    () =>
+      ({ children }) => {
+        const state = useValue(() => toState(control));
+        return children(state);
+      },
+    []
+  );
+}
+
+/**
+ * @deprecated
+ */
+export function useControlChangeEffect<V>(
+  control: Control<V>,
+  changeEffect: (control: Control<V>) => void,
+  mask?: ControlChange,
+  deps?: any[],
+  runInitial?: boolean
+) {
+  useControlEffect(
+    () => trackControlChange(control, mask ?? ControlChange.All),
+    () => changeEffect(control),
+    runInitial
+  );
 }
