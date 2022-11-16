@@ -1,12 +1,11 @@
 import {
   addElement,
   Control,
-  ControlChange,
   Finput,
   FormArray,
   getElems,
   getFields,
-  Render,
+  RenderControl,
   renderAll,
   RenderValue,
   useComputed,
@@ -40,7 +39,7 @@ export default function SimpleExample() {
         toValue={(v?: number) => (v ?? -1) + 1}
         children={(count) => <h2>{count} notifications</h2>}
       />
-      <Render children={() => <div>{mapped.value}</div>} />
+      <RenderControl children={() => <div>{mapped.value}</div>} />
       <FormArray state={fields.stringChildren}>
         {(s) =>
           s.map((x) => (

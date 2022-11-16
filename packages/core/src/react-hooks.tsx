@@ -355,7 +355,7 @@ export function usePreviousValue<V>(
   return withPrev;
 }
 
-export function Render({ children }: { children: () => ReactNode }) {
+export function RenderControl({ children }: { children: () => ReactNode }) {
   const v = useValue(children);
   return <>{v}</>;
 }

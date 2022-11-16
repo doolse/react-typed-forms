@@ -1,13 +1,7 @@
 import { TextField, TextFieldProps } from "@mui/material";
-import React, { FC, ReactElement, useEffect, useState } from "react";
+import React, { FC, ReactElement } from "react";
 
-import {
-  Control,
-  genericProps,
-  Render,
-  RenderForm,
-  useComputed,
-} from "@react-typed-forms/core";
+import { Control, RenderForm, useComputed } from "@react-typed-forms/core";
 
 export type FTextFieldProps = TextFieldProps & {
   state: Control<string | undefined | null>;

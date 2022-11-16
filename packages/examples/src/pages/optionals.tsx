@@ -2,7 +2,7 @@ import {
   addElement,
   FormArray,
   getFields,
-  Render,
+  RenderControl,
   useControl,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -42,7 +42,7 @@ export default function OptionalsTest() {
       <div>
         <FNumberField id="age" label="Age" state={fields.age} />
       </div>
-      <Render
+      <RenderControl
         children={() =>
           nested.isNonNull() && (
             <div>
@@ -75,7 +75,7 @@ export default function OptionalsTest() {
           Add optional string
         </button>
       </div>
-      <Render
+      <RenderControl
         children={() =>
           nullable.isNonNull() && (
             <div>

@@ -8,7 +8,7 @@ import {
   getFields,
   notEmpty,
   removeElement,
-  Render,
+  RenderControl,
   updateElems,
   useControl,
 } from "@react-typed-forms/core";
@@ -221,22 +221,22 @@ export default function ArraysExample() {
           >
             Set different
           </button>{" "}
-          <Render>
+          <RenderControl>
             {() => (
               <span>
                 Dirty:{" "}
                 <span id="dirtyFlag">{fields.structured.dirty.toString()}</span>
               </span>
             )}
-          </Render>{" "}
-          <Render>
+          </RenderControl>{" "}
+          <RenderControl>
             {() => (
               <span>
                 Valid:{" "}
                 <span id="validFlag">{fields.structured.valid.toString()}</span>
               </span>
             )}
-          </Render>
+          </RenderControl>
         </div>
       </div>
       <div>

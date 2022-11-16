@@ -1,6 +1,6 @@
 import {
   getFields,
-  Render,
+  RenderControl,
   useComputed,
   useControl,
   useControlEffect,
@@ -20,7 +20,7 @@ export default function ThomasPage() {
     <div>
       <FTextField state={getFields(myForm).firstName} label="First Name" />
       <FTextField state={getFields(myForm).lastName} label="Last Name" />
-      <Render children={() => getFullName()} />
+      <RenderControl children={() => getFullName()} />
     </div>
   );
 

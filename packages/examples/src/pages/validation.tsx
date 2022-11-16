@@ -72,7 +72,11 @@ export default function ValidationExample() {
       <FormArray state={fields.array}>
         {(elems) =>
           elems.map((s) => (
-            <FormInput state={getFields(s).notBlank} label="Not blank" />
+            <FormInput
+              key={s.uniqueId}
+              state={getFields(s).notBlank}
+              label="Not blank"
+            />
           ))
         }
       </FormArray>

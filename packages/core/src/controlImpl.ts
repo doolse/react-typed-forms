@@ -149,7 +149,7 @@ class ControlImpl<V> implements Control<V> {
       if (typeof childId === "string") {
         base = getFields(base.as<Record<string, any>>())?.[childId];
       } else {
-        base = getElems(base.as<any[]>())?.[childId];
+        base = getElemsInternal(base.as<any[]>())?.[childId];
       }
       index++;
     }
@@ -184,7 +184,7 @@ class ControlImpl<V> implements Control<V> {
    * @internal
    */
   updateValid(valid: boolean): ControlChange {
-    if (this.valid !== valid) {
+    if (isValid(this.flags) !== valid) {
       this.setFlag(ControlFlags.Valid, valid);
       return ControlChange.Valid;
     }
@@ -195,7 +195,7 @@ class ControlImpl<V> implements Control<V> {
    * @internal
    */
   updateDisabled(disabled: boolean): ControlChange {
-    if (this.disabled !== disabled) {
+    if (isDisabled(this.flags) !== disabled) {
       this.setFlag(ControlFlags.Disabled, disabled);
       return ControlChange.Disabled;
     }
@@ -206,7 +206,7 @@ class ControlImpl<V> implements Control<V> {
    * @internal
    */
   updateDirty(dirty: boolean): ControlChange {
-    if (this.dirty !== dirty) {
+    if (isDirty(this.flags) !== dirty) {
       this.setFlag(ControlFlags.Dirty, dirty);
       return ControlChange.Dirty;
     }
@@ -217,7 +217,7 @@ class ControlImpl<V> implements Control<V> {
    * @internal
    */
   updateTouched(touched: boolean): ControlChange {
-    if (this.touched !== touched) {
+    if (isTouched(this.flags) !== touched) {
       this.setFlag(ControlFlags.Touched, touched);
       return ControlChange.Touched;
     }
@@ -428,25 +428,7 @@ class ControlImpl<V> implements Control<V> {
 
   get initialValue(): V {
     collectChange?.(this, ControlChange.InitialValue);
-    if (!(this._childSync & ChildSyncFlags.InitialValue))
-      return this._initialValue;
-
-    if (this._elems) {
-      const initialValues = [...((this._initialValue as any[]) ?? [])];
-      if (Array.isArray(getValueInternal(this))) {
-        this._elems.forEach((x, i) => (initialValues[i] = x.initialValue));
-      }
-      this._initialValue = initialValues as any;
-    } else if (this._fields) {
-      const fieldsToSync = this._fields;
-      const newValue = { ...this._initialValue };
-      for (const k in fieldsToSync) {
-        newValue[k as keyof V] = fieldsToSync[k]!.initialValue;
-      }
-      this._initialValue = newValue;
-    }
-    this._childSync &= ~ChildSyncFlags.InitialValue;
-    return this._initialValue;
+    return getInitialValueInternal(this);
   }
 
   markAsClean(): void {
@@ -462,18 +444,18 @@ class ControlImpl<V> implements Control<V> {
   }
 
   isAnyChildInvalid(): boolean {
-    return this.getChildControls().some((x) => !x.valid);
+    return this.getChildControls().some((x) => !isValid(x.flags));
   }
 
   isAnyChildDirty(): boolean {
     const e = this._elems;
     if (e) {
-      const initialValues = (this.initialValue as any[]) ?? [];
+      const initialValues = (getInitialValueInternal(this) as any[]) ?? [];
       if (e.length !== initialValues.length) return true;
       return e.some((x, i) => !x.isValueEqual(initialValues[i]));
     } else if (this._fields) {
       return this.getChildControls().some(
-        (x) => x.isAnyChildDirty() || x.dirty
+        (x) => x.isAnyChildDirty() || isDirty(x.flags)
       );
     }
     return false;
@@ -484,7 +466,7 @@ class ControlImpl<V> implements Control<V> {
   }
 
   setInitialValue(v: V, dontTellParent?: boolean): Control<V> {
-    if (this.isEqual(v, this.initialValue)) {
+    if (this.isEqual(v, getInitialValueInternal(this))) {
       return this;
     }
     this._initialValue = v;
@@ -793,7 +775,9 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
         pc._childSync |= ChildSyncFlags.Dirty;
       }
       if (change & ControlChange.Touched) {
-        flags |= pc.updateTouched(child.touched || pc.touched);
+        flags |= pc.updateTouched(
+          isTouched((child as ControlImpl<any>).flags) || isTouched(pc.flags)
+        );
       }
       pc.runChange(flags);
     },
@@ -904,12 +888,12 @@ export function getFields<E extends { [k: string]: any }>(
         if (p in target) {
           return target[p];
         }
-        const thisInitial = c.initialValue;
+        const thisInitial = getInitialValueInternal(c);
         const v = getValueInternal(c)[p as string];
         const iv = thisInitial?.[p as string];
         const newChild = newControl(v, c.setup.fields?.[p as string], iv);
-        newChild.setTouched(c.touched);
-        newChild.setDisabled(c.disabled);
+        newChild.setTouched(isTouched(c.flags));
+        newChild.setDisabled(isDisabled(c.flags));
         c.attachParentListener(newChild);
         target[p] = newChild;
         return newChild;
@@ -921,6 +905,10 @@ export function getFields<E extends { [k: string]: any }>(
 
 export function getElems<V>(control: Control<V[]>): Control<V>[] {
   collectChange?.(control, ControlChange.Structure);
+  return getElemsInternal(control);
+}
+
+function getElemsInternal<V>(control: Control<V[]>): Control<V>[] {
   const c = control as ControlImpl<V[]>;
   const e = c._elems;
   if (e) {
@@ -940,7 +928,7 @@ export function updateElems<V extends any[]>(
   cb: (elems: Control<ElemType<V>>[]) => Control<ElemType<V>>[]
 ): void {
   const c = control as ControlImpl<V>;
-  const e = getElems(control);
+  const e = getElemsInternal(control);
   const newElems = cb(e);
   if (e !== newElems) {
     ensureArrayAttachment(c, newElems, e);
@@ -998,9 +986,9 @@ export function addElement<V>(
   index?: number | Control<V>,
   insertAfter?: boolean
 ): Control<V> {
-  if (control.isNonNull()) {
+  if (!isControlNull(control)) {
     const c = control as ControlImpl<V[]>;
-    const e = getElems(c);
+    const e = getElemsInternal(c);
     const newChild = newControl(child, c.setup.elems);
     if (typeof index === "object") {
       index = e.indexOf(index as any);
@@ -1015,7 +1003,7 @@ export function addElement<V>(
     return newChild;
   } else {
     control.setValue([child]);
-    return getElems(control.as<V[]>())[0];
+    return getElemsInternal(control.as<V[]>())[0];
   }
 }
 
@@ -1023,7 +1011,7 @@ export function removeElement<V>(
   control: Control<V[]>,
   child: number | Control<V>
 ): void {
-  const c = getElems(control);
+  const c = getElemsInternal(control);
   const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
   if (wantedIndex < 0 || wantedIndex >= c.length) return;
   updateElems(control, (ex) => ex.filter((x, i) => i !== wantedIndex));
@@ -1129,7 +1117,7 @@ function getValueInternal<V>(control: Control<V>) {
   if (!(c._childSync & ChildSyncFlags.Value)) return c._value;
 
   if (c._elems) {
-    c._value = c._elems.map((x) => x.value) as any;
+    c._value = c._elems.map((x) => getValueInternal(x)) as any;
   } else if (c._fields) {
     const fieldsToSync = c._fields;
     const newValue = { ...c._value };
@@ -1140,4 +1128,48 @@ function getValueInternal<V>(control: Control<V>) {
   }
   c._childSync &= ~ChildSyncFlags.Value;
   return c._value;
+}
+
+function getInitialValueInternal<V>(control: Control<V>) {
+  const c = control as ControlImpl<V>;
+  if (!(c._childSync & ChildSyncFlags.InitialValue)) return c._initialValue;
+
+  if (c._elems) {
+    const initialValues = [...((c._initialValue as any[]) ?? [])];
+    if (Array.isArray(getValueInternal(c))) {
+      c._elems.forEach(
+        (x, i) => (initialValues[i] = getInitialValueInternal(x))
+      );
+    }
+    c._initialValue = initialValues as any;
+  } else if (c._fields) {
+    const fieldsToSync = c._fields;
+    const newValue = { ...c._initialValue };
+    for (const k in fieldsToSync) {
+      newValue[k as keyof V] = getInitialValueInternal(fieldsToSync[k]!);
+    }
+    c._initialValue = newValue;
+  }
+  c._childSync &= ~ChildSyncFlags.InitialValue;
+  return c._initialValue;
+}
+
+function isValid(flags: ControlFlags) {
+  return Boolean(flags & ControlFlags.Valid);
+}
+
+function isDirty(flags: ControlFlags) {
+  return Boolean(flags & ControlFlags.Dirty);
+}
+
+function isTouched(flags: ControlFlags) {
+  return Boolean(flags & ControlFlags.Touched);
+}
+
+function isDisabled(flags: ControlFlags) {
+  return Boolean(flags & ControlFlags.Disabled);
+}
+
+function isControlNull(c: Control<any>) {
+  return (c as ControlImpl<any>)._value == null;
 }

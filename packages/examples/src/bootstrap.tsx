@@ -15,7 +15,7 @@ export function FormInput({
   return (
     <RenderForm
       control={state}
-      children={(formProps) => (
+      children={({ errorText, ...formProps }) => (
         <div className="form-group" id={id}>
           {label && <label>{label}</label>}
           <input
@@ -31,7 +31,7 @@ export function FormInput({
             }`}
             {...others}
           />
-          <span className="invalid-feedback">{state.error}</span>
+          <span className="invalid-feedback">{errorText}</span>
         </div>
       )}
     />

@@ -1,7 +1,7 @@
 import {
   Control,
   getFields,
-  Render,
+  RenderControl,
   useComputed,
   useControl,
   usePreviousValue,
@@ -95,22 +95,22 @@ export default function MappedTest() {
           Reset Sub data
         </button>
       </div>
-      <Render
+      <RenderControl
         children={() => (
           <pre id="mappedJson">{JSON.stringify(subForm.value, null, 2)}</pre>
         )}
       />
-      <Render
+      <RenderControl
         children={() => (
           <pre id="mappedJson2">{JSON.stringify(combined.value, null, 2)}</pre>
         )}
       />
-      <Render
+      <RenderControl
         children={() => (
           <pre id="selectedValue">{JSON.stringify(selected.value.value)}</pre>
         )}
       />
-      <Render
+      <RenderControl
         children={() => (
           <pre id="previousValue">
             {JSON.stringify(previousValueControl.value, null, 2)}

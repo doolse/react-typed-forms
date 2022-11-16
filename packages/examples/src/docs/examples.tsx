@@ -4,7 +4,7 @@ import {
   Finput,
   getFields,
   groupControl,
-  Render,
+  RenderControl,
   ValueTypeForControl,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -32,13 +32,13 @@ function AnotherExample() {
   const [formState] = useState(FormDef);
   // ...render form...
   return (
-    <Render>
+    <RenderControl>
       {() => (
         <button disabled={!formState.valid} onClick={() => save()}>
           Save
         </button>
       )}
-    </Render>
+    </RenderControl>
   );
 
   function save() {}
