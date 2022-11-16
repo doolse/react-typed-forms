@@ -7,7 +7,7 @@ import {
   getFields,
   groupControl,
   useAsyncValidator,
-  useValue,
+  useControlValue,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 import { FormInput } from "../bootstrap";
@@ -41,7 +41,7 @@ export default function ValidationExample() {
   const [formData, setFormData] = useState<ValidationForm>();
   const [formState] = useState(FormDef);
   const fields = getFields(formState);
-  const valid = useValue(() => formState.valid);
+  const valid = useControlValue(() => formState.valid);
 
   useAsyncValidator(
     fields.async,

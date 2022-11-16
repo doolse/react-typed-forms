@@ -81,7 +81,9 @@ export interface FormArrayProps<V> {
 export function FormArray<V>({ state, children }: FormArrayProps<V>) {
   return (
     <>
-      {useValue(() => (state.isNonNull() ? children(getElems(state)) : null))}
+      {useControlValue(() =>
+        state.isNonNull() ? children(getElems(state)) : null
+      )}
     </>
   );
 }
@@ -307,15 +309,27 @@ function useAfterChangesEffect(
   }, deps);
 }
 
-export function useValue<V>(stateValue: (previous?: V) => V) {
-  const [initial, deps] = collectChanges(stateValue);
-  const [value, setValue] = useState(initial);
+export function useControlValue<V>(control: Control<V>): V;
+
+export function useControlValue<V>(stateValue: (previous?: V) => V): V;
+
+export function useControlValue<V>(
+  controlOrValue: Control<V> | ((previous?: V) => V)
+) {
+  const stateValue =
+    typeof controlOrValue === "function"
+      ? controlOrValue
+      : () => controlOrValue.value;
+  const prevRef = useRef<V>();
+  const [currentVal, deps] = collectChanges(() => stateValue(prevRef.current));
+  prevRef.current = currentVal;
+  const [, setChangeCount] = useState(0);
   useAfterChangesEffect(
-    () => setValue(initial),
-    () => setValue(stateValue),
+    () => {},
+    () => setChangeCount((x) => x + 1),
     deps
   );
-  return value;
+  return currentVal;
 }
 
 export function useComputed<V>(compute: () => V): Control<V> {
@@ -358,8 +372,7 @@ export function usePreviousValue<V>(
 }
 
 export function RenderControl({ children }: { children: () => ReactNode }) {
-  const v = useValue(children);
-  return <>{v}</>;
+  return <>{useControlValue(children)}</>;
 }
 
 export function RenderValue<V>({
@@ -369,7 +382,7 @@ export function RenderValue<V>({
   toValue: (previous?: V) => V;
   children: (v: V) => ReactNode;
 }) {
-  const v = useValue(toValue);
+  const v = useControlValue(toValue);
   return <>{children(v)}</>;
 }
 
@@ -380,14 +393,7 @@ export function RenderForm<V, E extends HTMLElement = HTMLElement>({
   control: Control<V>;
   children: (fcp: FormControlProps<V, E>) => ReactNode;
 }) {
-  return <>{useValue(() => children(genericProps<V, E>(control)))}</>;
-}
-
-/**
- * @deprecated
- */
-export function useControlValue<V>(c: Control<V>): V {
-  return useValue(() => c.value);
+  return <>{useControlValue(() => children(genericProps<V, E>(control)))}</>;
 }
 
 /**
@@ -397,7 +403,7 @@ export function useControlState<V, S>(
   control: Control<V>,
   toState: (state: Control<V>, previous?: S) => S
 ): S {
-  return useValue((p) => toState(control, p));
+  return useControlValue((p) => toState(control, p));
 }
 
 /**
@@ -410,7 +416,7 @@ export function useControlStateComponent<V, S>(
   return useMemo(
     () =>
       ({ children }) => {
-        const state = useValue(() => toState(control));
+        const state = useControlValue(() => toState(control));
         return children(state);
       },
     []
