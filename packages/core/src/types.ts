@@ -55,9 +55,11 @@ export interface Control<V>
 
   removeChangeListener(listener: ChangeListenerFunc<V>): void;
 
-  setValue(v: (current: V) => V, initial?: boolean): Control<V>;
+  setValue(v: (current: V) => V): Control<V>;
 
   setValueAndInitial(v: V, iv: V): Control<V>;
+
+  setInitialValue(v: V): Control<V>;
 
   groupedChanges(run: () => void): Control<V>;
 

@@ -535,13 +535,13 @@ class ControlImpl<V> implements Control<V> {
     return this;
   }
 
-  setValue(newValue: (current: V) => V, initial?: boolean): Control<V> {
-    const v = newValue(this.current.value);
-    if (initial) {
-      return this.setValueAndInitial(v, v);
-    }
-    this.value = v;
+  setValue(newValue: (current: V) => V): Control<V> {
+    this.value = newValue(this.current.value);
     return this;
+  }
+
+  setInitialValue(v: V): Control<V> {
+    return this.setValueAndInitial(v, v);
   }
 
   /**
