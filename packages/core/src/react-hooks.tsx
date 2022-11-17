@@ -100,7 +100,7 @@ export function useValueChangeEffect<V>(
           effectRef.current[0](c.current.value);
         }, r[2]);
       } else {
-        r[0](c.value);
+        r[0](c.current.value);
       }
     };
     runInitial ? updater(control) : undefined;
