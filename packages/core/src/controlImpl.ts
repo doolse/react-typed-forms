@@ -449,7 +449,7 @@ class ControlImpl<V> implements Control<V> {
       ControlChange.Value |
       structureChange |
       (this.setup?.validator !== null
-        ? this.updateError(this.setup!.validator?.(v))
+        ? this.updateError(this.setup.validator?.(v))
         : 0);
     if (!this.hasChildren || v == null) {
       this._childSync &= ~ChildSyncFlags.Value;
