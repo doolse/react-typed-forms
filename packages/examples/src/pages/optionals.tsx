@@ -90,10 +90,10 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
-              ...formState.value,
+            formState.setValue((v) => ({
+              ...v,
               optionalStrings: undefined,
-            });
+            }));
           }}
         >
           Clear strings
@@ -103,7 +103,7 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({ ...formState.value, nested: undefined });
+            formState.setValue((v) => ({ ...v, nested: undefined }));
           }}
         >
           Clear nested
@@ -113,10 +113,10 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
-              ...formState.value,
+            formState.setValue((v) => ({
+              ...v,
               nested: { optional: "optional" },
-            });
+            }));
           }}
         >
           Unclear nested
@@ -126,10 +126,10 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
+            formState.value = {
               nested: { optional: undefined },
               nullableStruct: null,
-            });
+            };
           }}
         >
           Reset data
@@ -139,12 +139,10 @@ export default function OptionalsTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
-              ...formState.value,
-              nullableStruct: formState.value.nullableStruct
-                ? null
-                : { id: "hi" },
-            });
+            formState.setValue((v) => ({
+              ...v,
+              nullableStruct: v.nullableStruct ? null : { id: "hi" },
+            }));
           }}
         >
           Toggle nullable
@@ -153,7 +151,7 @@ export default function OptionalsTest() {
           id="submit"
           className="btn btn-primary"
           onClick={(e) => {
-            setFormData(formState.toObject());
+            setFormData(formState.current.value);
             e.preventDefault();
           }}
         >

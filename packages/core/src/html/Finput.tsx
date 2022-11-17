@@ -25,7 +25,7 @@ export function Finput<V extends string | number>({
           {...theseProps}
           ref={(r) => {
             state.element = r;
-            if (r) r.setCustomValidity(state.error ?? "");
+            if (r) r.setCustomValidity(state.current.error ?? "");
           }}
           {...others}
         />

@@ -26,9 +26,9 @@ export function Fcheckbox({
           checked={value}
           ref={(r) => {
             state.element = r;
-            if (r) r.setCustomValidity(state.error ?? "");
+            if (r) r.setCustomValidity(state.current.error ?? "");
           }}
-          onChange={(e) => state.setValue(!value)}
+          onChange={(e) => (state.value = !value)}
           type={type}
           {...others}
         />

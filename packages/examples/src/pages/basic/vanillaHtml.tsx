@@ -57,7 +57,7 @@ export default function BasicFormExample() {
             onClick={(e) => {
               e.preventDefault();
               formRef.current?.reportValidity();
-              setFormData(formState.toObject());
+              setFormData(formState.current.value);
             }}
           >
             toObject()

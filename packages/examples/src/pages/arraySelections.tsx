@@ -10,6 +10,7 @@ import {
   RenderControl,
   SelectionGroup,
   useControl,
+  useControlValue,
   useSelectableArray,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -31,10 +32,8 @@ const allDefaults: RowForm[] = ["Jolse", "Thomas", "Nicholas"].map((x) => ({
   last: "",
 }));
 
-let renders = 0;
-
 export default function ArraySelectionsExample() {
-  renders++;
+  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
   const allFormState = useControl<FormData>(
     { other: "HI", people: selected },
     {
@@ -86,7 +85,7 @@ export default function ArraySelectionsExample() {
         <button
           id="toggleDisabled"
           className="btn btn-secondary"
-          onClick={() => formState.setDisabled(!formState.disabled)}
+          onClick={() => (formState.disabled = !formState.current.disabled)}
         >
           Toggle disabled
         </button>{" "}
@@ -94,7 +93,7 @@ export default function ArraySelectionsExample() {
           id="submit"
           className="btn btn-primary"
           onClick={() => {
-            setFormData(getFields(allFormState).people.toArray());
+            setFormData(getFields(allFormState).people.current.value);
           }}
         >
           toObject()
@@ -112,10 +111,10 @@ export default function ArraySelectionsExample() {
           id="setValue"
           className="btn btn-primary"
           onClick={() => {
-            getFields(allFormState).people.setValue([
+            getFields(allFormState).people.value = [
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },
-            ]);
+            ];
           }}
         >
           Set Value

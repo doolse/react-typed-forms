@@ -4,6 +4,7 @@ import {
   ControlSetup,
   Finput,
   FormArray,
+  getCurrentElems,
   getElems,
   getFields,
   notEmpty,
@@ -11,6 +12,7 @@ import {
   RenderControl,
   updateElems,
   useControl,
+  useControlValue,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
@@ -36,10 +38,8 @@ const FormDef: ControlSetup<MainForm> = {
   },
 };
 
-let renders = 0;
-
 export default function ArraysExample() {
-  renders++;
+  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
   const formState = useControl(
     {
       strings: [""],
@@ -51,7 +51,7 @@ export default function ArraysExample() {
   const [formData, setFormData] = useState<MainForm>();
 
   function moveUp(fa: Control<any[]>, index: number) {
-    if (index > 0 && index < getElems(fa).length)
+    if (index > 0 && index < getCurrentElems(fa).length)
       updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
@@ -63,7 +63,7 @@ export default function ArraysExample() {
       );
   }
   function moveDown(fa: Control<any[]>, index: number) {
-    if (index >= 0 && index < getElems(fa).length - 1)
+    if (index >= 0 && index < getCurrentElems(fa).length - 1)
       updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
@@ -196,15 +196,13 @@ export default function ArraysExample() {
           <button
             id="setObj"
             className="btn"
-            onClick={() =>
-              fields.structured.setValue(
-                [
-                  { name: "Reset", id: "reset" },
-                  { id: "id", name: "Name" },
-                ],
-                true
-              )
-            }
+            onClick={() => {
+              fields.structured.value = [
+                { name: "Reset", id: "reset" },
+                { id: "id", name: "Name" },
+              ];
+              fields.structured.markAsClean();
+            }}
           >
             Reset
           </button>{" "}
@@ -212,7 +210,7 @@ export default function ArraysExample() {
             id="setDifferent"
             className="btn"
             onClick={() =>
-              fields.structured.setValue([
+              (fields.structured.value = [
                 { name: "Reset", id: "reset" },
                 { id: "id", name: "Name" },
                 { id: "Another", name: "Righto" },
@@ -243,14 +241,14 @@ export default function ArraysExample() {
         <button
           id="toggleDisabled"
           className="btn btn-secondary"
-          onClick={() => formState.setDisabled(!formState.disabled)}
+          onClick={() => (formState.disabled = !formState.current.disabled)}
         >
           Toggle disabled
         </button>{" "}
         <button
           id="submit"
           className="btn btn-primary"
-          onClick={() => setFormData(formState.toObject())}
+          onClick={() => setFormData(formState.current.value)}
         >
           toObject()
         </button>{" "}

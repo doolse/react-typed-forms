@@ -46,7 +46,7 @@ export default function MappedTest() {
           id="firstName"
           state={fields.firstName}
         />
-        <button id="sel1" onClick={() => selected.setValue(fields.firstName)}>
+        <button id="sel1" onClick={() => (selected.value = fields.firstName)}>
           Select
         </button>
       </div>
@@ -58,7 +58,7 @@ export default function MappedTest() {
         />
         <button
           id="sel2"
-          onClick={() => selected.setValue(fields.anotherField)}
+          onClick={() => (selected.value = fields.anotherField)}
         >
           Select
         </button>
@@ -72,11 +72,11 @@ export default function MappedTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
+            formState.value = {
               age: 10,
               anotherField: "WOW",
               firstName: "Reset",
-            });
+            };
           }}
         >
           Reset data
@@ -86,10 +86,10 @@ export default function MappedTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            subForm.setValue({
+            subForm.value = {
               age: 5,
               firstName: "cool",
-            });
+            };
           }}
         >
           Reset Sub data

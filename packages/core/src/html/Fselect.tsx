@@ -22,7 +22,7 @@ export function Fselect({ state, children, ...others }: FselectProps) {
           {...theseProps}
           ref={(r) => {
             state.element = r;
-            if (r) r.setCustomValidity(state.error ?? "");
+            if (r) r.setCustomValidity(state.current.error ?? "");
           }}
           {...others}
         >

@@ -22,7 +22,7 @@ export default function SimpleExample() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        setFormData(formState.value);
+        setFormData(formState.current.value);
       }}
     >
       <label>First Name</label>

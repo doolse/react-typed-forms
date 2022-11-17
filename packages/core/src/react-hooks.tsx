@@ -14,6 +14,7 @@ import {
   addAfterChangesCallback,
   collectChanges,
   controlGroup,
+  getCurrentElems,
   getElems,
   getFields,
   newControl,
@@ -21,25 +22,60 @@ import {
   setFields,
   trackControlChange,
   updateElems,
+  ValueAndDeps,
 } from "./controlImpl";
-import { Control, ControlChange, ControlSetup, ControlValue } from "./types";
+import {
+  ChangeListenerFunc,
+  Control,
+  ControlChange,
+  ControlSetup,
+  ControlValue,
+} from "./types";
 
 export function useControlEffect<V>(
   compute: () => V,
   onChange: (value: V) => void,
   initial?: ((value: V) => void) | boolean
 ) {
-  const [res, deps] = collectChanges(compute);
-  useAfterChangesEffect(
-    () =>
+  const lastRef = useRef<[ValueAndDeps<V>, ChangeListenerFunc<any>]>();
+
+  function checkEffect(onlyDeps?: boolean) {
+    const [res, deps] = collectChanges(compute);
+    const c = lastRef.current;
+    if (c) {
+      const [[oldRes, oldDeps], oldListener] = c;
+      const depsChanged =
+        oldDeps.length !== deps.length || deps.some((x, i) => x !== oldDeps[i]);
+      if (oldRes !== res && (!onlyDeps || depsChanged)) {
+        onChange(res);
+      }
+      if (depsChanged) {
+        removeListeners(oldListener, oldDeps);
+        const listener = makeAfterChangeListener(checkEffect);
+        attachListeners(listener, deps);
+        lastRef.current = [[res, deps], listener];
+      }
+    } else {
       typeof initial === "function"
         ? initial(res)
         : initial
         ? onChange(res)
-        : undefined,
-    () => onChange(compute()),
-    deps
-  );
+        : undefined;
+      const listener = makeAfterChangeListener(checkEffect);
+      attachListeners(listener, deps);
+      lastRef.current = [[res, deps], listener];
+    }
+  }
+
+  useEffect(() => checkEffect(true));
+  useEffect(() => {
+    return () => {
+      const c = lastRef.current;
+      if (c) {
+        removeListeners(c[1], c[0][1]);
+      }
+    };
+  }, []);
 }
 
 export function useValueChangeEffect<V>(
@@ -61,7 +97,7 @@ export function useValueChangeEffect<V>(
       if (r[2]) {
         if (r[1]) clearTimeout(r[1]);
         r[1] = setTimeout(() => {
-          effectRef.current[0](c.value);
+          effectRef.current[0](c.current.value);
         }, r[2]);
       } else {
         r[0](c.value);
@@ -101,7 +137,7 @@ export function useAsyncValidator<V>(
     abortSignal: AbortSignal
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue: (control: Control<V>) => any = (c) => control.value
+  validCheckValue: (control: Control<V>) => any = (c) => c.value
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
@@ -122,9 +158,10 @@ export function useAsyncValidator<V>(
         abortController.current = aborter;
         validator(control, aborter.signal)
           .then((error) => {
-            if (validCheckValue(control) === currentVersion) {
-              control.setTouched(true);
-              control.setError(error);
+            const [live] = collectChanges(() => validCheckValue(control));
+            if (live === currentVersion) {
+              control.touched = true;
+              control.error = error;
             }
           })
           .catch((e) => {
@@ -160,8 +197,8 @@ export function genericProps<V, E extends HTMLElement>(
     value: state.value,
     disabled: state.disabled,
     errorText: state.touched && !valid ? error : undefined,
-    onBlur: () => state.setTouched(true),
-    onChange: (e) => state.setValue(e.target.value),
+    onBlur: () => (state.touched = true),
+    onChange: (e) => (state.value = e.target.value),
   };
 }
 
@@ -224,7 +261,11 @@ export function ensureSelectableValues<V>(
     const newFields = parentSync(elems, initialValue, groupCreator);
     values.forEach((av) => {
       const thisKey = key(av);
-      if (!newFields.some((x) => thisKey === key(getFields(x).value.value))) {
+      if (
+        !newFields.some(
+          (x) => thisKey === key(getFields(x).value.current.value)
+        )
+      ) {
         newFields.push(
           groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
         );
@@ -241,8 +282,8 @@ export function useSelectableArray<V>(
   const selectable = useControl<SelectionGroup<V>[]>([]);
   const updatedWithRef = useRef<Control<V>[] | undefined>(undefined);
   const selectChangeListener = useCallback(() => {
-    const selectedElems = getElems(selectable)
-      .filter((x) => getFields(x).selected.value)
+    const selectedElems = getCurrentElems(selectable)
+      .filter((x) => getFields(x).selected.current.value)
       .map((x) => getFields(x).value);
     updatedWithRef.current = selectedElems;
     updateElems(control, () => selectedElems);
@@ -250,13 +291,17 @@ export function useSelectableArray<V>(
   useControlEffect(
     () => [control.value, control.initialValue],
     () => {
-      const allControlElems = getElems(control);
+      const allControlElems = getCurrentElems(control);
       if (updatedWithRef.current === allControlElems) return;
       const selectableElems = groupSyncer(
         allControlElems,
-        control.initialValue,
+        control.current.initialValue,
         {
-          makeElem: (v, iv) => newElement(control, v).setInitialValue(iv),
+          makeElem: (v, iv) => {
+            const c = newElement(control, v);
+            c.initialValue = iv;
+            return c;
+          },
           makeGroup: (isSelected, wasSelected, value) => {
             const selected = newControl(isSelected, undefined, wasSelected);
             selected.addChangeListener(
@@ -278,6 +323,40 @@ export function useSelectableArray<V>(
   return selectable;
 }
 
+function removeListeners(
+  listener: ChangeListenerFunc<any>,
+  deps: (Control<any> | ControlChange)[]
+) {
+  for (let i = 0; i < deps.length; i++) {
+    const depC = deps[i++] as Control<any>;
+    depC.removeChangeListener(listener);
+  }
+}
+
+function attachListeners(
+  listener: ChangeListenerFunc<any>,
+  deps: (Control<any> | ControlChange)[]
+) {
+  for (let i = 0; i < deps.length; i++) {
+    const depC = deps[i++] as Control<any>;
+    const depChange = deps[i] as ControlChange;
+    depC.addChangeListener(listener, depChange);
+  }
+}
+
+function makeAfterChangeListener(effect: () => void): ChangeListenerFunc<any> {
+  let afterCbAdded = false;
+  return () => {
+    if (!afterCbAdded) {
+      afterCbAdded = true;
+      addAfterChangesCallback(() => {
+        effect();
+        afterCbAdded = false;
+      });
+    }
+  };
+}
+
 function useAfterChangesEffect(
   initial: () => void,
   changeEffect: () => void,
@@ -285,27 +364,9 @@ function useAfterChangesEffect(
 ) {
   useEffect(() => {
     initial();
-    let afterCbAdded = false;
-    const listener = (s: Control<any>, ch: ControlChange) => {
-      if (!afterCbAdded) {
-        afterCbAdded = true;
-        addAfterChangesCallback(() => {
-          changeEffect();
-          afterCbAdded = false;
-        });
-      }
-    };
-    for (let i = 0; i < deps.length; i++) {
-      const depC = deps[i++] as Control<any>;
-      const depChange = deps[i] as ControlChange;
-      depC.addChangeListener(listener, depChange);
-    }
-    return () => {
-      for (let i = 0; i < deps.length; i++) {
-        const depC = deps[i++] as Control<any>;
-        depC.removeChangeListener(listener);
-      }
-    };
+    const listener = makeAfterChangeListener(changeEffect);
+    attachListeners(listener, deps);
+    return () => removeListeners(listener, deps);
   }, deps);
 }
 
@@ -333,13 +394,8 @@ export function useControlValue<V>(
 }
 
 export function useComputed<V>(compute: () => V): Control<V> {
-  const [res, deps] = collectChanges(compute);
-  const c = useControl(res);
-  useAfterChangesEffect(
-    () => (c.value = res),
-    () => (c.value = compute()),
-    deps
-  );
+  const c = useControl(() => collectChanges(compute)[0]);
+  useControlEffect(compute, (v) => (c.value = v), true);
   return c;
 }
 
@@ -358,15 +414,15 @@ export function usePreviousValue<V>(
   control: Control<V>
 ): Control<{ previous?: V; current: V }> {
   const withPrev = useControl<{ previous?: V; current: V }>(() => ({
-    current: control.value,
+    current: control.current.value,
   }));
   useControlEffect(
     () => control.value,
     (nextValue) =>
-      (withPrev.value = {
-        previous: withPrev.value.current,
+      withPrev.setValue(({ current }) => ({
+        previous: current,
         current: nextValue,
-      })
+      }))
   );
   return withPrev;
 }

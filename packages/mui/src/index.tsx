@@ -39,7 +39,7 @@ export function FNumberField({
   helperText,
   ...others
 }: FNumberFieldProps): ReactElement {
-  const text = useComputed(() => state.value?.toString() ?? "");
+  const text = useComputed(() => state.current.value?.toString() ?? "");
   return (
     <RenderForm
       control={state}
@@ -56,16 +56,16 @@ export function FNumberField({
               text.value = textVal;
               if (!textVal) {
                 if (blankError) {
-                  state.setError(blankError);
+                  state.error = blankError;
                 } else {
-                  state.setValue(null);
+                  state.value = null;
                 }
               } else {
                 const value = parseFloat(textVal);
                 if (!isNaN(value)) {
-                  state.setValue(value);
+                  state.value = value;
                 } else {
-                  state.setError(invalidError);
+                  state.error = invalidError;
                 }
               }
             }}

@@ -22,33 +22,40 @@ export type ControlValidator<V> = ((v: V) => string | undefined) | null;
 export type ControlValue<C> = C extends Control<infer V> ? V : never;
 export type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : never;
 
-export interface Control<V> {
-  readonly uniqueId: number;
-  value: V;
+export interface ControlState<V> {
+  readonly value: V;
   readonly initialValue: V;
-  readonly error?: string;
+  readonly error?: string | null;
   readonly valid: boolean;
   readonly dirty: boolean;
   readonly disabled: boolean;
   readonly touched: boolean;
+}
+
+type Writeable<V> = {
+  -readonly [P in keyof V]: V[P];
+};
+
+export interface Control<V>
+  extends Writeable<Omit<ControlState<V>, "dirty" | "valid">> {
+  readonly uniqueId: number;
+  readonly valid: boolean;
+  readonly dirty: boolean;
+  current: ControlState<V>;
   meta: { [key: string]: any };
 
+  isNull(): boolean;
+
+  isNonNull(): this is Control<NonNullable<V>>;
+
   addChangeListener(
-    listener: ChangeListenerFunc<Control<V>>,
+    listener: ChangeListenerFunc<V>,
     mask?: ControlChange
   ): void;
 
-  removeChangeListener(listener: ChangeListenerFunc<Control<V>>): void;
+  removeChangeListener(listener: ChangeListenerFunc<V>): void;
 
-  setTouched(showValidation: boolean): void;
-
-  setError(error?: string | null): Control<V>;
-
-  setDisabled(disabled: boolean): Control<V>;
-
-  setValue(v: V, initial?: boolean): Control<V>;
-
-  setInitialValue(v: V): Control<V>;
+  setValue(v: (current: V) => V, initial?: boolean): Control<V>;
 
   setValueAndInitial(v: V, iv: V): Control<V>;
 
@@ -57,10 +64,6 @@ export interface Control<V> {
   isValueEqual(v: V): boolean;
 
   validate(): Control<V>;
-
-  isNonNull(): this is Control<NonNullable<V>>;
-
-  isNull(): boolean;
 
   markAsClean(): void;
 
@@ -71,21 +74,6 @@ export interface Control<V> {
   element: HTMLElement | null;
 
   as<NV extends V>(): Control<NV>;
-
-  /**
-   * @deprecated Use .value
-   */
-  toValue(): V;
-
-  /**
-   * @deprecated Use .value
-   */
-  toObject(): V;
-
-  /**
-   * @deprecated Use .value
-   */
-  toArray(): V;
 }
 
 export interface ControlSetup<V, M = object> {
@@ -99,5 +87,8 @@ export interface ControlSetup<V, M = object> {
   create?: (value: V, initial: V, setup: ControlSetup<V, M>) => Control<V>;
 }
 
-export type ChangeListenerFunc<C> = (control: C, cb: ControlChange) => void;
-export type ChangeListener<V> = [ControlChange, ChangeListenerFunc<Control<V>>];
+export type ChangeListenerFunc<V> = (
+  control: Control<V>,
+  cb: ControlChange
+) => void;
+export type ChangeListener<V> = [ControlChange, ChangeListenerFunc<V>];

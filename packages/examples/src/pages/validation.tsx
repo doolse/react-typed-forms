@@ -32,10 +32,8 @@ const FormDef = buildGroup<ValidationForm>()({
   ),
 });
 
-let renders = 0;
-
 export default function ValidationExample() {
-  renders++;
+  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
 
   const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
@@ -52,7 +50,7 @@ export default function ValidationExample() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ value: n.value }),
+        body: JSON.stringify({ value: n.current.value }),
       }).then((resp) => {
         return resp.json().then((r) => r.error);
       }),
@@ -83,14 +81,14 @@ export default function ValidationExample() {
       <div>
         <button
           className="btn btn-secondary"
-          onClick={() => formState.setDisabled(!formState.disabled)}
+          onClick={() => (formState.disabled = !formState.current.disabled)}
         >
           Toggle disabled
         </button>{" "}
         <button
           id="submit"
           className="btn btn-primary"
-          onClick={(e) => setFormData(formState.toObject())}
+          onClick={(e) => setFormData(formState.current.value)}
         >
           toObject()
         </button>{" "}
@@ -99,7 +97,7 @@ export default function ValidationExample() {
           className="btn btn-secndary"
           onClick={() => {
             addElement(fields.array, { notBlank: "" });
-            formState.setTouched(true);
+            formState.touched = true;
           }}
         >
           Add array

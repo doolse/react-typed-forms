@@ -71,7 +71,7 @@ export default function BasicFormExample() {
             className="btn btn-secondary"
             onClick={(e) => {
               e.preventDefault();
-              formState.setDisabled(!formState.disabled);
+              formState.disabled = !formState.current.disabled;
             }}
           >
             Toggle disabled
@@ -82,7 +82,7 @@ export default function BasicFormExample() {
             onClick={(e) => {
               e.preventDefault();
               formRef.current?.reportValidity();
-              setFormData(formState.toObject());
+              setFormData(formState.current.value);
             }}
           >
             toObject()

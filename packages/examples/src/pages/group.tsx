@@ -76,11 +76,11 @@ export default function GroupTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            formState.setValue({
+            formState.value = {
               age: 10,
               anotherField: "WOW",
               firstName: "Reset",
-            });
+            };
           }}
         >
           Reset data
@@ -90,10 +90,10 @@ export default function GroupTest() {
           className="btn btn-secondary"
           onClick={(e) => {
             e.preventDefault();
-            subForm.setValue({
+            subForm.value = {
               age: 5,
               firstName: "cool",
-            });
+            };
           }}
         >
           Reset Sub data

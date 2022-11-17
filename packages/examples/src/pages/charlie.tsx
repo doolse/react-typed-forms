@@ -41,16 +41,16 @@ export default function CharliePage() {
       </FormArray>
       <Button onClick={() => addElement(fields.strings, "")}>Add string</Button>
       {subFields && <FTextField state={subFields.coolBeans} label={"Beans"} />}
-      <Button onClick={() => fields.subObject.setValue(undefined)}>
+      <Button onClick={() => (fields.subObject.value = undefined)}>
         Clear sub
       </Button>
-      <Button onClick={() => fields.subObject.setValue({ coolBeans: "" })}>
+      <Button onClick={() => (fields.subObject.value = { coolBeans: "" })}>
         Re sub
       </Button>
       <Button
         onClick={() => {
           fc.validate();
-          fc.setTouched(true);
+          fc.touched = true;
           alert(JSON.stringify(fc.value, undefined, 2));
         }}
       >

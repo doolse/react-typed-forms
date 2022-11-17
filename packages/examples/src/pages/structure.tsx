@@ -59,7 +59,7 @@ export default function SimpleExample() {
       >
         Add string
       </button>
-      <button onClick={() => fields.stringChildren.setValue(["Reset"])}>
+      <button onClick={() => (fields.stringChildren.value = ["Reset"])}>
         Reset strings
       </button>
       <TreeStructure state={fields.substructure} />
