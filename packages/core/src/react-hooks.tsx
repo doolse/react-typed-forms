@@ -416,20 +416,7 @@ export function useControlValue<V>(
   });
 
   useClearListeners(lastRef);
-
-  const [state, setState] = useState(() => {
-    adjustListeners(lastRef, computed, checkChange);
-    return computed[0];
-  });
-  return state;
-
-  function checkChange() {
-    const changes = collectChanges(compute);
-    const changed = adjustListeners(lastRef, changes, checkChange);
-    if (changed?.[0]) {
-      setState(changes[0]);
-    }
-  }
+  return computed[0];
 }
 
 export function useComputed<V>(compute: () => V): Control<V> {
