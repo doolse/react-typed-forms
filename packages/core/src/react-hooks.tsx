@@ -56,7 +56,15 @@ export function useControlEffect<V>(
   }
 
   useEffect(() => checkEffect(true));
-  useEffect(() => {
+  useClearListeners(lastRef);
+}
+
+function useClearListeners<V>(
+  lastRef: MutableRefObject<
+    [ValueAndDeps<V>, ChangeListenerFunc<any>] | undefined
+  >
+) {
+  return useEffect(() => {
     return () => {
       const c = lastRef.current;
       if (c) {
@@ -400,8 +408,16 @@ export function useControlValue<V>(
       : () => controlOrValue.value;
   const lastRef = useRef<[ValueAndDeps<V>, ChangeListenerFunc<any>]>();
 
+  const [_, rerender] = useState(0);
+  const computed = collectChanges(compute);
+
+  useEffect(() => {
+    adjustListeners(lastRef, computed, () => rerender((x) => x + 1));
+  });
+
+  useClearListeners(lastRef);
+
   const [state, setState] = useState(() => {
-    const computed = collectChanges(compute);
     adjustListeners(lastRef, computed, checkChange);
     return computed[0];
   });
