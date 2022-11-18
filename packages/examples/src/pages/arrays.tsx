@@ -4,7 +4,6 @@ import {
   ControlSetup,
   Finput,
   FormArray,
-  getCurrentElems,
   getElems,
   getFields,
   notEmpty,
@@ -51,7 +50,7 @@ export default function ArraysExample() {
   const [formData, setFormData] = useState<MainForm>();
 
   function moveUp(fa: Control<any[]>, index: number) {
-    if (index > 0 && index < getCurrentElems(fa).length)
+    if (index > 0 && index < getElems(fa).length)
       updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
@@ -63,7 +62,7 @@ export default function ArraysExample() {
       );
   }
   function moveDown(fa: Control<any[]>, index: number) {
-    if (index >= 0 && index < getCurrentElems(fa).length - 1)
+    if (index >= 0 && index < getElems(fa).length - 1)
       updateElems(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index

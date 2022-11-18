@@ -15,8 +15,8 @@ import {
   addAfterChangesCallback,
   collectChanges,
   controlGroup,
-  getCurrentElems,
   getElems,
+  getElemsTracked,
   getFields,
   newControl,
   newElement,
@@ -143,7 +143,7 @@ export function FormArray<V>({ state, children }: FormArrayProps<V>) {
   return (
     <>
       {useControlValue(() =>
-        state.isNonNull() ? children(getElems(state)) : null
+        state.isNonNull() ? children(getElemsTracked(state)) : null
       )}
     </>
   );
@@ -307,7 +307,7 @@ export function useSelectableArray<V>(
   const selectable = useControl<SelectionGroup<V>[]>([]);
   const updatedWithRef = useRef<Control<V>[] | undefined>(undefined);
   const selectChangeListener = useCallback(() => {
-    const selectedElems = getCurrentElems(selectable)
+    const selectedElems = getElems(selectable)
       .filter((x) => getFields(x).selected.current.value)
       .map((x) => getFields(x).value);
     updatedWithRef.current = selectedElems;
@@ -316,7 +316,7 @@ export function useSelectableArray<V>(
   useControlEffect(
     () => [control.value, control.initialValue],
     () => {
-      const allControlElems = getCurrentElems(control);
+      const allControlElems = getElems(control);
       if (updatedWithRef.current === allControlElems) return;
       const selectableElems = groupSyncer(
         allControlElems,

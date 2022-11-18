@@ -22,15 +22,20 @@ export type ValueAndDeps<V> = [V, (Control<any> | ControlChange)[]];
 
 let controlCount = 0;
 
+let hasWarned = false;
+
 const pendingChangeSet: Set<ControlImpl<any>> = new Set<ControlImpl<any>>();
 let freezeCount = 0;
 let runningListeners = 0;
 let collectChange: (control: Control<any>, change: ControlChange) => void = (
   c
 ) => {
-  console.trace(
-    "Changes will not be tracked, if this is intentional pls use .current"
-  );
+  if (!hasWarned) {
+    hasWarned = true;
+    console.trace(
+      "Changes will not be tracked, if this is intentional please use .current"
+    );
+  }
 };
 
 export function groupedChanges<A>(change: () => A) {
@@ -158,7 +163,7 @@ class ControlImpl<V> implements Control<V> {
       if (typeof childId === "string") {
         base = getFields(base.as<Record<string, any>>())?.[childId];
       } else {
-        base = getCurrentElems(base.as<any[]>())?.[childId];
+        base = getElems(base.as<any[]>())?.[childId];
       }
       index++;
     }
@@ -929,12 +934,12 @@ export function getFieldValues<
   };
 }
 
-export function getElems<V>(control: Control<V[]>): Control<V>[] {
+export function getElemsTracked<V>(control: Control<V[]>): Control<V>[] {
   collectChange(control, ControlChange.Structure);
-  return getCurrentElems(control);
+  return getElems(control);
 }
 
-export function getCurrentElems<V>(control: Control<V[]>): Control<V>[] {
+export function getElems<V>(control: Control<V[]>): Control<V>[] {
   const c = control as ControlImpl<V[]>;
   const e = c._elems;
   if (e) {
@@ -954,7 +959,7 @@ export function updateElems<V extends any[]>(
   cb: (elems: Control<ElemType<V>>[]) => Control<ElemType<V>>[]
 ): void {
   const c = control as unknown as ControlImpl<any[]>;
-  const e = getCurrentElems(c);
+  const e = getElems(c);
   const newElems = cb(e);
   if (e !== newElems) {
     ensureArrayAttachment(c, newElems, e);
@@ -1014,7 +1019,7 @@ export function addElement<V>(
 ): Control<V> {
   if (control.current != null) {
     const c = control as ControlImpl<V[]>;
-    const e = getCurrentElems(c);
+    const e = getElems(c);
     const newChild = newControl(child, c.setup.elems);
     if (typeof index === "object") {
       index = e.indexOf(index as any);
@@ -1029,7 +1034,7 @@ export function addElement<V>(
     return newChild;
   } else {
     control.value = [child];
-    return getCurrentElems(control.as<V[]>())[0];
+    return getElems(control.as<V[]>())[0];
   }
 }
 
@@ -1037,7 +1042,7 @@ export function removeElement<V>(
   control: Control<V[]>,
   child: number | Control<V>
 ): void {
-  const c = getCurrentElems(control);
+  const c = getElems(control);
   const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
   if (wantedIndex < 0 || wantedIndex >= c.length) return;
   updateElems(control, (ex) => ex.filter((x, i) => i !== wantedIndex));
