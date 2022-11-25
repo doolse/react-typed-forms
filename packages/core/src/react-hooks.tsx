@@ -69,6 +69,7 @@ function useClearListeners<V>(
       const c = lastRef.current;
       if (c) {
         removeListeners(c[1], c[0][1]);
+        c[0][1] = [];
       }
     };
   }, []);
@@ -380,19 +381,6 @@ function makeAfterChangeListener(effect: () => void): ChangeListenerFunc<any> {
       });
     }
   };
-}
-
-function useAfterChangesEffect(
-  initial: () => void,
-  changeEffect: () => void,
-  deps: (Control<any> | ControlChange)[]
-) {
-  useEffect(() => {
-    initial();
-    const listener = makeAfterChangeListener(changeEffect);
-    attachListeners(listener, deps);
-    return () => removeListeners(listener, deps);
-  }, deps);
 }
 
 export function useControlValue<V>(control: Control<V>): V;
