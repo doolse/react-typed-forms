@@ -771,7 +771,7 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
       ControlChange.Dirty |
       ControlChange.Structure,
     (child, change) => {
-      let flags: ControlChange = 0;
+      let flags: ControlChange = change & ControlChange.Structure;
       const childKey = child.meta[pc.parentMetaKey()];
       if (change & ControlChange.Value) {
         if (
