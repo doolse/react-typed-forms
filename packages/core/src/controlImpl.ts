@@ -156,12 +156,14 @@ class ControlImpl<V> implements Control<V> {
   }
 
   lookupControl(path: (string | number)[]): Control<any> | undefined {
-    let base = this as Control<any>;
+    let base = this as Control<any> | undefined;
     let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
       if (typeof childId === "string") {
-        base = getFields(base.as<Record<string, any>>())?.[childId];
+        base = base.isCurrentlyNotNull()
+          ? getFields(base.as<Record<string, any>>())[childId]
+          : undefined;
       } else {
         base = getElems(base.as<any[]>())?.[childId];
       }
@@ -619,14 +621,13 @@ class ControlImpl<V> implements Control<V> {
   //   return controlGroup(select(this.fields!)).as();
   // }
 
-  isNonNull(): this is Control<NonNullable<V>> {
+  isNotNull(): this is Control<NonNullable<V>> {
     collectChange(this, ControlChange.Structure);
     return this._value != null;
   }
 
-  isNull(): boolean {
-    collectChange(this, ControlChange.Structure);
-    return this._value == null;
+  isCurrentlyNotNull(): boolean {
+    return this._value != null;
   }
 }
 

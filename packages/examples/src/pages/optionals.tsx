@@ -44,7 +44,7 @@ export default function OptionalsTest() {
       </div>
       <RenderControl
         children={() =>
-          nested.isNonNull() && (
+          nested.isNotNull() && (
             <div>
               <FTextField
                 id="optionalField"
@@ -77,7 +77,7 @@ export default function OptionalsTest() {
       </div>
       <RenderControl
         children={() =>
-          nullable.isNonNull() && (
+          nullable.isNotNull() && (
             <div>
               <FTextField state={getFields(nullable).id} label="Nullable" />
             </div>

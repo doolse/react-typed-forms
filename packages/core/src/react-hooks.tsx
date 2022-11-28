@@ -144,7 +144,7 @@ export function FormArray<V>({ state, children }: FormArrayProps<V>) {
   return (
     <>
       {useControlValue(() =>
-        state.isNonNull() ? children(getElemsTracked(state)) : null
+        state.isNotNull() ? children(getElemsTracked(state)) : null
       )}
     </>
   );

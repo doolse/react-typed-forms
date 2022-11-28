@@ -44,9 +44,8 @@ export interface Control<V>
   current: ControlState<V>;
   meta: { [key: string]: any };
 
-  isNull(): boolean;
-
-  isNonNull(): this is Control<NonNullable<V>>;
+  isNotNull(): this is Control<NonNullable<V>>;
+  isCurrentlyNotNull(): this is Control<NonNullable<V>>;
 
   addChangeListener(
     listener: ChangeListenerFunc<V>,

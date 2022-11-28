@@ -30,7 +30,7 @@ export default function CharliePage() {
   );
   const fields = getFields(fc);
   const subFields = useControlValue(() =>
-    fields.subObject.isNonNull() ? getFields(fields.subObject) : undefined
+    fields.subObject.isNotNull() ? getFields(fields.subObject) : undefined
   );
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
