@@ -895,6 +895,20 @@ function createArrayChildren<V>(
   });
 }
 
+export function optionalField<
+  E extends { [k: string]: any },
+  K extends keyof E
+>(
+  control: Control<E | undefined | null> | undefined | null,
+  k: K
+): Control<E[K]> | undefined {
+  const o = control?.current.optional;
+  if (o) {
+    return getFields(o)[k];
+  }
+  return undefined;
+}
+
 export function getFields<E extends { [k: string]: any }>(
   control: Control<E>
 ): { [K in keyof E]-?: Control<E[K]> } {
@@ -933,6 +947,14 @@ export function getFieldValues<
   return Object.fromEntries(keys.map((k) => [k, fields[k].value])) as {
     [NK in K]: V[NK];
   };
+}
+
+export function findElem<T>(
+  control: Control<T[] | undefined> | undefined,
+  pred: (c: Control<T>) => unknown
+): Control<T> | undefined {
+  const c = control?.current.optional;
+  return c && getElems(c).find(pred);
 }
 
 export function getElemsTracked<V>(control: Control<V[]>): Control<V>[] {
@@ -1040,13 +1062,16 @@ export function addElement<V>(
 }
 
 export function removeElement<V>(
-  control: Control<V[]>,
+  control: Control<V[] | undefined>,
   child: number | Control<V>
 ): void {
-  const c = getElems(control);
-  const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
-  if (wantedIndex < 0 || wantedIndex >= c.length) return;
-  updateElems(control, (ex) => ex.filter((x, i) => i !== wantedIndex));
+  const o = control.current.optional;
+  if (o) {
+    const c = getElems(o);
+    const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
+    if (wantedIndex < 0 || wantedIndex >= c.length) return;
+    updateElems(o, (ex) => ex.filter((x, i) => i !== wantedIndex));
+  }
 }
 
 export function newElement<V>(control: Control<V[]>, elem: V): Control<V> {
