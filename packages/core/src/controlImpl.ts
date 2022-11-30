@@ -161,7 +161,7 @@ class ControlImpl<V> implements Control<V> {
     while (index < path.length && base) {
       const childId = path[index];
       if (typeof childId === "string") {
-        base = base.isCurrentlyNotNull()
+        base = base.current.optional
           ? getFields(base.as<Record<string, any>>())[childId]
           : undefined;
       } else {
@@ -1203,5 +1203,11 @@ class ControlStateImpl<V> implements ControlState<V> {
 
   get disabled() {
     return Boolean(this.control.flags & ControlFlags.Disabled);
+  }
+
+  get optional() {
+    return this.control._value != null
+      ? (this.control as Control<NonNullable<V>>)
+      : undefined;
   }
 }

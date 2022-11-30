@@ -30,6 +30,7 @@ export interface ControlState<V> {
   readonly dirty: boolean;
   readonly disabled: boolean;
   readonly touched: boolean;
+  readonly optional: Control<NonNullable<V>> | undefined;
 }
 
 type Writeable<V> = {
@@ -37,7 +38,7 @@ type Writeable<V> = {
 };
 
 export interface Control<V>
-  extends Writeable<Omit<ControlState<V>, "dirty" | "valid">> {
+  extends Writeable<Omit<ControlState<V>, "dirty" | "valid" | "optional">> {
   readonly uniqueId: number;
   readonly valid: boolean;
   readonly dirty: boolean;
@@ -45,7 +46,6 @@ export interface Control<V>
   meta: { [key: string]: any };
 
   isNotNull(): this is Control<NonNullable<V>>;
-  isCurrentlyNotNull(): this is Control<NonNullable<V>>;
 
   addChangeListener(
     listener: ChangeListenerFunc<V>,
