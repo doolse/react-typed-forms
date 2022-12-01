@@ -36,9 +36,10 @@ export function useControlEffect<V>(
   initial?: ((value: V) => void) | boolean
 ) {
   const lastRef = useRef<[ValueAndDeps<V>, ChangeListenerFunc<any>]>();
-
+  const computeRef = useRef(compute);
+  computeRef.current = compute;
   function checkEffect(onlyDeps?: boolean) {
-    const changes = collectChanges(compute);
+    const changes = collectChanges(computeRef.current);
     const changed = adjustListeners(lastRef, changes, checkEffect);
     const res = changes[0];
     if (changed === undefined) {
