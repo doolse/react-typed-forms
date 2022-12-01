@@ -1,6 +1,5 @@
 import {
   Control,
-  getFields,
   RenderControl,
   useComputed,
   useControl,
@@ -22,7 +21,7 @@ export default function MappedTest() {
     firstName: "",
     anotherField: "",
   });
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const subForm = useComputed(() => ({
     age: fields.age.value,
     firstName: fields.firstName.value.toUpperCase(),
@@ -30,9 +29,7 @@ export default function MappedTest() {
 
   const combined = useComputed(
     () =>
-      `${getFields(subForm).firstName.value} is ${
-        getFields(subForm).age.value
-      } years old`
+      `${subForm.fields.firstName.value} is ${subForm.fields.age.value} years old`
   );
 
   const selected = useControl<Control<any>>(fields.firstName);

@@ -3,8 +3,6 @@ import {
   Control,
   Finput,
   FormArray,
-  getElems,
-  getFields,
   RenderControl,
   renderAll,
   RenderValue,
@@ -32,7 +30,7 @@ export default function SimpleExample() {
 
   const mapped = useComputed(() => formState.value.stringChildren.join(","));
   useValueChangeEffect(formState, (v) => console.log(v));
-  const fields = getFields(formState);
+  const fields = formState.fields;
   return (
     <div>
       <RenderValue
@@ -53,7 +51,7 @@ export default function SimpleExample() {
         onClick={() =>
           addElement(
             fields.stringChildren,
-            "child " + (getElems(fields.stringChildren).length + 1)
+            "child " + (fields.stringChildren.elements.length + 1)
           )
         }
       >
@@ -72,7 +70,7 @@ function TreeStructure({
 }: {
   state: Control<SubStructure>;
 }): ReactElement {
-  const fields = getFields(state);
+  const fields = state.fields;
   return (
     <div>
       <div>

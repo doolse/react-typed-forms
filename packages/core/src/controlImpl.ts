@@ -109,6 +109,59 @@ class ControlImpl<V> implements Control<V> {
       );
   }
 
+  get optional() {
+    collectChange(this, ControlChange.Structure);
+    return this.current.optional;
+  }
+
+  get fields() {
+    const c = this as unknown as ControlImpl<{ [k: string]: any }>;
+    c._fields ??= {};
+    if (!c._fieldsProxy) {
+      c._fieldsProxy = new Proxy<{ [k: string]: Control<any> }>(c._fields, {
+        get(
+          target: { [k: string | symbol]: Control<any> },
+          p: string | symbol,
+          receiver: any
+        ): any {
+          if (p in target) {
+            return target[p];
+          }
+          const thisInitial = c.current.initialValue;
+          const v = c.current.value[p as string];
+          const iv = thisInitial?.[p as string];
+          const newChild = newControl(v, c.setup.fields?.[p as string], iv);
+          newChild.touched = c.current.touched;
+          newChild.disabled = c.current.disabled;
+          c.attachParentListener(newChild, p as string);
+          target[p] = newChild;
+          return newChild;
+        },
+      });
+    }
+    return c._fieldsProxy as any;
+  }
+
+  get elementsStructure(): any {
+    collectChange(this, ControlChange.Structure);
+    return this.elements;
+  }
+
+  get elements(): any {
+    const c = this as unknown as ControlImpl<V[]>;
+    const e = c._elems;
+    if (e) {
+      return e;
+    } else {
+      const valueArr = (c._value as any) ?? [];
+      const initialArr = (c._initialValue as any) ?? [];
+      c._elems = createArrayChildren<any>(valueArr, initialArr, (n, i, iv) =>
+        c.attachParentListener(newControl(i, c.setup.elems, iv), n)
+      );
+    }
+    return c._elems;
+  }
+
   isEqual(a: V, b: V): boolean {
     if (this.setup.equals) return this.setup.equals(a, b);
     return a === b;
@@ -160,12 +213,13 @@ class ControlImpl<V> implements Control<V> {
     let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
-      if (typeof childId === "string") {
-        base = base.current.optional
-          ? getFields(base.as<Record<string, any>>())[childId]
-          : undefined;
-      } else {
-        base = getElems(base.as<any[]>())?.[childId];
+      const o = base.current.optional;
+      if (o) {
+        if (typeof childId === "string") {
+          base = o.fields[childId];
+        } else {
+          base = o.elements[childId];
+        }
       }
       index++;
     }
@@ -895,94 +949,32 @@ function createArrayChildren<V>(
   });
 }
 
-export function optionalField<
-  E extends { [k: string]: any },
-  K extends keyof E
->(
-  control: Control<E | undefined | null> | undefined | null,
-  k: K
-): Control<E[K]> | undefined {
-  const o = control?.current.optional;
-  if (o) {
-    return getFields(o)[k];
-  }
-  return undefined;
-}
-
-export function getFields<E extends { [k: string]: any }>(
-  control: Control<E>
-): { [K in keyof E]-?: Control<E[K]> } {
-  const c = control as ControlImpl<E>;
-  c._fields ??= {};
-  if (!c._fieldsProxy) {
-    c._fieldsProxy = new Proxy<{ [k: string]: Control<any> }>(c._fields, {
-      get(
-        target: { [k: string | symbol]: Control<any> },
-        p: string | symbol,
-        receiver: any
-      ): any {
-        if (p in target) {
-          return target[p];
-        }
-        const thisInitial = c.current.initialValue;
-        const v = c.current.value[p as string];
-        const iv = thisInitial?.[p as string];
-        const newChild = newControl(v, c.setup.fields?.[p as string], iv);
-        newChild.touched = c.current.touched;
-        newChild.disabled = c.current.disabled;
-        c.attachParentListener(newChild, p as string);
-        target[p] = newChild;
-        return newChild;
-      },
-    });
-  }
-  return c._fieldsProxy as { [K in keyof E]-?: Control<E[K]> };
-}
-
 export function getFieldValues<
   V extends { [k: string]: any },
   K extends keyof V
 >(c: Control<V>, ...keys: K[]): { [NK in K]: V[NK] } {
-  const fields = getFields(c);
-  return Object.fromEntries(keys.map((k) => [k, fields[k].value])) as {
+  const fields = c.fields;
+  return Object.fromEntries(
+    keys.map((k) => [k, fields[k as string].value])
+  ) as {
     [NK in K]: V[NK];
   };
 }
 
-export function findElem<T>(
+export function findElement<T>(
   control: Control<T[] | undefined> | undefined,
   pred: (c: Control<T>) => unknown
 ): Control<T> | undefined {
   const c = control?.current.optional;
-  return c && getElems(c).find(pred);
+  return c && c.elements.find(pred);
 }
 
-export function getElemsTracked<V>(control: Control<V[]>): Control<V>[] {
-  collectChange(control, ControlChange.Structure);
-  return getElems(control);
-}
-
-export function getElems<V>(control: Control<V[]>): Control<V>[] {
-  const c = control as ControlImpl<V[]>;
-  const e = c._elems;
-  if (e) {
-    return e;
-  } else {
-    const valueArr = (c._value as any) ?? [];
-    const initialArr = (c._initialValue as any) ?? [];
-    c._elems = createArrayChildren<any>(valueArr, initialArr, (n, i, iv) =>
-      c.attachParentListener(newControl(i, c.setup.elems, iv), n)
-    );
-  }
-  return c._elems;
-}
-
-export function updateElems<V extends any[]>(
-  control: Control<V>,
-  cb: (elems: Control<ElemType<V>>[]) => Control<ElemType<V>>[]
+export function updateElements<V>(
+  control: Control<V[]>,
+  cb: (elems: Control<V>[]) => Control<V>[]
 ): void {
-  const c = control as unknown as ControlImpl<any[]>;
-  const e = getElems(c);
+  const c = control as unknown as ControlImpl<V[]>;
+  const e = control.elements;
   const newElems = cb(e);
   if (e !== newElems) {
     ensureArrayAttachment(c, newElems, e);
@@ -1040,9 +1032,9 @@ export function addElement<V>(
   index?: number | Control<V> | undefined,
   insertAfter?: boolean
 ): Control<V> {
-  if (control.current != null) {
-    const c = control as ControlImpl<V[]>;
-    const e = getElems(c);
+  if (control.current.optional) {
+    const c = control as unknown as ControlImpl<V[]>;
+    const e = (c as unknown as Control<any[]>).elements;
     const newChild = newControl(child, c.setup.elems);
     if (typeof index === "object") {
       index = e.indexOf(index as any);
@@ -1053,11 +1045,11 @@ export function addElement<V>(
     } else {
       newElems.push(newChild);
     }
-    updateElems(c, () => newElems);
+    updateElements(control as Control<V[]>, () => newElems);
     return newChild;
   } else {
     control.value = [child];
-    return getElems(control.as<V[]>())[0];
+    return control.as<V[]>().elements[0];
   }
 }
 
@@ -1067,15 +1059,15 @@ export function removeElement<V>(
 ): void {
   const o = control.current.optional;
   if (o) {
-    const c = getElems(o);
+    const c = o.elements;
     const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
     if (wantedIndex < 0 || wantedIndex >= c.length) return;
-    updateElems(o, (ex) => ex.filter((x, i) => i !== wantedIndex));
+    updateElements(o, (ex) => ex.filter((x, i) => i !== wantedIndex));
   }
 }
 
 export function newElement<V>(control: Control<V[]>, elem: V): Control<V> {
-  return newControl(elem, (control as ControlImpl<V[]>).setup.elems);
+  return newControl(elem, (control as unknown as ControlImpl<V[]>).setup.elems);
 }
 
 function debugSync(syncFlags: ChildSyncFlags) {

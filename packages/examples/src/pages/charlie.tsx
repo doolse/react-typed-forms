@@ -1,7 +1,6 @@
 import {
   addElement,
   FormArray,
-  getFields,
   notEmpty,
   useControl,
   useControlValue,
@@ -28,10 +27,8 @@ export default function CharliePage() {
       },
     }
   );
-  const fields = getFields(fc);
-  const subFields = useControlValue(() =>
-    fields.subObject.isNotNull() ? getFields(fields.subObject) : undefined
-  );
+  const fields = fc.fields;
+  const subFields = useControlValue(() => fields.subObject.optional?.fields);
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />

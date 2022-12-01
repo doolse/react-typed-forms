@@ -38,13 +38,34 @@ type Writeable<V> = {
 };
 
 export interface Control<V>
-  extends Writeable<Omit<ControlState<V>, "dirty" | "valid" | "optional">> {
+  extends Writeable<Omit<ControlState<V>, "dirty" | "valid">> {
   readonly uniqueId: number;
   readonly valid: boolean;
   readonly dirty: boolean;
   current: ControlState<V>;
   meta: { [key: string]: any };
 
+  readonly fields: V extends string | number | Array<any> | undefined | null
+    ? {}
+    : V extends { [a: string]: any }
+    ? { [K in keyof V]-?: Control<V[K]> }
+    : V;
+
+  readonly elements: V extends (infer A)[]
+    ? Control<A>[]
+    : V extends string | number | { [k: string]: any }
+    ? never[]
+    : V;
+
+  readonly elementsStructure: V extends (infer A)[]
+    ? Control<A>[]
+    : V extends string | number | { [k: string]: any }
+    ? never[]
+    : V;
+
+  /**
+   * @deprecated Use optional
+   */
   isNotNull(): this is Control<NonNullable<V>>;
 
   addChangeListener(

@@ -4,7 +4,6 @@ import {
   buildGroup,
   control,
   FormArray,
-  getFields,
   groupControl,
   useAsyncValidator,
   useControlValue,
@@ -38,7 +37,7 @@ export default function ValidationExample() {
   const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
   const [formState] = useState(FormDef);
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const valid = useControlValue(() => formState.valid);
 
   useAsyncValidator(
@@ -72,7 +71,7 @@ export default function ValidationExample() {
           elems.map((s) => (
             <FormInput
               key={s.uniqueId}
-              state={getFields(s).notBlank}
+              state={s.fields.notBlank}
               label="Not blank"
             />
           ))

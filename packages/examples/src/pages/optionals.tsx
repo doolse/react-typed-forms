@@ -1,7 +1,6 @@
 import {
   addElement,
   FormArray,
-  getFields,
   RenderControl,
   useControl,
 } from "@react-typed-forms/core";
@@ -23,7 +22,7 @@ export default function OptionalsTest() {
     nested: { optional: undefined },
     nullableStruct: null,
   });
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const [formData, setFormData] = useState<Form>();
 
   const nested = fields.nested;
@@ -44,12 +43,12 @@ export default function OptionalsTest() {
       </div>
       <RenderControl
         children={() =>
-          nested.isNotNull() && (
+          nested.optional && (
             <div>
               <FTextField
                 id="optionalField"
                 label="Optional"
-                state={getFields(nested).optional}
+                state={nested.optional.fields.optional}
               />
             </div>
           )
@@ -77,9 +76,12 @@ export default function OptionalsTest() {
       </div>
       <RenderControl
         children={() =>
-          nullable.isNotNull() && (
+          nullable.optional && (
             <div>
-              <FTextField state={getFields(nullable).id} label="Nullable" />
+              <FTextField
+                state={nullable.optional.fields.id}
+                label="Nullable"
+              />
             </div>
           )
         }

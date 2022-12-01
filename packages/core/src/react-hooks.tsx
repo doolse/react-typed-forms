@@ -15,14 +15,11 @@ import {
   addAfterChangesCallback,
   collectChanges,
   controlGroup,
-  getElems,
-  getElemsTracked,
-  getFields,
   newControl,
   newElement,
   setFields,
   trackControlChange,
-  updateElems,
+  updateElements,
   ValueAndDeps,
 } from "./controlImpl";
 import {
@@ -143,9 +140,10 @@ export interface FormArrayProps<V> {
 export function FormArray<V>({ state, children }: FormArrayProps<V>) {
   return (
     <>
-      {useControlValue(() =>
-        state.isNotNull() ? children(getElemsTracked(state)) : null
-      )}
+      {useControlValue(() => {
+        const v = state.optional?.elements;
+        return v ? children(v) : null;
+      })}
     </>
   );
 }
@@ -288,9 +286,7 @@ export function ensureSelectableValues<V>(
     values.forEach((av) => {
       const thisKey = key(av);
       if (
-        !newFields.some(
-          (x) => thisKey === key(getFields(x).value.current.value)
-        )
+        !newFields.some((x) => thisKey === key(x.fields.value.current.value))
       ) {
         newFields.push(
           groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
@@ -308,16 +304,16 @@ export function useSelectableArray<V>(
   const selectable = useControl<SelectionGroup<V>[]>([]);
   const updatedWithRef = useRef<Control<V>[] | undefined>(undefined);
   const selectChangeListener = useCallback(() => {
-    const selectedElems = getElems(selectable)
-      .filter((x) => getFields(x).selected.current.value)
-      .map((x) => getFields(x).value);
+    const selectedElems = selectable.elements
+      .filter((x) => x.fields.selected.current.value)
+      .map((x) => x.fields.value);
     updatedWithRef.current = selectedElems;
-    updateElems(control, () => selectedElems);
+    updateElements(control, () => selectedElems);
   }, [selectable, updatedWithRef, control]);
   useControlEffect(
     () => [control.value, control.initialValue],
     () => {
-      const allControlElems = getElems(control);
+      const allControlElems = control.elements;
       if (updatedWithRef.current === allControlElems) return;
       const selectableElems = groupSyncer(
         allControlElems,
@@ -341,7 +337,7 @@ export function useSelectableArray<V>(
           },
         }
       );
-      updateElems(selectable, () => selectableElems);
+      updateElements(selectable, () => selectableElems);
       updatedWithRef.current = allControlElems;
     },
     true

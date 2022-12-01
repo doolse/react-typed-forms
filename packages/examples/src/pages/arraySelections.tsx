@@ -4,7 +4,6 @@ import {
   Finput,
   FormArray,
   FormControl,
-  getFields,
   notEmpty,
   removeElement,
   RenderControl,
@@ -45,7 +44,7 @@ export default function ArraySelectionsExample() {
     }
   );
   const formState = useSelectableArray(
-    getFields(allFormState).people,
+    allFormState.fields.people,
     ensureSelectableValues(allDefaults, (x) => x.first)
   );
   const [formData, setFormData] = useState<RowForm[]>();
@@ -93,7 +92,7 @@ export default function ArraySelectionsExample() {
           id="submit"
           className="btn btn-primary"
           onClick={() => {
-            setFormData(getFields(allFormState).people.current.value);
+            setFormData(allFormState.fields.people.current.value);
           }}
         >
           toObject()
@@ -111,7 +110,7 @@ export default function ArraySelectionsExample() {
           id="setValue"
           className="btn btn-primary"
           onClick={() => {
-            getFields(allFormState).people.value = [
+            allFormState.fields.people.value = [
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },
             ];
@@ -136,12 +135,12 @@ function StructuredRow({
   index: number;
   onDelete: () => void;
 }) {
-  const c = getFields(getFields(state).value);
+  const c = state.fields.value.fields;
   return (
     <div className={`form-inline row_${index}`}>
       <div className="form-group mb-2">
         <label className="mx-2">Enabled:</label>
-        <Fcheckbox state={getFields(state).selected} className="enabled" />
+        <Fcheckbox state={state.fields.selected} className="enabled" />
       </div>
       <div className="form-group mb-2">
         <label className="mx-2">First:</label>

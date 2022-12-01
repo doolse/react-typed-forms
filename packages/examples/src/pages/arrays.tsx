@@ -4,12 +4,10 @@ import {
   ControlSetup,
   Finput,
   FormArray,
-  getElems,
-  getFields,
   notEmpty,
   removeElement,
   RenderControl,
-  updateElems,
+  updateElements,
   useControl,
   useControlValue,
 } from "@react-typed-forms/core";
@@ -46,12 +44,12 @@ export default function ArraysExample() {
     },
     FormDef
   );
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const [formData, setFormData] = useState<MainForm>();
 
   function moveUp(fa: Control<any[]>, index: number) {
-    if (index > 0 && index < getElems(fa).length)
-      updateElems(fa, (fields) =>
+    if (index > 0 && index < fa.elements.length)
+      updateElements(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx - 1]
@@ -62,8 +60,8 @@ export default function ArraysExample() {
       );
   }
   function moveDown(fa: Control<any[]>, index: number) {
-    if (index >= 0 && index < getElems(fa).length - 1)
-      updateElems(fa, (fields) =>
+    if (index >= 0 && index < fa.elements.length - 1)
+      updateElements(fa, (fields) =>
         fields.map((f, idx) =>
           idx === index
             ? fields[idx + 1]
@@ -149,7 +147,7 @@ export default function ArraysExample() {
                   <Finput
                     type="text"
                     className="idField form-control"
-                    state={getFields(c).id}
+                    state={c.fields.id}
                   />
                 </div>
                 <div className="form-group mb-2">
@@ -157,7 +155,7 @@ export default function ArraysExample() {
                   <Finput
                     type="text"
                     className="nameField form-control"
-                    state={getFields(c).name}
+                    state={c.fields.name}
                   />
                 </div>
                 <div>

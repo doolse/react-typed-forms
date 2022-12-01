@@ -1,6 +1,5 @@
 import {
   ControlChange,
-  getFields,
   useControl,
   useControlEffect,
   useControlGroup,
@@ -21,7 +20,7 @@ export default function GroupTest() {
     firstName: "",
     anotherField: "",
   });
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const subForm = useControlGroup({
     age: fields.age,
     firstName: fields.firstName,

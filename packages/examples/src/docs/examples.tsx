@@ -2,7 +2,6 @@ import {
   control,
   ControlType,
   Finput,
-  getFields,
   groupControl,
   RenderControl,
   ValueTypeForControl,
@@ -18,7 +17,7 @@ type SimpleForm = ValueTypeForControl<ControlType<typeof FormDef>>;
 
 export default function SimpleExample() {
   const [formState] = useState(FormDef);
-  const fields = getFields(formState);
+  const fields = formState.fields;
 
   return (
     <div>

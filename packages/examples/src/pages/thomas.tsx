@@ -1,5 +1,4 @@
 import {
-  getFields,
   RenderControl,
   useComputed,
   useControl,
@@ -11,15 +10,15 @@ export default function ThomasPage() {
   const myForm = useControl({ firstName: "Jolse", lastName: "maginnis" });
 
   useControlEffect(
-    () => getFields(myForm).firstName.value == "Thomas",
+    () => myForm.fields.firstName.value == "Thomas",
     (isThomas) => console.log(`It's ${isThomas}`),
     true
   );
 
   return (
     <div>
-      <FTextField state={getFields(myForm).firstName} label="First Name" />
-      <FTextField state={getFields(myForm).lastName} label="Last Name" />
+      <FTextField state={myForm.fields.firstName} label="First Name" />
+      <FTextField state={myForm.fields.lastName} label="Last Name" />
       <RenderControl children={() => getFullName()} />
     </div>
   );

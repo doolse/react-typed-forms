@@ -1,10 +1,4 @@
-import {
-  Finput,
-  Fselect,
-  getFields,
-  notEmpty,
-  useControl,
-} from "@react-typed-forms/core";
+import { Finput, Fselect, notEmpty, useControl } from "@react-typed-forms/core";
 import React, { useRef, useState } from "react";
 
 type SimpleForm = {
@@ -33,7 +27,7 @@ export default function BasicFormExample() {
       },
     }
   );
-  const fields = getFields(formState);
+  const fields = formState.fields;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
   return (
