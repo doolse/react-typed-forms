@@ -30,16 +30,20 @@ import {
   ControlValue,
 } from "./types";
 
+interface ComputeState<V> {
+  value?: ValueAndDeps<V>;
+  listener?: ChangeListenerFunc<any>;
+  compute?: () => V;
+}
 export function useControlEffect<V>(
   compute: () => V,
   onChange: (value: V) => void,
   initial?: ((value: V) => void) | boolean
 ) {
-  const lastRef = useRef<[ValueAndDeps<V>, ChangeListenerFunc<any>]>();
-  const computeRef = useRef(compute);
-  computeRef.current = compute;
-  function checkEffect(onlyDeps?: boolean) {
-    const changes = collectChanges(computeRef.current);
+  const lastRef = useRef<ComputeState<V>>({ compute });
+  lastRef.current.compute = compute;
+  function checkEffect() {
+    const changes = collectChanges(lastRef.current.compute!);
     const changed = adjustListeners(lastRef, changes, checkEffect);
     const res = changes[0];
     if (changed === undefined) {
@@ -48,56 +52,50 @@ export function useControlEffect<V>(
         : initial
         ? onChange(res)
         : undefined;
-    } else if (changed[0] && (!onlyDeps || changed[1])) {
+    } else if (changed[0]) {
       onChange(res);
     }
   }
 
-  useEffect(() => checkEffect(true));
+  useEffect(() => checkEffect());
   useClearListeners(lastRef);
 }
 
-function useClearListeners<V>(
-  lastRef: MutableRefObject<
-    [ValueAndDeps<V>, ChangeListenerFunc<any>] | undefined
-  >
-) {
+function useClearListeners<V>(lastRef: MutableRefObject<ComputeState<V>>) {
   return useEffect(() => {
     return () => {
       const c = lastRef.current;
-      if (c) {
-        removeListeners(c[1], c[0][1]);
-        c[0][1] = [];
+      if (c.value) {
+        removeListeners(c.listener!, c.value[1]);
+        c.value[1] = [];
       }
     };
   }, []);
 }
 
 function adjustListeners<V>(
-  lastRef: MutableRefObject<
-    [ValueAndDeps<V>, ChangeListenerFunc<any>] | undefined
-  >,
+  lastRef: MutableRefObject<ComputeState<V>>,
   computed: ValueAndDeps<V>,
   changeListener: () => void
 ) {
   const [res, deps] = computed;
   const c = lastRef.current;
-  if (c) {
-    const [[oldRes, oldDeps], oldListener] = c;
-    let listener = oldListener;
+  if (c.value) {
+    const [oldRes, oldDeps] = c.value;
     const depsChanged =
       oldDeps.length !== deps.length || deps.some((x, i) => x !== oldDeps[i]);
     if (depsChanged) {
-      removeListeners(listener, oldDeps);
-      listener = makeAfterChangeListener(changeListener);
-      attachListeners(listener, deps);
+      removeListeners(c.listener!, oldDeps);
+      c.listener = makeAfterChangeListener(changeListener);
+      attachListeners(c.listener, deps);
     }
-    lastRef.current = [[res, deps], listener];
+    c.value = computed;
     return [res !== oldRes, depsChanged];
   } else {
     const listener = makeAfterChangeListener(changeListener);
     attachListeners(listener, deps);
-    lastRef.current = [[res, deps], listener];
+    c.value = computed;
+    c.listener = listener;
     return undefined;
   }
 }
@@ -391,7 +389,7 @@ export function useControlValue<V>(
     typeof controlOrValue === "function"
       ? controlOrValue
       : () => controlOrValue.value;
-  const lastRef = useRef<[ValueAndDeps<V>, ChangeListenerFunc<any>]>();
+  const lastRef = useRef<ComputeState<V>>({});
 
   const [_, rerender] = useState(0);
   const computed = collectChanges(compute);
