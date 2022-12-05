@@ -300,48 +300,57 @@ export function useSelectableArray<V>(
   control: Control<V[]>,
   groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>
 ): Control<SelectionGroup<V>[]> {
-  const selectable = useControl<SelectionGroup<V>[]>([]);
-  const updatedWithRef = useRef<Control<V>[] | undefined>(undefined);
-  const selectChangeListener = useCallback(() => {
+  const selectRef = useRef<{
+    updatedWith?: Control<V>[];
+    control: Control<V[]>;
+    selectable?: Control<SelectionGroup<V>[]>;
+  }>({ control });
+
+  const selectChangeListener = () => {
+    const selectable = selectRef.current.selectable!;
     const selectedElems = selectable.elements
       .filter((x) => x.fields.selected.current.value)
       .map((x) => x.fields.value);
-    updatedWithRef.current = selectedElems;
+    selectRef.current.updatedWith = selectedElems;
     updateElements(control, () => selectedElems);
-  }, [selectable, updatedWithRef, control]);
+  };
+
+  const selectable = useControl<SelectionGroup<V>[]>([], undefined, (c) =>
+    setupSelections(c)
+  );
+  selectRef.current.selectable = selectable;
+
   useControlEffect(
     () => [control.value, control.initialValue],
-    () => {
-      const allControlElems = control.elements;
-      if (updatedWithRef.current === allControlElems) return;
-      const selectableElems = groupSyncer(
-        allControlElems,
-        control.current.initialValue,
-        {
-          makeElem: (v, iv) => {
-            const c = newElement(control, v);
-            c.initialValue = iv;
-            return c;
-          },
-          makeGroup: (isSelected, wasSelected, value) => {
-            const selected = newControl(isSelected, undefined, wasSelected);
-            selected.addChangeListener(
-              selectChangeListener,
-              ControlChange.Value
-            );
-            return controlGroup({
-              selected,
-              value,
-            });
-          },
-        }
-      );
-      updateElements(selectable, () => selectableElems);
-      updatedWithRef.current = allControlElems;
-    },
-    true
+    () => setupSelections(selectable)
   );
   return selectable;
+
+  function setupSelections(selectable: Control<SelectionGroup<V>[]>) {
+    const allControlElems = control.elements;
+    if (selectRef.current.updatedWith === allControlElems) return;
+    const selectableElems = groupSyncer(
+      allControlElems,
+      control.current.initialValue,
+      {
+        makeElem: (v, iv) => {
+          const c = newElement(control, v);
+          c.initialValue = iv;
+          return c;
+        },
+        makeGroup: (isSelected, wasSelected, value) => {
+          const selected = newControl(isSelected, undefined, wasSelected);
+          selected.addChangeListener(selectChangeListener, ControlChange.Value);
+          return controlGroup({
+            selected,
+            value,
+          });
+        },
+      }
+    );
+    updateElements(selectable, () => selectableElems);
+    selectRef.current.updatedWith = allControlElems;
+  }
 }
 
 function removeListeners(
