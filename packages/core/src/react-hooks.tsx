@@ -241,7 +241,8 @@ export function useControl(
   return useState(() => {
     const rv = typeof v === "function" ? v() : v;
     const c = newControl(rv, configure);
-    return afterInit?.(c) ?? c;
+    afterInit?.(c);
+    return c;
   })[0];
 }
 
