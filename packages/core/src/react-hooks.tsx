@@ -34,6 +34,7 @@ interface ComputeState<V> {
   value?: ValueAndDeps<V>;
   listener?: ChangeListenerFunc<any>;
   compute?: () => V;
+  effect?: () => void;
 }
 export function useControlEffect<V>(
   compute: () => V,
@@ -42,22 +43,37 @@ export function useControlEffect<V>(
 ) {
   const lastRef = useRef<ComputeState<V>>({ compute });
   lastRef.current.compute = compute;
-  function checkEffect() {
+  function checkEffect(dontRunEffect?: boolean) {
     const changes = collectChanges(lastRef.current.compute!);
     const changed = adjustListeners(lastRef, changes, checkEffect);
     const res = changes[0];
-    if (changed === undefined) {
-      typeof initial === "function"
-        ? initial(res)
-        : initial
-        ? onChange(res)
+    const effectFunction =
+      changed === undefined
+        ? typeof initial === "function"
+          ? initial
+          : initial
+          ? onChange
+          : undefined
+        : changed[0]
+        ? onChange
         : undefined;
-    } else if (changed[0]) {
-      onChange(res);
+    if (effectFunction) {
+      if (dontRunEffect) {
+        lastRef.current.effect = () => effectFunction(res);
+      } else {
+        effectFunction(res);
+      }
     }
   }
 
-  useEffect(() => checkEffect());
+  checkEffect(true);
+  useEffect(() => {
+    const effect = lastRef.current.effect;
+    if (effect) {
+      lastRef.current.effect = undefined;
+      effect();
+    }
+  });
   useClearListeners(lastRef);
 }
 
