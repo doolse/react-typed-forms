@@ -29,7 +29,6 @@ import {
   ControlSetup,
   ControlValue,
 } from "./types";
-import { ensureSelectableValues } from "./index";
 
 interface ComputeState<V> {
   value?: ValueAndDeps<V>;
@@ -285,10 +284,26 @@ const defaultSelectionCreator: SelectionGroupSync<any> = (original) => {
   return original.elements.map((x) => [true, x]);
 };
 
-// function ensureSelectableValues<V> (
-//     table.columns.map((x) => x.column),
-//     (x) => x
-// )
+export function ensureSelectableValues<V>(
+  values: V[],
+  key: (v: V) => any
+): SelectionGroupSync<V> {
+  return (original) => {
+    const otherSelected = [...original.elements];
+    const fromValues: [boolean, Control<V>][] = values.map((x) => {
+      const origIndex = otherSelected.findIndex(
+        (e) => key(e.current.value) === key(x)
+      );
+      const origElem = origIndex >= 0 ? otherSelected[origIndex] : undefined;
+      if (origIndex >= 0) {
+        otherSelected.splice(origIndex, 1);
+      }
+      return [Boolean(origElem), origElem ?? newElement(original, x)];
+    });
+    return fromValues.concat(otherSelected.map((x) => [true, x]));
+  };
+}
+
 export function useSelectableArray<V>(
   control: Control<V[]>,
   groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator,
