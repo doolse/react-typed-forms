@@ -43,9 +43,11 @@ export default function ArraySelectionsExample() {
       },
     }
   );
+  const [reset, setReset] = useState(0);
   const formState = useSelectableArray(
     allFormState.fields.people,
-    ensureSelectableValues(allDefaults, (x) => x.first)
+    ensureSelectableValues(allDefaults, (x) => x.first),
+    reset
   );
   const [formData, setFormData] = useState<RowForm[]>();
   return (
@@ -114,6 +116,7 @@ export default function ArraySelectionsExample() {
               { first: "Thomas", last: "" },
               { first: "Derek", last: "Chongster" },
             ];
+            setReset((x) => x + 1);
           }}
         >
           Set Value

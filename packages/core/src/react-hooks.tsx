@@ -315,39 +315,20 @@ export function ensureSelectableValues<V>(
 
 export function useSelectableArray<V>(
   control: Control<V[]>,
-  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>
+  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>,
+  reset?: any
 ): Control<SelectionGroup<V>[]> {
-  const selectRef = useRef<{
-    updatedWith?: Control<V>[];
-    control: Control<V[]>;
-    selectable?: Control<SelectionGroup<V>[]>;
-  }>({ control });
+  return useMemo(() => {
+    const selectable = newControl<SelectionGroup<V>[]>([]);
+    const selectionChangeListener = () => {
+      const selectedElems = selectable.elements
+        .filter((x) => x.fields.selected.current.value)
+        .map((x) => x.fields.value);
+      updateElements(control, () => selectedElems);
+    };
 
-  const selectChangeListener = () => {
-    const selectable = selectRef.current.selectable!;
-    const selectedElems = selectable.elements
-      .filter((x) => x.fields.selected.current.value)
-      .map((x) => x.fields.value);
-    selectRef.current.updatedWith = selectedElems;
-    updateElements(control, () => selectedElems);
-  };
-
-  const selectable = useControl<SelectionGroup<V>[]>([], undefined, (c) =>
-    setupSelections(c)
-  );
-  selectRef.current.selectable = selectable;
-
-  useControlEffect(
-    () => [control.value, control.initialValue],
-    () => setupSelections(selectable)
-  );
-  return selectable;
-
-  function setupSelections(selectable: Control<SelectionGroup<V>[]>) {
-    const allControlElems = control.elements;
-    if (selectRef.current.updatedWith === allControlElems) return;
     const selectableElems = groupSyncer(
-      allControlElems,
+      control.elements,
       control.current.initialValue,
       {
         makeElem: (v, iv) => {
@@ -357,7 +338,10 @@ export function useSelectableArray<V>(
         },
         makeGroup: (isSelected, wasSelected, value) => {
           const selected = newControl(isSelected, undefined, wasSelected);
-          selected.addChangeListener(selectChangeListener, ControlChange.Value);
+          selected.addChangeListener(
+            selectionChangeListener,
+            ControlChange.Value
+          );
           return controlGroup({
             selected,
             value,
@@ -366,8 +350,9 @@ export function useSelectableArray<V>(
       }
     );
     updateElements(selectable, () => selectableElems);
-    selectRef.current.updatedWith = allControlElems;
-  }
+
+    return selectable;
+  }, [control, reset]);
 }
 
 function removeListeners(
