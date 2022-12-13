@@ -29,6 +29,7 @@ import {
   ControlSetup,
   ControlValue,
 } from "./types";
+import { ensureSelectableValues } from "./index";
 
 interface ComputeState<V> {
   value?: ValueAndDeps<V>;
@@ -277,82 +278,53 @@ interface SelectionGroupCreator<V> {
 }
 
 type SelectionGroupSync<V> = (
-  elems: Control<V>[],
-  initialValue: V[],
-  groupCreator: SelectionGroupCreator<V>
-) => Control<SelectionGroup<V>>[];
+  original: Control<V[]>
+) => [boolean, Control<V>, boolean?][];
 
-const defaultSelectionCreator: SelectionGroupSync<any> = (
-  elems,
-  initialValue,
-  creator
-) => {
-  return elems.map((x, i) => {
-    return creator.makeGroup(true, true, x);
-  });
+const defaultSelectionCreator: SelectionGroupSync<any> = (original) => {
+  return original.elements.map((x) => [true, x]);
 };
 
-export function ensureSelectableValues<V>(
-  values: V[],
-  key: (v: V) => any,
-  parentSync: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>
-): SelectionGroupSync<V> {
-  return (elems, initialValue, groupCreator) => {
-    const newFields = parentSync(elems, initialValue, groupCreator);
-    values.forEach((av) => {
-      const thisKey = key(av);
-      if (
-        !newFields.some((x) => thisKey === key(x.fields.value.current.value))
-      ) {
-        newFields.push(
-          groupCreator.makeGroup(false, false, groupCreator.makeElem(av, av))
-        );
-      }
-    });
-    return newFields;
-  };
-}
-
+// function ensureSelectableValues<V> (
+//     table.columns.map((x) => x.column),
+//     (x) => x
+// )
 export function useSelectableArray<V>(
   control: Control<V[]>,
-  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>,
+  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator,
   reset?: any
 ): Control<SelectionGroup<V>[]> {
-  return useMemo(() => {
+  const selectable = useMemo(() => {
     const selectable = newControl<SelectionGroup<V>[]>([]);
     const selectionChangeListener = () => {
-      const selectedElems = selectable.elements
-        .filter((x) => x.fields.selected.current.value)
-        .map((x) => x.fields.value);
-      updateElements(control, () => selectedElems);
+      updateElements(control, () =>
+        selectable.elements
+          .filter((x) => x.fields.selected.current.value)
+          .map((x) => x.fields.value)
+      );
     };
 
-    const selectableElems = groupSyncer(
-      control.elements,
-      control.current.initialValue,
-      {
-        makeElem: (v, iv) => {
-          const c = newElement(control, v);
-          c.initialValue = iv;
-          return c;
-        },
-        makeGroup: (isSelected, wasSelected, value) => {
-          const selected = newControl(isSelected, undefined, wasSelected);
-          selected.addChangeListener(
-            selectionChangeListener,
-            ControlChange.Value
-          );
-          return controlGroup({
-            selected,
-            value,
-          });
-        },
-      }
-    );
+    const selectableElems = groupSyncer(control).map(([s, value, is]) => {
+      const selected = newControl(s, undefined, is === undefined ? s : is);
+      selected.addChangeListener(selectionChangeListener, ControlChange.Value);
+      return controlGroup({
+        selected,
+        value,
+      });
+    });
     updateElements(selectable, () => selectableElems);
 
     return selectable;
   }, [control, reset]);
+
+  useEffect(() => {
+    updateElements(control, () =>
+      selectable.elements
+        .filter((x) => x.fields.selected.current.value)
+        .map((x) => x.fields.value)
+    );
+  }, [selectable, control]);
+  return selectable;
 }
 
 function removeListeners(

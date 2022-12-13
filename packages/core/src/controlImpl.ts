@@ -976,7 +976,7 @@ export function updateElements<V>(
   const c = control as unknown as ControlImpl<V[]>;
   const e = control.elements;
   const newElems = cb(e);
-  if (e !== newElems) {
+  if (!shallowArrayEquals(e, newElems)) {
     ensureArrayAttachment(c, newElems, e);
     c._elems = newElems;
     c._childSync |=
@@ -1227,4 +1227,8 @@ class ControlStateImpl<V> implements ControlState<V> {
       ? (this.control as Control<NonNullable<V>>)
       : undefined;
   }
+}
+
+function shallowArrayEquals<V>(a: V[], b: V[]): boolean {
+  return a === b || (a.length === b.length && a.every((x, i) => x === b[i]));
 }
