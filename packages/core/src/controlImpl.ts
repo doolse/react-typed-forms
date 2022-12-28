@@ -107,6 +107,7 @@ class ControlImpl<V> implements Control<V> {
       Object.entries(_fields).forEach((x) =>
         this.attachParentListener(x[1], x[0])
       );
+    setup.afterCreate?.(this);
   }
 
   get optional() {

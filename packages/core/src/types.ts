@@ -107,6 +107,7 @@ export interface ControlSetup<V, M = object> {
     [K in keyof V]?: ControlSetup<V[K], M> | (() => ControlSetup<V[K], M>);
   };
   create?: (value: V, initial: V, setup: ControlSetup<V, M>) => Control<V>;
+  afterCreate?: (control: Control<V>) => void;
 }
 
 export type ChangeListenerFunc<V> = (
