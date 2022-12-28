@@ -307,10 +307,11 @@ export function ensureSelectableValues<V>(
 export function useSelectableArray<V>(
   control: Control<V[]>,
   groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator,
+  setup?: ControlSetup<SelectionGroup<V>[]>,
   reset?: any
 ): Control<SelectionGroup<V>[]> {
   const selectable = useMemo(() => {
-    const selectable = newControl<SelectionGroup<V>[]>([]);
+    const selectable = newControl<SelectionGroup<V>[]>([], setup);
     const selectionChangeListener = () => {
       updateElements(control, () =>
         selectable.elements

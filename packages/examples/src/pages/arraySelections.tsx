@@ -47,6 +47,7 @@ export default function ArraySelectionsExample() {
   const formState = useSelectableArray(
     allFormState.fields.people,
     ensureSelectableValues(allDefaults, (x) => x.first),
+    undefined,
     reset
   );
   const [formData, setFormData] = useState<RowForm[]>();
