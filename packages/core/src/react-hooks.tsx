@@ -377,8 +377,18 @@ function makeAfterChangeListener(effect: () => void): ChangeListenerFunc<any> {
   };
 }
 
+/**
+ * Get value of a control and re-render current component whenever the value is changed.
+ * This is equivalent to `useControlValue(() => control.value);`
+ * @param control The control to retrieve the value from
+ */
 export function useControlValue<V>(control: Control<V>): V;
 
+/**
+ * Calculate a value from control properties and re-render the current component whenever
+ * any of those properties changes.
+ * @param stateValue The function which calculates the value.
+ */
 export function useControlValue<V>(stateValue: (previous?: V) => V): V;
 
 export function useControlValue<V>(
