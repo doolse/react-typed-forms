@@ -87,6 +87,42 @@ importers:
       react-dom: 18.2.0_react@18.2.0
       rimraf: 3.0.2
 
+  ../../packages/schemas:
+    specifiers:
+      '@react-typed-forms/core': workspace:*
+      '@types/react': ^18.0.22
+      nswag: ^13.18.2
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      rimraf: ^3.0.2
+    dependencies:
+      '@react-typed-forms/core': link:../core
+    devDependencies:
+      '@types/react': 18.0.22
+      nswag: 13.18.2
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      rimraf: 3.0.2
+
+  ../../packages/schemas-mui:
+    specifiers:
+      '@react-typed-forms/mui': workspace:*
+      '@react-typed-forms/schemas': workspace:*
+      '@types/react': ^18.0.22
+      nswag: ^13.18.2
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      rimraf: ^3.0.2
+    dependencies:
+      '@react-typed-forms/mui': link:../mui
+      '@react-typed-forms/schemas': link:../schemas
+    devDependencies:
+      '@types/react': 18.0.22
+      nswag: 13.18.2
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      rimraf: 3.0.2
+
 packages:
 
   /@babel/code-frame/7.18.6:
@@ -2969,6 +3005,12 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       path-key: 3.1.1
+    dev: true
+
+  /nswag/13.18.2:
+    resolution: {integrity: sha512-7OpG9WkrZUO2+9I7hgQsaAHujsP/tCaIs7ML2B4wUuFLjSsG6lHucyrREyVO/h9l3MM/Cw4RlEGFBbluWhgeYg==}
+    engines: {npm: '>=3.10.8'}
+    hasBin: true
     dev: true
 
   /object-assign/4.1.1:

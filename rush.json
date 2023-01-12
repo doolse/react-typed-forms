@@ -413,6 +413,14 @@
     {
       "packageName": "cypress-tests",
       "projectFolder": "cypress-tests"
+    },
+    {
+      "packageName": "@react-typed-forms/schemas",
+      "projectFolder": "packages/schemas"
+    },
+    {
+      "packageName": "@react-typed-forms/schemas-mui",
+      "projectFolder": "packages/schemas-mui"
     }
     // {
     //   /**

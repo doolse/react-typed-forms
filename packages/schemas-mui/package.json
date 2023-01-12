@@ -1,0 +1,46 @@
+{
+  "name": "@react-typed-forms/schemas-mui",
+  "version": "3.0.0-dev.71",
+  "description": "",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "require": "./lib/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doolse/react-typed-forms.git"
+  },
+  "author": "Jolse Maginnis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/doolse/react-typed-forms/issues"
+  },
+  "homepage": "https://github.com/doolse/react-typed-forms#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "forms",
+    "material-ui"
+  ],
+  "dependencies": {
+    "@react-typed-forms/schemas": "workspace:*",
+    "@react-typed-forms/mui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.22",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^3.0.2",
+    "nswag": "^13.18.2"
+  },
+  "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
+  "scripts": {
+    "build": "rimraf ./lib/ && tsc",
+    "watch": "tsc -w"
+  }
+}
