@@ -79,11 +79,11 @@ export interface FormEditState {
 }
 
 export interface FormRendererComponents {
-  RenderData: FC<DataRendererProps>;
-  RenderGroup: FC<GroupRendererProps>;
-  RenderCompound: FC<CompoundGroupRendererProps>;
-  RenderDisplay: FC<DisplayRendererProps>;
-  RenderAction: FC<ActionRendererProps>;
+  renderData: (props: DataRendererProps) => ReactElement;
+  renderGroup: (props: GroupRendererProps) => ReactElement;
+  renderCompound: (props: CompoundGroupRendererProps) => ReactElement;
+  renderDisplay: (props: DisplayRendererProps) => ReactElement;
+  renderAction: (props: ActionRendererProps) => ReactElement;
 }
 
 export const FormRendererComponentsContext = createContext<
@@ -232,7 +232,7 @@ export function fieldDisplayName(sf: SchemaField): string {
   return sf.displayName ? sf.displayName : sf.field;
 }
 
-export function controlTitle(title: string, field: SchemaField) {
+export function controlTitle(title: string | undefined, field: SchemaField) {
   return title ? title : fieldDisplayName(field);
 }
 
@@ -311,7 +311,7 @@ function DataRenderer({
   fieldData: ScalarField;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { RenderData } = useFormRendererComponents();
+  const { renderData } = useFormRendererComponents();
   const props = hooks.useDataProperties(formState, controlDef, fieldData);
   const scalarControl =
     formState.data.fields[fieldData.field] ?? newControl(undefined);
@@ -336,9 +336,7 @@ function DataRenderer({
     definition: controlDef,
     properties: props,
   };
-  return wrapElem(
-    props.customRender?.(scalarProps) ?? <RenderData {...scalarProps} />
-  );
+  return wrapElem((props.customRender ?? renderData)(scalarProps));
 }
 
 function ActionRenderer({
@@ -352,7 +350,7 @@ function ActionRenderer({
   formState: FormEditState;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { RenderAction } = useFormRendererComponents();
+  const { renderAction } = useFormRendererComponents();
   const actionControlProperties = hooks.useActionProperties(
     formState,
     actionDef
@@ -362,7 +360,7 @@ function ActionRenderer({
   }
 
   return wrapElem(
-    <RenderAction definition={actionDef} properties={actionControlProperties} />
+    renderAction({ definition: actionDef, properties: actionControlProperties })
   );
 }
 
@@ -377,7 +375,7 @@ function GroupRenderer({
   formState: FormEditState;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { RenderCompound, RenderGroup } = useFormRendererComponents();
+  const { renderCompound, renderGroup } = useFormRendererComponents();
 
   const groupProps = hooks.useGroupProperties(formState, groupDef, hooks);
   if (!groupProps.visible) {
@@ -388,12 +386,12 @@ function GroupRenderer({
     : undefined;
   if (compoundField) {
     return wrapElem(
-      <RenderCompound
-        definition={groupDef}
-        field={compoundField}
-        control={formState.data.fields[compoundField.field]}
-        properties={groupProps}
-        renderChild={(k, c, data, wrapChild) =>
+      renderCompound({
+        definition: groupDef,
+        field: compoundField,
+        control: formState.data.fields[compoundField.field],
+        properties: groupProps,
+        renderChild: (k, c, data, wrapChild) =>
           renderControl(
             c as AnyControlDefinitions,
             {
@@ -404,26 +402,24 @@ function GroupRenderer({
             groupProps.hooks,
             k,
             wrapChild
-          )
-        }
-      />
+          ),
+      })
     );
   }
   return wrapElem(
-    <RenderGroup
-      definition={groupDef}
-      childCount={groupDef.children.length}
-      properties={groupProps}
-      renderChild={(c, wrapChild) =>
+    renderGroup({
+      definition: groupDef,
+      childCount: groupDef.children.length,
+      properties: groupProps,
+      renderChild: (c, wrapChild) =>
         renderControl(
           groupDef.children[c] as AnyControlDefinitions,
           formState,
           groupProps.hooks,
           c,
           wrapChild
-        )
-      }
-    />
+        ),
+    })
   );
 }
 
@@ -438,13 +434,13 @@ function DisplayRenderer({
   formState: FormEditState;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { RenderDisplay } = useFormRendererComponents();
+  const { renderDisplay } = useFormRendererComponents();
 
   const displayProps = hooks.useDisplayProperties(formState, displayDef);
   if (!displayProps.visible) {
     return <></>;
   }
   return wrapElem(
-    <RenderDisplay definition={displayDef} properties={displayProps} />
+    renderDisplay({ definition: displayDef, properties: displayProps })
   );
 }

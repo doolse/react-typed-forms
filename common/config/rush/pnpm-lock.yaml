@@ -106,6 +106,9 @@ importers:
 
   ../../packages/schemas-mui:
     specifiers:
+      '@mui/icons-material': ^5
+      '@mui/material': ^5
+      '@react-typed-forms/core': workspace:*
       '@react-typed-forms/mui': workspace:*
       '@react-typed-forms/schemas': workspace:*
       '@types/react': ^18.0.22
@@ -114,9 +117,12 @@ importers:
       react-dom: ^18.2.0
       rimraf: ^3.0.2
     dependencies:
+      '@react-typed-forms/core': link:../core
       '@react-typed-forms/mui': link:../mui
       '@react-typed-forms/schemas': link:../schemas
     devDependencies:
+      '@mui/icons-material': 5.11.0_256c7780dc65eddde685f7f9a26f8096
+      '@mui/material': 5.10.10_dc814835b1afd6d75f665817c1b1a67f
       '@types/react': 18.0.22
       nswag: 13.18.2
       react: 18.2.0
@@ -183,6 +189,13 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.9
+
+  /@babel/runtime/7.20.7:
+    resolution: {integrity: sha512-UF0tvkUtxwAgZ5W/KrkHf0Rn0fdnLDU9ScxBrEVNUprE/MzirjK4MJUX1/BVDv00Sv8cljtukVK1aky++X1SjQ==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.13.11
+    dev: true
 
   /@babel/types/7.19.4:
     resolution: {integrity: sha512-M5LK7nAeS6+9j7hAq+b3fQs+pNfUtTGq+yFFfHnauFA8zQtLRfmuipmsKDKKLuyG+wC8ABW43A153YNawNTEtw==}
@@ -409,6 +422,23 @@ packages:
 
   /@mui/core-downloads-tracker/5.10.10:
     resolution: {integrity: sha512-aDuE2PNEh+hAndxEWlZgq7uiFPZKJtnkPDX7v6kSCrMXA32ZaQ6rZi5olmC7DUHt/BaOSxb7N/im/ss0XBkDhA==}
+
+  /@mui/icons-material/5.11.0_256c7780dc65eddde685f7f9a26f8096:
+    resolution: {integrity: sha512-I2LaOKqO8a0xcLGtIozC9xoXjZAto5G5gh0FYUMAlbsIHNHIjn4Xrw9rvjY20vZonyiGrZNMAlAXYkY6JvhF6A==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      '@mui/material': ^5.0.0
+      '@types/react': ^17.0.0 || ^18.0.0
+      react: ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.20.7
+      '@mui/material': 5.10.10_dc814835b1afd6d75f665817c1b1a67f
+      '@types/react': 18.0.22
+      react: 18.2.0
+    dev: true
 
   /@mui/material/5.10.10_58a78a90a0623fcb15d3cc53f0436dae:
     resolution: {integrity: sha512-ioLvqY7VvcePz9dnEIRhpiVvtJmAFmvG6rtLXXzVdMmAVbSaelr5Io07mPz/mCyqE+Uv8/4EuJV276DWO7etzA==}
@@ -3294,6 +3324,10 @@ packages:
       safe-buffer: 5.1.2
       string_decoder: 1.1.1
       util-deprecate: 1.0.2
+    dev: true
+
+  /regenerator-runtime/0.13.11:
+    resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
     dev: true
 
   /regenerator-runtime/0.13.9:

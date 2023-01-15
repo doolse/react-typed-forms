@@ -28,10 +28,17 @@
     "material-ui"
   ],
   "dependencies": {
+    "@react-typed-forms/core": "workspace:*",
     "@react-typed-forms/schemas": "workspace:*",
     "@react-typed-forms/mui": "workspace:*"
   },
+  "peerDependencies": {
+    "@mui/material": "^5",
+    "@mui/icons-material": "^5"
+  },
   "devDependencies": {
+    "@mui/material": "^5",
+    "@mui/icons-material": "^5",
     "@types/react": "^18.0.22",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
