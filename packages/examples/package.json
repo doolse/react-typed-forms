@@ -32,7 +32,9 @@
     "@emotion/styled": "^11.10.4",
     "@emotion/react": "^11.10.4",
     "@react-typed-forms/core": "workspace:*",
-    "@react-typed-forms/mui": "workspace:*"
+    "@react-typed-forms/mui": "workspace:*",
+    "@react-typed-forms/schemas": "workspace:*",
+    "@react-typed-forms/schemas-mui": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.0.22",

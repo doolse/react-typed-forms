@@ -2,12 +2,8 @@
   "name": "@react-typed-forms/schemas-mui",
   "version": "3.0.0-dev.71",
   "description": "",
-  "exports": {
-    ".": {
-      "types": "./lib/index.d.ts",
-      "require": "./lib/index.js"
-    }
-  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/doolse/react-typed-forms.git"

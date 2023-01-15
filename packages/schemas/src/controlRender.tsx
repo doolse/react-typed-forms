@@ -11,7 +11,7 @@ import {
   SchemaField,
   SchemaFieldType,
 } from "./types";
-import React, { createContext, FC, Key, ReactElement, useContext } from "react";
+import React, { createContext, Key, ReactElement, useContext } from "react";
 import {
   AnyControl,
   Control,
@@ -443,4 +443,34 @@ function DisplayRenderer({
   return wrapElem(
     renderDisplay({ definition: displayDef, properties: displayProps })
   );
+}
+
+export function controlForField(
+  field: string,
+  formState: FormEditState
+): Control<any> {
+  const refField = findField(formState.fields, field);
+  return (
+    (refField && formState.data.fields[refField.field]) ?? newControl(undefined)
+  );
+}
+
+export function fieldForControl(c: AnyControlDefinitions) {
+  return isSchemaControl(c)
+    ? c.field
+    : isGroupControl(c)
+    ? c.compoundField
+    : undefined;
+}
+
+export function isSchemaControl(
+  c: AnyControlDefinitions
+): c is DataControlDefinition {
+  return c.type === ControlDefinitionType.Data;
+}
+
+export function isGroupControl(
+  c: AnyControlDefinitions
+): c is GroupedControlsDefinition {
+  return c.type === ControlDefinitionType.Group;
 }
