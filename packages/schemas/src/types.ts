@@ -6,246 +6,251 @@
 
 /* tslint:disable */
 /* eslint-disable */
+
 // ReSharper disable InconsistentNaming
 
-
-
 export interface AllClasses {
-    schemaField: SchemaField;
-    control: ControlDefinition;
+  schemaField: SchemaField;
+  control: ControlDefinition;
 }
 
 export interface SchemaField {
-    schemaType: SchemaFieldType;
-    field: string;
-    displayName: string;
-    type: FieldType;
-    tags: string[];
-    system: boolean;
-    collection: boolean;
-    onlyForTypes: string[];
+  schemaType: SchemaFieldType;
+  field: string;
+  displayName: string;
+  type: FieldType;
+  tags: string[];
+  system: boolean;
+  collection: boolean;
+  onlyForTypes: string[];
 }
 
 export enum SchemaFieldType {
-    Scalar = "Scalar",
-    Compound = "Compound",
+  Scalar = "Scalar",
+  Compound = "Compound",
 }
 
 export enum FieldType {
-    String = "String",
-    Bool = "Bool",
-    Int = "Int",
-    Date = "Date",
-    DateTime = "DateTime",
-    Double = "Double",
-    EntityRef = "EntityRef",
-    Compound = "Compound",
-    AutoId = "AutoId",
-    Image = "Image",
+  String = "String",
+  Bool = "Bool",
+  Int = "Int",
+  Date = "Date",
+  DateTime = "DateTime",
+  Double = "Double",
+  EntityRef = "EntityRef",
+  Compound = "Compound",
+  AutoId = "AutoId",
+  Image = "Image",
 }
 
 export interface ScalarField extends SchemaField {
-    entityRefType: string;
-    required: boolean;
-    parentField: string;
-    searchable: boolean;
-    defaultValue: any;
-    isTypeField: boolean;
-    restrictions: SchemaRestrictions | undefined;
+  entityRefType: string;
+  required: boolean;
+  parentField: string;
+  searchable: boolean;
+  defaultValue: any;
+  isTypeField: boolean;
+  restrictions: SchemaRestrictions | undefined;
 }
 
 export interface SchemaRestrictions {
-    options: FieldOption[] | undefined;
+  options: FieldOption[] | undefined;
 }
 
 export interface FieldOption {
-    name: string;
-    value: any;
+  name: string;
+  value: any;
 }
 
 export interface CompoundField extends SchemaField {
-    children: SchemaField[];
-    treeChildren: boolean;
+  children: SchemaField[];
+  treeChildren: boolean;
 }
 
+export type AnyControlDefinition =
+  | ControlDefinition
+  | DataControlDefinition
+  | GroupedControlsDefinition
+  | ActionControlDefinition
+  | DisplayControlDefinition;
+
 export interface ControlDefinition {
-    type: ControlDefinitionType;
-    title: string | undefined;
-    dynamic: DynamicProperty[];
-    adornments: ControlAdornment[] | undefined;
+  type: string;
+  title?: string;
+  dynamic?: DynamicProperty[];
+  adornments?: ControlAdornment[];
 }
 
 export enum ControlDefinitionType {
-    Data = "Data",
-    Group = "Group",
-    Display = "Display",
-    Action = "Action",
+  Data = "Data",
+  Group = "Group",
+  Display = "Display",
+  Action = "Action",
 }
 
 export interface DynamicProperty {
-    type: DynamicPropertyType;
-    expr: EntityExpression;
+  type: DynamicPropertyType;
+  expr: EntityExpression;
 }
 
 export enum DynamicPropertyType {
-    Visible = "Visible",
-    DefaultValue = "DefaultValue",
+  Visible = "Visible",
+  DefaultValue = "DefaultValue",
 }
 
 export interface EntityExpression {
-    type: ExpressionType;
+  type: ExpressionType;
 }
 
 export enum ExpressionType {
-    Jsonata = "Jsonata",
-    FieldValue = "FieldValue",
-    UserMatch = "UserMatch",
+  Jsonata = "Jsonata",
+  FieldValue = "FieldValue",
+  UserMatch = "UserMatch",
 }
 
 export interface JsonataExpression extends EntityExpression {
-    expression: string;
+  expression: string;
 }
 
 export interface FieldValueExpression extends EntityExpression {
-    field: string;
-    value: any;
+  field: string;
+  value: any;
 }
 
 export interface UserMatchExpression extends EntityExpression {
-    userMatch: string;
+  userMatch: string;
 }
 
 export interface ControlAdornment {
-    type: ControlAdornmentType;
+  type: ControlAdornmentType;
 }
 
 export enum ControlAdornmentType {
-    Tooltip = "Tooltip",
-    Accordion = "Accordion",
+  Tooltip = "Tooltip",
+  Accordion = "Accordion",
 }
 
 export interface TooltipAdornment extends ControlAdornment {
-    tooltip: string;
+  tooltip: string;
 }
 
 export interface AccordionAdornment extends ControlAdornment {
-    title: string;
-    defaultExpanded: boolean;
+  title: string;
+  defaultExpanded: boolean;
 }
 
 export interface DataControlDefinition extends ControlDefinition {
-    field: string;
-    required: boolean;
-    renderOptions: RenderOptions;
-    defaultValue: any | undefined;
-    noEdit: boolean;
+  type: ControlDefinitionType.Data;
+  field: string;
+  required: boolean;
+  renderOptions: RenderOptions;
+  defaultValue?: any;
+  noEdit: boolean;
 }
 
 export interface RenderOptions {
-    type: DataRenderType;
+  type: DataRenderType;
 }
 
 export enum DataRenderType {
-    Standard = "Standard",
-    Radio = "Radio",
-    HtmlEditor = "HtmlEditor",
-    IconList = "IconList",
-    CheckList = "CheckList",
-    UserSelection = "UserSelection",
-    Synchronised = "Synchronised",
-    IconSelector = "IconSelector",
+  Standard = "Standard",
+  Radio = "Radio",
+  HtmlEditor = "HtmlEditor",
+  IconList = "IconList",
+  CheckList = "CheckList",
+  UserSelection = "UserSelection",
+  Synchronised = "Synchronised",
+  IconSelector = "IconSelector",
 }
 
-export interface RadioButtonRenderOptions extends RenderOptions {
-}
+export interface RadioButtonRenderOptions extends RenderOptions {}
 
-export interface StandardRenderer extends RenderOptions {
-}
+export interface StandardRenderer extends RenderOptions {}
 
 export interface HtmlEditorRenderOptions extends RenderOptions {
-    allowImages: boolean;
+  allowImages: boolean;
 }
 
 export interface IconListRenderOptions extends RenderOptions {
-    iconMappings: IconMapping[];
+  iconMappings: IconMapping[];
 }
 
 export interface IconMapping {
-    value: string;
-    materialIcon: string | undefined;
+  value: string;
+  materialIcon: string | undefined;
 }
 
-export interface CheckListRenderOptions extends RenderOptions {
-}
+export interface CheckListRenderOptions extends RenderOptions {}
 
 export interface SynchronisedRenderOptions extends RenderOptions {
-    fieldToSync: string;
-    syncType: SyncTextType;
+  fieldToSync: string;
+  syncType: SyncTextType;
 }
 
 export enum SyncTextType {
-    Camel = "Camel",
-    Snake = "Snake",
-    Pascal = "Pascal",
+  Camel = "Camel",
+  Snake = "Snake",
+  Pascal = "Pascal",
 }
 
 export interface UserSelectionRenderOptions extends RenderOptions {
-    noGroups: boolean;
-    noUsers: boolean;
+  noGroups: boolean;
+  noUsers: boolean;
 }
 
-export interface IconSelectionRenderOptions extends RenderOptions {
-}
+export interface IconSelectionRenderOptions extends RenderOptions {}
 
 export interface GroupedControlsDefinition extends ControlDefinition {
-    children: ControlDefinition[];
-    compoundField: string | undefined;
-    groupOptions: GroupRenderOptions;
+  type: ControlDefinitionType.Group;
+  children: AnyControlDefinition[];
+  compoundField: string | undefined;
+  groupOptions: GroupRenderOptions;
 }
 
 export interface GroupRenderOptions {
-    type: GroupRenderType;
-    hideTitle: boolean;
+  type: GroupRenderType;
+  hideTitle: boolean;
 }
 
 export enum GroupRenderType {
-    Standard = "Standard",
-    Grid = "Grid",
-    GroupElement = "GroupElement",
+  Standard = "Standard",
+  Grid = "Grid",
+  GroupElement = "GroupElement",
 }
 
-export interface StandardGroupRenderer extends GroupRenderOptions {
-}
+export interface StandardGroupRenderer extends GroupRenderOptions {}
 
 export interface GroupElementRenderer extends GroupRenderOptions {
-    value: any;
+  value: any;
 }
 
 export interface GridRenderer extends GroupRenderOptions {
-    columns: number | undefined;
+  columns: number | undefined;
 }
 
 export interface DisplayControlDefinition extends ControlDefinition {
-    displayData: DisplayData;
+  type: ControlDefinitionType.Display;
+  displayData: DisplayData;
 }
 
 export interface DisplayData {
-    type: DisplayDataType;
+  type: DisplayDataType;
 }
 
 export enum DisplayDataType {
-    Text = "Text",
-    Html = "Html",
+  Text = "Text",
+  Html = "Html",
 }
 
 export interface TextDisplay extends DisplayData {
-    text: string;
+  text: string;
 }
 
 export interface HtmlDisplay extends DisplayData {
-    html: string;
+  html: string;
 }
 
 export interface ActionControlDefinition extends ControlDefinition {
-    actionId: string;
+  type: ControlDefinitionType.Action;
+  actionId: string;
 }

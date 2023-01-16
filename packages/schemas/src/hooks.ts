@@ -7,10 +7,10 @@ import {
   FieldOption,
   FieldValueExpression,
   ScalarField,
+  ControlDefinition,
 } from "./types";
 import {
   ActionControlProperties,
-  AnyControlDefinitions,
   controlForField,
   DataControlProperties,
   fieldForControl,
@@ -32,7 +32,7 @@ export function useDefaultValue(
   formState: FormEditState,
   useExpression: ExpressionHook
 ) {
-  const valueExpression = definition.dynamic.find(
+  const valueExpression = definition.dynamic?.find(
     (x) => x.type === DynamicPropertyType.DefaultValue
   );
   if (valueExpression) {
@@ -42,11 +42,11 @@ export function useDefaultValue(
 }
 
 export function useIsControlVisible(
-  definition: AnyControlDefinitions,
+  definition: ControlDefinition,
   formState: FormEditState,
   useExpression: ExpressionHook
 ) {
-  const visibleExpression = definition.dynamic.find(
+  const visibleExpression = definition.dynamic?.find(
     (x) => x.type === DynamicPropertyType.Visible
   );
   if (visibleExpression && visibleExpression.expr) {

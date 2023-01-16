@@ -18,7 +18,6 @@ describe("Optional data", () => {
     cy.get("pre").should(
       compareJson({
         firstName: "",
-        age: null,
         nullableStruct: null,
         nested: {},
       })

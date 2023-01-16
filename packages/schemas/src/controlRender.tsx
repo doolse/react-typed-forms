@@ -1,5 +1,6 @@
 import {
   ActionControlDefinition,
+  AnyControlDefinition,
   CompoundField,
   ControlDefinition,
   ControlDefinitionType,
@@ -19,12 +20,6 @@ import {
   newControl,
   useControlChangeEffect,
 } from "@react-typed-forms/core";
-
-export type AnyControlDefinitions =
-  | ControlDefinition
-  | DataControlDefinition
-  | GroupedControlsDefinition
-  | DisplayControlDefinition;
 
 export interface FormEditHooks {
   useDataProperties(
@@ -237,7 +232,7 @@ export function controlTitle(title: string | undefined, field: SchemaField) {
 }
 
 export function renderControl(
-  definition: AnyControlDefinitions,
+  definition: AnyControlDefinition,
   formState: FormEditState,
   hooks: FormEditHooks,
   key: Key,
@@ -393,7 +388,7 @@ function GroupRenderer({
         properties: groupProps,
         renderChild: (k, c, data, wrapChild) =>
           renderControl(
-            c as AnyControlDefinitions,
+            c,
             {
               ...formState,
               fields: compoundField!.children,
@@ -413,7 +408,7 @@ function GroupRenderer({
       properties: groupProps,
       renderChild: (c, wrapChild) =>
         renderControl(
-          groupDef.children[c] as AnyControlDefinitions,
+          groupDef.children[c],
           formState,
           groupProps.hooks,
           c,
@@ -455,7 +450,7 @@ export function controlForField(
   );
 }
 
-export function fieldForControl(c: AnyControlDefinitions) {
+export function fieldForControl(c: ControlDefinition) {
   return isSchemaControl(c)
     ? c.field
     : isGroupControl(c)
@@ -464,13 +459,13 @@ export function fieldForControl(c: AnyControlDefinitions) {
 }
 
 export function isSchemaControl(
-  c: AnyControlDefinitions
+  c: ControlDefinition
 ): c is DataControlDefinition {
   return c.type === ControlDefinitionType.Data;
 }
 
 export function isGroupControl(
-  c: AnyControlDefinitions
+  c: ControlDefinition
 ): c is GroupedControlsDefinition {
   return c.type === ControlDefinitionType.Group;
 }

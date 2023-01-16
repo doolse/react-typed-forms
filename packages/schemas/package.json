@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas",
-  "version": "3.0.0-dev.71",
+  "version": "3.0.0-dev.73",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -28,10 +28,10 @@
   },
   "devDependencies": {
     "@types/react": "^18.0.22",
+    "nswag": "^13.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rimraf": "^3.0.2",
-    "nswag": "^13.18.2"
+    "rimraf": "^3.0.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {

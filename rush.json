@@ -416,11 +416,13 @@
     },
     {
       "packageName": "@react-typed-forms/schemas",
-      "projectFolder": "packages/schemas"
+      "projectFolder": "packages/schemas",
+      "versionPolicyName": "publicRelease"
     },
     {
       "packageName": "@react-typed-forms/schemas-mui",
-      "projectFolder": "packages/schemas-mui"
+      "projectFolder": "packages/schemas-mui",
+      "versionPolicyName": "publicRelease"
     }
     // {
     //   /**
