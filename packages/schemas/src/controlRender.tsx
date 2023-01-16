@@ -47,7 +47,10 @@ export interface DataControlProperties {
   options: FieldOption[] | undefined;
   defaultValue: any;
   required: boolean;
-  customRender?: (props: DataRendererProps) => ReactElement;
+  customRender?: (
+    props: DataRendererProps,
+    control: Control<any>
+  ) => ReactElement;
 }
 
 export interface GroupControlProperties {
@@ -74,9 +77,18 @@ export interface FormEditState {
 }
 
 export interface FormRendererComponents {
-  renderData: (props: DataRendererProps) => ReactElement;
+  renderData: (
+    props: DataRendererProps,
+    control: Control<any>,
+    element: boolean,
+    renderers: FormRendererComponents
+  ) => ReactElement;
+  renderCompound: (
+    props: CompoundGroupRendererProps,
+    control: Control<any>,
+    renderers: FormRendererComponents
+  ) => ReactElement;
   renderGroup: (props: GroupRendererProps) => ReactElement;
-  renderCompound: (props: CompoundGroupRendererProps) => ReactElement;
   renderDisplay: (props: DisplayRendererProps) => ReactElement;
   renderAction: (props: ActionRendererProps) => ReactElement;
 }
@@ -107,7 +119,6 @@ export interface DataRendererProps {
   definition: DataControlDefinition;
   properties: DataControlProperties;
   field: ScalarField;
-  control: AnyControl;
   formEditState?: FormEditState;
 }
 
@@ -124,7 +135,6 @@ export interface GroupRendererProps {
 export interface CompoundGroupRendererProps {
   definition: GroupedControlsDefinition;
   field: CompoundField;
-  control: AnyControl;
   properties: GroupControlProperties;
   renderChild: (
     key: Key,
@@ -306,7 +316,7 @@ function DataRenderer({
   fieldData: ScalarField;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { renderData } = useFormRendererComponents();
+  const renderer = useFormRendererComponents();
   const props = hooks.useDataProperties(formState, controlDef, fieldData);
   const scalarControl =
     formState.data.fields[fieldData.field] ?? newControl(undefined);
@@ -327,11 +337,17 @@ function DataRenderer({
   const scalarProps: DataRendererProps = {
     formEditState: formState,
     field: fieldData,
-    control: scalarControl,
     definition: controlDef,
     properties: props,
   };
-  return wrapElem((props.customRender ?? renderData)(scalarProps));
+  return wrapElem(
+    (props.customRender ?? renderer.renderData)(
+      scalarProps,
+      scalarControl,
+      false,
+      renderer
+    )
+  );
 }
 
 function ActionRenderer({
@@ -370,7 +386,7 @@ function GroupRenderer({
   formState: FormEditState;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
-  const { renderCompound, renderGroup } = useFormRendererComponents();
+  const renderers = useFormRendererComponents();
 
   const groupProps = hooks.useGroupProperties(formState, groupDef, hooks);
   if (!groupProps.visible) {
@@ -381,28 +397,31 @@ function GroupRenderer({
     : undefined;
   if (compoundField) {
     return wrapElem(
-      renderCompound({
-        definition: groupDef,
-        field: compoundField,
-        control: formState.data.fields[compoundField.field],
-        properties: groupProps,
-        renderChild: (k, c, data, wrapChild) =>
-          renderControl(
-            c,
-            {
-              ...formState,
-              fields: compoundField!.children,
-              data,
-            },
-            groupProps.hooks,
-            k,
-            wrapChild
-          ),
-      })
+      renderers.renderCompound(
+        {
+          definition: groupDef,
+          field: compoundField,
+          properties: groupProps,
+          renderChild: (k, c, data, wrapChild) =>
+            renderControl(
+              c,
+              {
+                ...formState,
+                fields: compoundField!.children,
+                data,
+              },
+              groupProps.hooks,
+              k,
+              wrapChild
+            ),
+        },
+        formState.data.fields[compoundField.field],
+        renderers
+      )
     );
   }
   return wrapElem(
-    renderGroup({
+    renderers.renderGroup({
       definition: groupDef,
       childCount: groupDef.children.length,
       properties: groupProps,

@@ -56,19 +56,25 @@ import {
   FTextField,
 } from "@react-typed-forms/mui";
 
-function muiControlRenderer({
-  definition: { title: _title, required, renderOptions, adornments },
-  field,
-  properties,
-  control,
-  formEditState,
-}: DataRendererProps): ReactElement {
+function muiControlRenderer(
+  props: DataRendererProps,
+  control: Control<any>,
+  element: boolean,
+  renderer: FormRendererComponents
+): ReactElement {
+  const {
+    definition: { title: _title, required, renderOptions, adornments },
+    field,
+    properties,
+  } = props;
   const title = controlTitle(_title, field);
   const { options } = properties;
 
   return renderAdornments(
     adornments,
-    field.collection ? renderCollection(control.as()) : singleControl(control)
+    field.collection && !element
+      ? renderCollection(control.as())
+      : singleControl(control)
   );
 
   function renderCollection(control: Control<any[]>) {
@@ -81,7 +87,9 @@ function muiControlRenderer({
         return (
           <Repeater
             control={control}
-            renderControl={singleControl}
+            renderControl={(control) =>
+              renderer.renderData(props, control, true, renderer)
+            }
             onAdd={() => addElement(control, field.defaultValue)}
           />
         );
@@ -308,16 +316,18 @@ function muiGroupRenderer({
   );
 }
 
-function muiCompoundRenderer({
-  definition: {
-    title: _title,
-    children,
-    groupOptions: { hideTitle },
-  },
-  field,
-  control,
-  renderChild,
-}: CompoundGroupRendererProps): ReactElement {
+function muiCompoundRenderer(
+  {
+    definition: {
+      title: _title,
+      children,
+      groupOptions: { hideTitle },
+    },
+    field,
+    renderChild,
+  }: CompoundGroupRendererProps,
+  control: Control<any>
+): ReactElement {
   const title = controlTitle(_title, field);
   return field.collection
     ? renderCollection(control.as())
