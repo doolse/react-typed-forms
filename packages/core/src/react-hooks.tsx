@@ -497,8 +497,12 @@ export function useControlChangeEffect<V>(
   deps?: any[],
   runInitial?: boolean
 ) {
+  const changeCount = useRef(0);
   useControlEffect(
-    () => trackControlChange(control, mask ?? ControlChange.All),
+    () => {
+      trackControlChange(control, mask ?? ControlChange.All);
+      return changeCount.current++;
+    },
     () => changeEffect(control),
     runInitial
   );
