@@ -1,4 +1,4 @@
-import { Control, genericProps, RenderForm } from "@react-typed-forms/core";
+import { Control, RenderForm } from "@react-typed-forms/core";
 import { FormControl as FC, FormHelperText, FormLabel } from "@mui/material";
 import React, { ReactNode } from "react";
 
@@ -27,11 +27,7 @@ export function FCheckList<A>({
 }: FCheckListProps<A>) {
   const comp = compare ?? ((a: A, b: A) => a === b);
   function isSelected(v: A) {
-    return (
-      state.value.find((a) => {
-        comp(a, v);
-      }) != null
-    );
+    return state.current.value.find((a) => comp(a, v)) != null;
   }
   const checkProps: CheckPropsFunc<A> = (v: A) => {
     return {
