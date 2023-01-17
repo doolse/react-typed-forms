@@ -128,45 +128,6 @@ function muiControlRenderer(
           return optionRenderer(stringFC, options);
         }
         switch (renderOptions.type) {
-          // case DataRenderType.UserSelection:
-          //   return (
-          //     <UserSelectionRenderer
-          //       options={renderOptions as UserSelectionRenderOptions}
-          //       state={stringFC}
-          //       title={title}
-          //       required={required}
-          //     />
-          //   );
-          // case DataRenderType.IconSelector:
-          //   return (
-          //     <IconSelectorRenderer
-          //       state={stringFC}
-          //       title={title}
-          //       options={renderOptions as IconSelectionRenderOptions}
-          //       required={required}
-          //     />
-          //   );
-          // case DataRenderType.HtmlEditor:
-          //   const htmlOptions = renderOptions as HtmlEditorRenderOptions;
-          //   return (
-          //     <HtmlEditor
-          //       state={stringFC}
-          //       label={title}
-          //       description={title}
-          //       allowFullScreen
-          //     />
-          //   );
-          // case DataRenderType.Synchronised:
-          //   const syncOptions = renderOptions as SynchronisedRenderOptions;
-          //   return (
-          //     <SyncedFields
-          //       control={stringFC}
-          //       syncOptions={syncOptions}
-          //       title={title}
-          //       required={required}
-          //       formState={formEditState}
-          //     />
-          //   );
           default:
             return (
               <FTextField
