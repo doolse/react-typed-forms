@@ -36,7 +36,7 @@ export function FSelectAutocomplete({
               if (reason === "selectOption") {
                 state.value = newValue;
                 query.setValue(
-                  getOptionLabel?.(newValue) ?? newValue.toString()
+                  () => getOptionLabel?.(newValue) ?? newValue.toString()
                 );
               }
             }}
