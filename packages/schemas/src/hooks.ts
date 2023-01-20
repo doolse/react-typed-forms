@@ -78,13 +78,15 @@ export function getDefaultScalarControlProperties(
   control: DataControlDefinition,
   field: ScalarField,
   visible: boolean,
-  defaultValue: any
+  defaultValue: any,
+  readonly?: boolean
 ): DataControlProperties {
   return {
     defaultValue,
     options: getOptionsForScalarField(field),
-    required: control.required,
+    required: control.required ?? false,
     visible,
+    readonly: readonly ?? control.readonly ?? false,
   };
 }
 
@@ -133,7 +135,8 @@ export function createFormEditHooks(
         definition,
         field,
         visible,
-        defaultValue
+        defaultValue,
+        formState.readonly
       );
     },
     useDisplayProperties: (fs, definition) => {

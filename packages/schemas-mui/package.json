@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas-mui",
-  "version": "3.0.0-dev.76",
+  "version": "3.0.0-dev.77",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -39,7 +39,8 @@
     "nswag": "^13.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "typescript": "4.9.3"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {

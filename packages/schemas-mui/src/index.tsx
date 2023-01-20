@@ -17,7 +17,12 @@ import {
   TooltipAdornment,
   UserSelectionRenderOptions,
 } from "@react-typed-forms/schemas";
-import { addElement, AnyControl, Control } from "@react-typed-forms/core";
+import {
+  addElement,
+  AnyControl,
+  Control,
+  RenderControl,
+} from "@react-typed-forms/core";
 import React, { ReactElement } from "react";
 import {
   Accordion,
@@ -25,6 +30,7 @@ import {
   AccordionSummary,
   Button,
   Checkbox,
+  FormControl,
   FormControlLabel,
   Grid,
   Radio,
@@ -65,16 +71,19 @@ function muiControlRenderer(
   const {
     definition: { title: _title, required, renderOptions, adornments },
     field,
-    properties,
+    properties: { options, readonly },
   } = props;
   const title = controlTitle(_title, field);
-  const { options } = properties;
 
   return renderAdornments(
     adornments,
-    field.collection && !element
-      ? renderCollection(control.as())
-      : singleControl(control)
+    field.collection && !element ? (
+      renderCollection(control.as())
+    ) : readonly ? (
+      <RenderControl children={() => readonlyControl(control)} />
+    ) : (
+      singleControl(control)
+    )
   );
 
   function renderCollection(control: Control<any[]>) {
@@ -94,6 +103,17 @@ function muiControlRenderer(
           />
         );
     }
+  }
+
+  function readonlyControl(control: AnyControl) {
+    const value = control.value;
+    const text = options?.find((x) => x.value === value)?.name ?? value;
+    return (
+      <div>
+        <Typography variant="subtitle2">{title}</Typography>
+        <Typography variant="body2">{text}</Typography>
+      </div>
+    );
   }
 
   function singleControl(control: AnyControl) {

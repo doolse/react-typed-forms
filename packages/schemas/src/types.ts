@@ -126,10 +126,10 @@ export interface AccordionAdornment extends ControlAdornment {
 export interface DataControlDefinition extends ControlDefinition {
   type: ControlDefinitionType.Data;
   field: string;
-  required: boolean;
+  required?: boolean;
   renderOptions: RenderOptions;
   defaultValue?: any;
-  noEdit: boolean;
+  readonly?: boolean;
 }
 
 export interface RenderOptions {

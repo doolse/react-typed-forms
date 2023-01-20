@@ -43,6 +43,7 @@ export interface FormEditHooks {
 }
 
 export interface DataControlProperties {
+  readonly: boolean;
   visible: boolean;
   options: FieldOption[] | undefined;
   defaultValue: any;
@@ -74,6 +75,7 @@ export interface ControlData {
 export interface FormEditState {
   fields: SchemaField[];
   data: Control<ControlData>;
+  readonly?: boolean;
 }
 
 export interface FormRendererComponents {
