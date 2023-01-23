@@ -5,7 +5,6 @@ import React, {
   MutableRefObject,
   ReactElement,
   ReactNode,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -18,6 +17,7 @@ import {
   newControl,
   newElement,
   setFields,
+  basicShallowEquals,
   trackControlChange,
   updateElements,
   ValueAndDeps,
@@ -106,7 +106,7 @@ function adjustListeners<V>(
       attachListeners(c.listener, deps);
     }
     c.value = computed;
-    return [res !== oldRes, depsChanged];
+    return [!basicShallowEquals(res, oldRes), depsChanged];
   } else {
     const listener = makeAfterChangeListener(changeListener);
     attachListeners(listener, deps);

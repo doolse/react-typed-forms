@@ -977,7 +977,7 @@ export function updateElements<V>(
   const c = control as unknown as ControlImpl<V[]>;
   const e = control.elements;
   const newElems = cb(e);
-  if (!shallowArrayEquals(e, newElems)) {
+  if (!basicShallowEquals(e, newElems)) {
     ensureArrayAttachment(c, newElems, e);
     c._elems = newElems;
     c._childSync |=
@@ -1230,6 +1230,30 @@ class ControlStateImpl<V> implements ControlState<V> {
   }
 }
 
-function shallowArrayEquals<V>(a: V[], b: V[]): boolean {
-  return a === b || (a.length === b.length && a.every((x, i) => x === b[i]));
+export function basicShallowEquals(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a && b && typeof a == "object" && typeof b == "object") {
+    if (a.constructor !== b.constructor) return false;
+
+    let length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- !== 0; ) if (a[i] !== b[i]) return false;
+      return true;
+    }
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+
+    for (i = length; i-- !== 0; )
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+
+    for (i = length; i-- !== 0; ) {
+      let key = keys[i];
+      if (a[key] !== b[key]) return false;
+    }
+    return true;
+  }
+  return a !== a && b !== b;
 }
