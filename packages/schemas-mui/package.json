@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas-mui",
-  "version": "3.0.0-dev.78",
+  "version": "3.0.0-dev.79",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

@@ -299,11 +299,7 @@ function muiGroupRenderer({
 
 function muiCompoundRenderer(
   {
-    definition: {
-      title: _title,
-      children,
-      groupOptions: { hideTitle },
-    },
+    definition: { title: _title, children, groupOptions },
     field,
     renderChild,
   }: CompoundGroupRendererProps,
@@ -326,8 +322,16 @@ function muiCompoundRenderer(
   }
 
   function renderGroup(data: Control<ControlData>) {
-    return renderGrid(title, hideTitle, children.length, (x, wc) =>
-      renderChild(x, children[x], data, wc)
+    const gridOptions =
+      groupOptions.type === GroupRenderType.Grid
+        ? (groupOptions as GridRenderer)
+        : undefined;
+    return renderGrid(
+      title,
+      groupOptions.hideTitle,
+      children.length,
+      (x, wc) => renderChild(x, children[x], data, wc),
+      gridOptions?.columns
     );
   }
 }
