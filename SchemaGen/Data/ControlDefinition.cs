@@ -67,7 +67,8 @@ public enum DataRenderType
     [Display(Name = "Check list")] CheckList,
     [Display(Name = "User Selection")] UserSelection,
     [Display(Name = "Synchronised Fields")] Synchronised,
-    [Display(Name = "Icon Selection")] IconSelector
+    [Display(Name = "Icon Selection")] IconSelector,
+    [Display(Name = "Date/Time")] DateTime
 }
 
 [JsonConverter(typeof(JsonInheritanceConverter), "type")]
@@ -79,6 +80,7 @@ public enum DataRenderType
 [JsonInheritance("Synchronised", typeof(SynchronisedRenderOptions))]
 [JsonInheritance("UserSelection", typeof(UserSelectionRenderOptions))]
 [JsonInheritance("IconSelector", typeof(IconSelectionRenderOptions))]
+[JsonInheritance("DateTime", typeof(DateTimeRenderOptions))]
 public abstract record RenderOptions([property: DefaultValue("Standard")] DataRenderType Type);
 
 public record StandardRenderer() : RenderOptions(DataRenderType.Standard);
@@ -88,6 +90,8 @@ public record UserSelectionRenderOptions(bool NoGroups, bool NoUsers) : RenderOp
 public record RadioButtonRenderOptions() : RenderOptions(DataRenderType.Radio);
 
 public record IconSelectionRenderOptions() : RenderOptions(DataRenderType.IconSelector);
+
+public record DateTimeRenderOptions(string? Format) : RenderOptions(DataRenderType.DateTime);
 
 public record CheckListRenderOptions() : RenderOptions(DataRenderType.CheckList);
 

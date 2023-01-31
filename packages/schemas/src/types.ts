@@ -145,6 +145,8 @@ export enum DataRenderType {
   UserSelection = "UserSelection",
   Synchronised = "Synchronised",
   IconSelector = "IconSelector",
+  
+  DateTime = "DateTime"
 }
 
 export interface RadioButtonRenderOptions extends RenderOptions {}
@@ -153,6 +155,10 @@ export interface StandardRenderer extends RenderOptions {}
 
 export interface HtmlEditorRenderOptions extends RenderOptions {
   allowImages: boolean;
+}
+
+export interface DateTimeRenderOptions extends RenderOptions {
+  format?: string;
 }
 
 export interface IconListRenderOptions extends RenderOptions {
@@ -165,6 +171,7 @@ export interface IconMapping {
 }
 
 export interface CheckListRenderOptions extends RenderOptions {}
+
 
 export interface SynchronisedRenderOptions extends RenderOptions {
   fieldToSync: string;

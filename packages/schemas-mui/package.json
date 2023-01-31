@@ -26,7 +26,8 @@
   "dependencies": {
     "@react-typed-forms/core": "workspace:*",
     "@react-typed-forms/mui": "workspace:*",
-    "@react-typed-forms/schemas": "workspace:*"
+    "@react-typed-forms/schemas": "workspace:*",
+    "date-fns": "^2.29.3"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5",
