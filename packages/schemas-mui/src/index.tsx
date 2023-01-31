@@ -15,7 +15,7 @@ import {
   SynchronisedRenderOptions,
   TextDisplay,
   TooltipAdornment,
-  UserSelectionRenderOptions,
+  UserSelectionRenderOptions, DateTimeRenderOptions,
 } from "@react-typed-forms/schemas";
 import {
   addElement,
@@ -61,6 +61,7 @@ import {
   FSelect,
   FTextField,
 } from "@react-typed-forms/mui";
+import {format, parseISO} from "date-fns";
 
 function muiControlRenderer(
   props: DataRendererProps,
@@ -108,12 +109,23 @@ function muiControlRenderer(
   function readonlyControl(control: AnyControl) {
     const value = control.value;
     const text = options?.find((x) => x.value === value)?.name ?? value;
-    return (
-      <div>
-        <Typography variant="subtitle2">{title}</Typography>
-        <Typography variant="body2">{text}</Typography>
-      </div>
-    );
+    switch (field.type) {
+      case FieldType.DateTime:
+        const dateTimeOptions = renderOptions as DateTimeRenderOptions;
+        return (
+            <div>
+              <Typography variant="subtitle2">{title}</Typography>
+              <Typography variant="body2">{format(parseISO(text), dateTimeOptions.format ?? "dd/MM/yyyy")}</Typography>
+            </div>)
+      default:
+        return (
+            <div>
+              <Typography variant="subtitle2">{title}</Typography>
+              <Typography variant="body2">{text}</Typography>
+            </div>
+        );
+    }
+    
   }
 
   function singleControl(control: AnyControl) {
