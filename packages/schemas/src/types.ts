@@ -7,6 +7,7 @@ export interface SchemaField {
   system: boolean;
   collection: boolean;
   onlyForTypes: string[];
+  required: boolean;
 }
 
 export enum SchemaFieldType {
@@ -29,7 +30,6 @@ export enum FieldType {
 
 export interface ScalarField extends SchemaField {
   entityRefType: string;
-  required: boolean;
   parentField: string;
   searchable: boolean;
   defaultValue: any;
@@ -52,7 +52,6 @@ export interface CompoundField extends SchemaField {
 }
 
 export type AnyControlDefinition =
-  | ControlDefinition
   | DataControlDefinition
   | GroupedControlsDefinition
   | ActionControlDefinition
@@ -145,8 +144,8 @@ export enum DataRenderType {
   UserSelection = "UserSelection",
   Synchronised = "Synchronised",
   IconSelector = "IconSelector",
-  
-  DateTime = "DateTime"
+
+  DateTime = "DateTime",
 }
 
 export interface RadioButtonRenderOptions extends RenderOptions {}
@@ -172,7 +171,6 @@ export interface IconMapping {
 
 export interface CheckListRenderOptions extends RenderOptions {}
 
-
 export interface SynchronisedRenderOptions extends RenderOptions {
   fieldToSync: string;
   syncType: SyncTextType;
@@ -194,13 +192,13 @@ export interface IconSelectionRenderOptions extends RenderOptions {}
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
   children: AnyControlDefinition[];
-  compoundField: string | undefined;
+  compoundField?: string;
   groupOptions: GroupRenderOptions;
 }
 
 export interface GroupRenderOptions {
   type: GroupRenderType;
-  hideTitle: boolean;
+  hideTitle?: boolean;
 }
 
 export enum GroupRenderType {

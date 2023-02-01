@@ -175,7 +175,7 @@ export function applyDefaultValues(
     out[x.field] =
       x.field in v
         ? applyDefaultForField(v[x.field], x, fields)
-        : defaultValueForField(x, true);
+        : defaultValueForField(x);
   });
   return out;
 }
@@ -192,22 +192,31 @@ export function applyDefaultForField(
     );
   }
   if (isCompoundField(field)) {
+    if (!v && !field.required) return v;
     return applyDefaultValues(v, field.treeChildren ? parent : field.children);
   }
-  return defaultValueForField(field, true);
+  return defaultValueForField(field);
 }
 
 export function defaultValueForFields(fields: SchemaField[]): any {
   return Object.fromEntries(
-    fields.map((x) => [x.field, defaultValueForField(x, true)])
+    fields.map((x) => [x.field, defaultValueForField(x)])
   );
 }
 
-export function defaultValueForField(
-  sf: SchemaField,
-  notElement?: boolean
-): any {
-  if (notElement && sf.collection) return [];
+export function defaultValueForField(sf: SchemaField): any {
+  if (isCompoundField(sf)) {
+    return sf.required
+      ? sf.collection
+        ? []
+        : defaultValueForFields(sf.children)
+      : undefined;
+  }
+  if (sf.collection) return [];
+  return (sf as ScalarField).defaultValue;
+}
+
+export function elementValueForField(sf: SchemaField): any {
   if (isCompoundField(sf)) {
     return defaultValueForFields(sf.children);
   }
@@ -297,7 +306,7 @@ export function renderControl(
         />
       );
     default:
-      return <h1>Unknown control: {definition.type}</h1>;
+      return <h1>Unknown control: {(definition as any).type}</h1>;
   }
 
   function wrapElem(e: ReactElement): ReactElement {
@@ -406,7 +415,7 @@ function GroupRenderer({
           properties: groupProps,
           renderChild: (k, c, data, wrapChild) =>
             renderControl(
-              c,
+              c as AnyControlDefinition,
               {
                 ...formState,
                 fields: compoundField!.children,

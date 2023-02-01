@@ -15,7 +15,9 @@ import {
   SynchronisedRenderOptions,
   TextDisplay,
   TooltipAdornment,
-  UserSelectionRenderOptions, DateTimeRenderOptions,
+  UserSelectionRenderOptions,
+  DateTimeRenderOptions,
+  elementValueForField,
 } from "@react-typed-forms/schemas";
 import {
   addElement,
@@ -61,7 +63,7 @@ import {
   FSelect,
   FTextField,
 } from "@react-typed-forms/mui";
-import {format, parseISO} from "date-fns";
+import { format, parseISO } from "date-fns";
 
 function muiControlRenderer(
   props: DataRendererProps,
@@ -113,19 +115,21 @@ function muiControlRenderer(
       case FieldType.DateTime:
         const dateTimeOptions = renderOptions as DateTimeRenderOptions;
         return (
-            <div>
-              <Typography variant="subtitle2">{title}</Typography>
-              <Typography variant="body2">{format(parseISO(text), dateTimeOptions.format ?? "dd/MM/yyyy")}</Typography>
-            </div>)
+          <div>
+            <Typography variant="subtitle2">{title}</Typography>
+            <Typography variant="body2">
+              {format(parseISO(text), dateTimeOptions.format ?? "dd/MM/yyyy")}
+            </Typography>
+          </div>
+        );
       default:
         return (
-            <div>
-              <Typography variant="subtitle2">{title}</Typography>
-              <Typography variant="body2">{text}</Typography>
-            </div>
+          <div>
+            <Typography variant="subtitle2">{title}</Typography>
+            <Typography variant="body2">{text}</Typography>
+          </div>
         );
     }
-    
   }
 
   function singleControl(control: AnyControl) {
@@ -260,7 +264,7 @@ function RenderChecklist({
 
 function renderGrid(
   title: string | undefined,
-  hideTitle: boolean,
+  hideTitle: boolean | undefined,
   childrenCount: number,
   renderChild: (
     c: number,
@@ -328,7 +332,7 @@ function muiCompoundRenderer(
         control={control}
         renderControl={renderGroup}
         buttonTitle={`Add ${title}`}
-        onAdd={() => addElement(control, defaultValueForField(field))}
+        onAdd={() => addElement(control, elementValueForField(field))}
       />
     );
   }

@@ -17,6 +17,7 @@ import {
   findField,
   FormEditHooks,
   FormEditState,
+  isGroupControl,
   isScalarField,
 } from "./controlRender";
 import { useMemo } from "react";
@@ -54,26 +55,34 @@ export function useIsControlVisible(
   }
   const schemaFields = formState.fields;
 
-  const typeControl = useMemo(() => {
+  const { typeControl, compoundField } = useMemo(() => {
     const typeField = schemaFields.find(
       (x) => isScalarField(x) && x.isTypeField
     ) as ScalarField | undefined;
-    return ((typeField && formState.data.fields?.[typeField.field]) ??
+
+    const typeControl = ((typeField &&
+      formState.data.fields?.[typeField.field]) ??
       newControl(undefined)) as Control<string | undefined>;
+    const compoundField =
+      isGroupControl(definition) && definition.compoundField
+        ? formState.data.fields[definition.compoundField]
+        : undefined;
+    return { typeControl, compoundField };
   }, [schemaFields, formState.data]);
 
   const fieldName = fieldForControl(definition);
   const onlyForTypes = (
     fieldName ? findField(schemaFields, fieldName) : undefined
   )?.onlyForTypes;
+
   return useControlValue(
     () =>
-      !onlyForTypes ||
-      onlyForTypes.length === 0 ||
-      Boolean(typeControl.value && onlyForTypes.includes(typeControl.value))
+      (!compoundField || compoundField.value != null) &&
+      (!onlyForTypes ||
+        onlyForTypes.length === 0 ||
+        Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)))
   );
 }
-
 export function getDefaultScalarControlProperties(
   control: DataControlDefinition,
   field: ScalarField,

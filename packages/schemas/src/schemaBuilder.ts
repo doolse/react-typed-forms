@@ -162,5 +162,6 @@ export function defaultCompoundField(
     treeChildren: false,
     children: [],
     onlyForTypes: [],
+    required: true,
   };
 }
