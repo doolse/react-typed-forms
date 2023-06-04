@@ -1,22 +1,25 @@
 import {
-  control,
-  ControlType,
+  ControlSetup,
   Finput,
-  groupControl,
+  notEmpty,
   RenderControl,
-  ValueTypeForControl,
+  useControl,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 
-const FormDef = groupControl({
-  firstName: "",
-  lastName: control("", (v) => (!v ? "Required field" : undefined)),
-});
+interface SimpleForm {
+  firstName: string;
+  lastName: string;
+}
 
-type SimpleForm = ValueTypeForControl<ControlType<typeof FormDef>>;
+const initialForm: SimpleForm = { firstName: "", lastName: "" };
+
+const formSetup: ControlSetup<SimpleForm> = {
+  fields: { lastName: { validator: notEmpty("Required field") } },
+};
 
 export default function SimpleExample() {
-  const [formState] = useState(FormDef);
+  const formState = useControl<SimpleForm>(initialForm, formSetup);
   const fields = formState.fields;
 
   return (
@@ -28,7 +31,7 @@ export default function SimpleExample() {
 }
 
 function AnotherExample() {
-  const [formState] = useState(FormDef);
+  const formState = useControl(initialForm, formSetup);
   // ...render form...
   return (
     <RenderControl>

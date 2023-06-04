@@ -1,9 +1,9 @@
 import {
+  Control,
   ensureSelectableValues,
   Fcheckbox,
   Finput,
   FormArray,
-  FormControl,
   notEmpty,
   removeElement,
   RenderControl,
@@ -135,7 +135,7 @@ function StructuredRow({
   index,
   onDelete,
 }: {
-  state: FormControl<SelectionGroup<RowForm>>;
+  state: Control<SelectionGroup<RowForm>>;
   index: number;
   onDelete: () => void;
 }) {

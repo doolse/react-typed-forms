@@ -669,53 +669,6 @@ class ControlImpl<V> implements Control<V> {
   as<NV extends V>(): Control<NV> {
     return this as unknown as Control<NV>;
   }
-
-  // subGroup<OUT extends { [k: string]: Control<any> }>(
-  //   select: (fields: FormControlFields<V, M>) => OUT
-  // ): Control<{ [K in keyof OUT]: ControlValue<OUT[K]> }> {
-  //   return controlGroup(select(this.fields!)).as();
-  // }
-
-  isNotNull(): this is Control<NonNullable<V>> {
-    collectChange(this, ControlChange.Structure);
-    return this._value != null;
-  }
-
-  isCurrentlyNotNull(): boolean {
-    return this._value != null;
-  }
-}
-
-export type ControlDefType<T> = T extends () => Control<infer V> ? V : T;
-
-/**
- * Define a form control containing values of type V
- * @deprecated Use useControl() instead.
- * @param value Initial value for control
- * @param validator An optional synchronous validator
- * @param equals An optional equality function
- */
-export function control<V>(
-  value: V,
-  validator?: ((v: V) => string | undefined) | null,
-  equals?: (a: V, b: V) => boolean
-): () => Control<V> {
-  return () => newControl(value, { validator, equals });
-}
-
-/**
- * @deprecated Use useControl() instead
- */
-export function arrayControl<CHILD>(
-  child: CHILD
-): () => Control<(CHILD extends () => Control<infer V> ? V : CHILD)[]> {
-  return () => {
-    const create =
-      typeof child === "function"
-        ? (v: any, iv: any) => child().setValueAndInitial(v, iv)
-        : undefined;
-    return newControl<any[]>([], { elems: { create } });
-  };
 }
 
 function initialValidation<V, M>(
@@ -770,52 +723,6 @@ export function newControl<V>(
     valid ? ControlFlags.Valid : 0,
     realSetup
   );
-}
-
-/**
- * @deprecated Use useControl() instead
- * @param children
- */
-export function groupControl<DEF extends { [t: string]: any }>(
-  children: DEF
-): () => Control<{
-  [K in keyof DEF]: ControlDefType<DEF[K]>;
-}> {
-  return () => {
-    const v = children as {
-      [K in keyof DEF]: ControlDefType<DEF[K]>;
-    };
-    const fields = Object.entries(children)
-      .filter((x) => typeof x[1] === "function")
-      .map((x) => [x[0], x[1]()]);
-    return new ControlImpl(
-      v,
-      v,
-      undefined,
-      ControlFlags.Valid,
-      {},
-      Object.fromEntries(fields),
-      ChildSyncFlags.InitialValue |
-        ChildSyncFlags.Value |
-        ChildSyncFlags.Valid |
-        ChildSyncFlags.Dirty
-    );
-  };
-}
-
-/**
- * @deprecated Use withElems() instead
- * Create a form group function which only accepts
- * valid definitions that will produce values of given type T.
- */
-export function buildGroup<T>(): <
-  DEF extends { [K in keyof T]: T[K] | (() => Control<T[K]>) }
->(
-  children: DEF
-) => () => Control<{
-  [K in keyof T]: ControlDefType<T[K]>;
-}> {
-  return groupControl as any;
 }
 
 function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
@@ -882,60 +789,7 @@ export function notEmpty<V>(msg: string): (v: V) => string | undefined {
   return (v: V) => (!v ? msg : undefined);
 }
 
-/**
- * @deprecated Use ControlValue instead
- */
-export type ControlValueTypeOut<C> = C extends Control<infer V> ? V : never;
-
-/**
- * @deprecated Use ControlValue instead
- */
-export type ValueTypeForControl<C> = ControlValue<C>;
-
-/**
- * @deprecated Use Control instead
- */
-export type GroupControl<C> = 0 extends 1 & C
-  ? Control<{}>
-  : Control<{
-      [K in keyof C]: ControlValue<C[K]>;
-    }>;
-
-/**
- * @deprecated Use FormControl instead
- */
-export type GroupControlFields<C> = C extends Control<infer V>
-  ? { [K in keyof V]: Control<V[K]> }
-  : never;
-
-/**
- * @deprecated Use Control instead
- */
-export type FormControl<V> = Control<V>;
-
 export type AnyControl = Control<any>;
-
-/**
- * @deprecated Use AnyControl instead
- */
-export type BaseControl = Control<any>;
-
-/**
- * @deprecated Use Control instead
- */
-export type ControlType<T> = T extends () => Control<infer V>
-  ? Control<V>
-  : never;
-
-/**
- * @deprecated Use Control instead. E.g. ArrayControl<FormControl<number> becomes Control<number[]>
- */
-export type ArrayControl<C> = Control<ControlValue<C>[]>;
-
-/**
- * @deprecated Use Control instead
- */
-export type ParentControl<V> = Control<V>;
 
 function createArrayChildren<V>(
   valArr: V[],

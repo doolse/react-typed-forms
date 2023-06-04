@@ -63,11 +63,6 @@ export interface Control<V>
     ? never[]
     : V;
 
-  /**
-   * @deprecated Use optional
-   */
-  isNotNull(): this is Control<NonNullable<V>>;
-
   addChangeListener(
     listener: ChangeListenerFunc<V>,
     mask?: ControlChange

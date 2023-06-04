@@ -11,29 +11,26 @@ npm install @react-typed-forms/core
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=../examples/src/pages/simple.tsx) -->
 <!-- The below code snippet is automatically added from ../examples/src/pages/simple.tsx -->
 ```tsx
-import { Finput, buildGroup, control } from "@react-typed-forms/core";
-import { useState } from "react";
-import React from "react";
+import { Finput, notEmpty, useControl } from "@react-typed-forms/core";
+import React, { useState } from "react";
 
 interface SimpleForm {
   firstName: string;
   lastName: string;
 }
 
-const FormDef = buildGroup<SimpleForm>()({
-  firstName: "",
-  lastName: control("", (v) => (!v ? "Required field" : undefined)),
-});
-
 export default function SimpleExample() {
-  const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const formState = useControl(
+    { firstName: "", lastName: "" },
+    { fields: { lastName: { validator: notEmpty("Required field") } } }
+  );
+  const fields = formState.fields;
   const [formData, setFormData] = useState<SimpleForm>();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        setFormData(formState.toObject());
+        setFormData(formState.current.value);
       }}
     >
       <label>First Name</label>

@@ -26,29 +26,26 @@ npm install @react-typed-forms/core
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/pages/simple.tsx) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
 ```tsx
-import { Finput, buildGroup, control } from "@react-typed-forms/core";
-import { useState } from "react";
-import React from "react";
+import { Finput, notEmpty, useControl } from "@react-typed-forms/core";
+import React, { useState } from "react";
 
 interface SimpleForm {
   firstName: string;
   lastName: string;
 }
 
-const FormDef = buildGroup<SimpleForm>()({
-  firstName: "",
-  lastName: control("", (v) => (!v ? "Required field" : undefined)),
-});
-
 export default function SimpleExample() {
-  const [formState] = useState(FormDef);
-  const { fields } = formState;
+  const formState = useControl(
+    { firstName: "", lastName: "" },
+    { fields: { lastName: { validator: notEmpty("Required field") } } }
+  );
+  const fields = formState.fields;
   const [formData, setFormData] = useState<SimpleForm>();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        setFormData(formState.toObject());
+        setFormData(formState.current.value);
       }}
     >
       <label>First Name</label>
@@ -76,15 +73,16 @@ The function `buildGroup<T>()` can be used to create a definition that matches t
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/pages/simple.tsx&lines=5-14) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
 ```tsx
-interface SimpleForm {
   firstName: string;
   lastName: string;
 }
 
-const FormDef = buildGroup<SimpleForm>()({
-  firstName: "",
-  lastName: control("", (v) => (!v ? "Required field" : undefined)),
-});
+export default function SimpleExample() {
+  const formState = useControl(
+    { firstName: "", lastName: "" },
+    { fields: { lastName: { validator: notEmpty("Required field") } } }
+  );
+  const fields = formState.fields;
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -95,12 +93,13 @@ Instead of starting with a datatype and checking the form structure, you can als
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=12-18) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/examples.tsx -->
 ```tsx
-const FormDef = groupControl({
   firstName: "",
   lastName: control("", (v) => (!v ? "Required field" : undefined)),
 });
 
 type SimpleForm = ValueTypeForControl<ControlType<typeof FormDef>>;
+
+export default function SimpleExample() {
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -111,7 +110,7 @@ With the form defined you need to initialise it within your component by using t
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/pages/simple.tsx&lines=16-16) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
 ```tsx
-  const [formState] = useState(FormDef);
+  return (
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -122,12 +121,12 @@ The core library contains an `<input>` renderer for `FormControl` called `Finput
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/examples.tsx&lines=23-28) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/examples.tsx -->
 ```tsx
-  return (
     <div>
-      <Finput type="text" state={formState.fields.firstName} />
-      <Finput type="text" state={formState.fields.lastName} />
+      <Finput type="text" state={fields.firstName} />
+      <Finput type="text" state={fields.lastName} />
     </div>
   );
+}
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -146,33 +145,30 @@ Let's take a possible implementation `Finput` implementation which uses both:
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/Finput.tsx&lines=8-100) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/Finput.tsx -->
 ```tsx
-// Only allow strings and numbers
-export type FinputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  state: FormControl<string | number>;
-};
+  };
 
-export function Finput({ state, ...others }: FinputProps) {
-  // Re-render on value or disabled state change
-  useControlStateVersion(state, ControlChange.Value | ControlChange.Disabled);
-
+export function Finput<V extends string | number>({
+  state,
+  ...others
+}: FinputProps<V>) {
   // Update the HTML5 custom validity whenever the error message is changed/cleared
-  useControlChangeEffect(
-    state,
-    (s) =>
-      (state.element as HTMLInputElement)?.setCustomValidity(state.error ?? ""),
-    ControlChange.Error
+  useControlEffect(
+    () => state.error,
+    (s) => (state.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
   return (
-    <input
-      ref={(r) => {
-        state.element = r;
-        if (r) r.setCustomValidity(state.error ?? "");
-      }}
-      value={state.value}
-      disabled={state.disabled}
-      onChange={(e) => state.setValue(e.currentTarget.value)}
-      onBlur={() => state.setTouched(true)}
-      {...others}
+    <RenderForm
+      control={state}
+      children={({ errorText, ...theseProps }) => (
+        <input
+          {...theseProps}
+          ref={(r) => {
+            state.element = r;
+            if (r) r.setCustomValidity(state.error ?? "");
+          }}
+          {...others}
+        />
+      )}
     />
   );
 }
@@ -192,8 +188,7 @@ If you need to re-render part of a component based on the value of a `FormCompon
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/useControlValue.tsx&lines=4-100) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/useControlValue.tsx -->
 ```tsx
-function UseControlValueComponent() {
-  const [titleField] = useState(control(""));
+  const titleField = useControl("");
   const title = useControlValue(titleField);
   return (
     <div>

@@ -24,10 +24,12 @@ importers:
   ../../packages/core:
     specifiers:
       '@types/react': ^18.0.22
+      markdown-magic: ^2.6.1
       rimraf: ^3.0.2
       typescript: 4.9.3
     devDependencies:
       '@types/react': 18.0.22
+      markdown-magic: 2.6.1
       rimraf: 3.0.2
       typescript: 4.9.3
 
@@ -815,6 +817,17 @@ packages:
       '@technote-space/anchor-markdown-header': 1.1.36
       '@textlint/markdown-to-ast': 12.1.1
       htmlparser2: 7.2.0
+      update-section: 0.3.3
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /@technote-space/doctoc/2.4.7:
+    resolution: {integrity: sha512-F4oyUpf2e29p3tNH0oTW0a3eOgd3wek2vz1urNalSKCFY8U0hzkFqwU+89rmXGLzzz8WMcLtEXb90CCgqnDQqQ==}
+    dependencies:
+      '@technote-space/anchor-markdown-header': 1.1.36
+      '@textlint/markdown-to-ast': 12.1.1
+      htmlparser2: 6.1.0
       update-section: 0.3.3
     transitivePeerDependencies:
       - supports-color
@@ -1967,6 +1980,15 @@ packages:
       react-is: 16.13.1
     dev: false
 
+  /htmlparser2/6.1.0:
+    resolution: {integrity: sha512-gyyPk6rgonLFEDGoeRgQNaEUvdJ4ktTmmUh/h2t7s+M8oPpIPxgNACWa+6ESR57kXstwqPiCut0V8NRpcwgU7A==}
+    dependencies:
+      domelementtype: 2.3.0
+      domhandler: 4.3.1
+      domutils: 2.8.0
+      entities: 2.2.0
+    dev: true
+
   /htmlparser2/7.2.0:
     resolution: {integrity: sha512-H7MImA4MS6cw7nbyURtLPO1Tms7C5H602LRETv95z1MxO/7CP7rDVROehUYeYBUYEON94NXXDEPmZuq+hX4sog==}
     dependencies:
@@ -2354,6 +2376,23 @@ packages:
     hasBin: true
     dependencies:
       '@technote-space/doctoc': 2.4.23
+      commander: 7.2.0
+      deepmerge: 4.2.2
+      find-up: 5.0.0
+      globby: 10.0.2
+      is-local-path: 0.1.6
+      json-alexander: 0.1.8
+      mkdirp: 1.0.4
+      sync-request: 6.1.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /markdown-magic/2.6.1:
+    resolution: {integrity: sha512-i+wPC9bAGzFVftF1P5ItooOCvX+TTD3v504WpupsJz+3B0wRZMuPxeFAE7uZXEZYjsiQYskoMgpypoJTWerpVA==}
+    hasBin: true
+    dependencies:
+      '@technote-space/doctoc': 2.4.7
       commander: 7.2.0
       deepmerge: 4.2.2
       find-up: 5.0.0

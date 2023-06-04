@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "rimraf ./lib/ && tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "update-readme": "md-magic --path README.md --path ../../README.md"
   },
   "repository": {
     "type": "git",
@@ -40,7 +41,8 @@
   "devDependencies": {
     "typescript": "4.9.3",
     "@types/react": "^18.0.22",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "markdown-magic": "^2.6.1"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6"
 }

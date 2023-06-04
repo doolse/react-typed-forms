@@ -1,11 +1,9 @@
 import {
   addElement,
-  arrayControl,
-  buildGroup,
-  control,
   FormArray,
-  groupControl,
+  notEmpty,
   useAsyncValidator,
+  useControl,
   useControlValue,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
@@ -21,22 +19,26 @@ type ValidationForm = {
 const emailRegExp =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
-const FormDef = buildGroup<ValidationForm>()({
-  email: control("", (v) =>
-    !emailRegExp.test(v) ? "Invalid email address" : ""
-  ),
-  async: control("", null),
-  array: arrayControl(
-    groupControl({ notBlank: control("", (v) => (!v ? "Blank" : undefined)) })
-  ),
-});
-
 export default function ValidationExample() {
   const renders = useControlValue<number>((p) => (p ?? 0) + 1);
 
   const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
-  const [formState] = useState(FormDef);
+  const formState = useControl<ValidationForm>(
+    { email: "", async: "", array: [] },
+    {
+      fields: {
+        email: {
+          validator: (v) =>
+            !emailRegExp.test(v) ? "Invalid email address" : "",
+        },
+        async: { validator: null },
+        array: {
+          elems: { fields: { notBlank: { validator: notEmpty("Blank") } } },
+        },
+      },
+    }
+  );
   const fields = formState.fields;
   const valid = useControlValue(() => formState.valid);
 

@@ -25,6 +25,13 @@
       "shellCommand": "rm -rf docs && cd packages/examples && rushx build && rushx export && mv out ../../docs && touch ../../docs/.nojekyll"
     },
     {
+      "commandKind": "bulk",
+      "name": "update-readme",
+      "summary": "Update the readme files",
+      enableParallelism: true,
+      "ignoreMissingScript": true
+    },
+    {
       "commandKind": "global",
       "name": "start",
       "summary": "Start the docs/test site",

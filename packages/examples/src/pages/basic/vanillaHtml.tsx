@@ -1,9 +1,8 @@
 import {
-  buildGroup,
-  control,
   Fcheckbox,
   Finput,
   Fselect,
+  useControl,
 } from "@react-typed-forms/core";
 import React, { useRef, useState } from "react";
 
@@ -13,14 +12,12 @@ interface SimpleForm {
   select: number | undefined;
 }
 
-const FormDef = buildGroup<SimpleForm>()({
-  select: undefined,
-  checked: control(false),
-  textField: "",
-})();
-
 export default function BasicFormExample() {
-  const [formState] = useState(FormDef);
+  const formState = useControl<SimpleForm>({
+    select: undefined,
+    checked: false,
+    textField: "",
+  });
   const fields = formState.fields;
 
   const [formData, setFormData] = useState<SimpleForm>();

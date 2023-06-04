@@ -14,11 +14,10 @@ import {
 } from "./types";
 import React, { createContext, Key, ReactElement, useContext } from "react";
 import {
-  AnyControl,
   Control,
   ControlChange,
   newControl,
-  useControlChangeEffect,
+  useControlEffect,
 } from "@react-typed-forms/core";
 
 export interface FormEditHooks {
@@ -331,15 +330,13 @@ function DataRenderer({
   const props = hooks.useDataProperties(formState, controlDef, fieldData);
   const scalarControl =
     formState.data.fields[fieldData.field] ?? newControl(undefined);
-  useControlChangeEffect(
-    scalarControl,
-    (c) => {
-      if (props.defaultValue && !c.current.value) {
-        c.value = props.defaultValue;
+  useControlEffect(
+    () => scalarControl.value,
+    (v) => {
+      if (props.defaultValue && !v) {
+        scalarControl.value = props.defaultValue;
       }
     },
-    ControlChange.Value,
-    [scalarControl, props.defaultValue],
     true
   );
   if (!props.visible) {
