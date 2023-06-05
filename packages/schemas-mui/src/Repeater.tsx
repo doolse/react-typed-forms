@@ -16,7 +16,7 @@ export default function Repeater<A>({
   onAdd: () => void;
 }) {
   return (
-    <FormArray state={control}>
+    <FormArray control={control}>
       {(elems) => (
         <>
           {elems.map((c) => (

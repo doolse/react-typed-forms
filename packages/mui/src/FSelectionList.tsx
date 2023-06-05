@@ -35,7 +35,7 @@ export function FSelectionList<A>({
   elevation?: number;
 }) {
   return (
-    <FormArray state={control}>
+    <FormArray control={control}>
       {(items) => {
         const numChecked = items
           .map((x) => x.fields.selected.value)
