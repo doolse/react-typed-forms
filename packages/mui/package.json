@@ -24,7 +24,7 @@
 		"material-ui"
 	],
 	"dependencies": {
-		"@react-typed-forms/core": "workspace:*"
+		"@react-typed-forms/core": "^3.0.0-dev"
 	},
 	"peerDependencies": {
 		"@mui/material": "^5"

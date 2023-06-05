@@ -38,11 +38,11 @@ export default function SimpleExample() {
         children={(count) => <h2>{count} notifications</h2>}
       />
       <RenderControl children={() => <div>{mapped.value}</div>} />
-      <FormArray state={fields.stringChildren}>
+      <FormArray control={fields.stringChildren}>
         {(s) =>
           s.map((x) => (
             <div key={x.uniqueId}>
-              <label>String</label> <Finput state={x} />
+              <label>String</label> <Finput control={x} />
             </div>
           ))
         }
@@ -60,28 +60,28 @@ export default function SimpleExample() {
       <button onClick={() => (fields.stringChildren.value = ["Reset"])}>
         Reset strings
       </button>
-      <TreeStructure state={fields.substructure} />
+      <TreeStructure control={fields.substructure} />
     </div>
   );
 }
 
 function TreeStructure({
-  state,
+  control,
 }: {
-  state: Control<SubStructure>;
+  control: Control<SubStructure>;
 }): ReactElement {
-  const fields = state.fields;
+  const fields = control.fields;
   return (
     <div>
       <div>
         <label>ID:</label>
-        <Finput state={fields.id} />
+        <Finput control={fields.id} />
       </div>
       <div style={{ paddingLeft: 10, margin: 10 }}>
         <FormArray
-          state={fields.children}
+          control={fields.children}
           children={renderAll((x) => (
-            <TreeStructure state={x} />
+            <TreeStructure control={x} />
           ))}
         />
       </div>

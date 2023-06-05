@@ -76,7 +76,7 @@ export default function ArraysExample() {
       <h2>Arrays Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Strings</h5>
-        <FormArray state={fields.strings}>
+        <FormArray control={fields.strings}>
           {(elems) =>
             elems.map((c, idx) => (
               <div
@@ -86,7 +86,7 @@ export default function ArraysExample() {
               >
                 <div className="form-group mb-2">
                   <label className="mx-2">Value:</label>
-                  <Finput type="text" className="form-control" state={c} />
+                  <Finput type="text" className="form-control" control={c} />
                 </div>
                 <div>
                   <button
@@ -134,7 +134,7 @@ export default function ArraysExample() {
       </div>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormArray state={fields.structured}>
+        <FormArray control={fields.structured}>
           {(elems) =>
             elems.map((c, idx) => (
               <div
@@ -147,7 +147,7 @@ export default function ArraysExample() {
                   <Finput
                     type="text"
                     className="idField form-control"
-                    state={c.fields.id}
+                    control={c.fields.id}
                   />
                 </div>
                 <div className="form-group mb-2">
@@ -155,7 +155,7 @@ export default function ArraysExample() {
                   <Finput
                     type="text"
                     className="nameField form-control"
-                    state={c.fields.name}
+                    control={c.fields.name}
                   />
                 </div>
                 <div>

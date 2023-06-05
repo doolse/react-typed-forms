@@ -56,7 +56,7 @@ export default function ArraySelectionsExample() {
       <h2>Array Selections Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormArray state={formState}>
+        <FormArray control={formState}>
           {(elems) =>
             elems.map((x, idx) => (
               <StructuredRow
@@ -144,19 +144,23 @@ function StructuredRow({
     <div className={`form-inline row_${index}`}>
       <div className="form-group mb-2">
         <label className="mx-2">Enabled:</label>
-        <Fcheckbox state={state.fields.selected} className="enabled" />
+        <Fcheckbox control={state.fields.selected} className="enabled" />
       </div>
       <div className="form-group mb-2">
         <label className="mx-2">First:</label>
         <Finput
           type="text"
           className="firstField form-control"
-          state={c.first}
+          control={c.first}
         />
       </div>
       <div className="form-group mb-2">
         <label className="mx-2">Last:</label>
-        <Finput type="text" className="lastField form-control" state={c.last} />
+        <Finput
+          type="text"
+          className="lastField form-control"
+          control={c.last}
+        />
       </div>
       <div className="form-group mb-2">
         <button onClick={onDelete}>Delete</button>

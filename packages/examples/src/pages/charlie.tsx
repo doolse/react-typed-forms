@@ -33,7 +33,7 @@ export default function CharliePage() {
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />
       <FTextField state={fields.field2} label="Two" />
-      <FormArray state={fields.strings}>
+      <FormArray control={fields.strings}>
         {(elems) => elems.map((v) => <FTextField state={v} label="Strings" />)}
       </FormArray>
       <Button onClick={() => addElement(fields.strings, "")}>Add string</Button>

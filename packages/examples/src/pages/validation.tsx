@@ -68,7 +68,7 @@ export default function ValidationExample() {
         state={fields.async}
         showValid
       />
-      <FormArray state={fields.array}>
+      <FormArray control={fields.array}>
         {(elems) =>
           elems.map((s) => (
             <FormInput

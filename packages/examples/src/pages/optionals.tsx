@@ -2,6 +2,7 @@ import {
   addElement,
   FormArray,
   RenderControl,
+  renderOptional,
   useControl,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -41,20 +42,18 @@ export default function OptionalsTest() {
       <div>
         <FNumberField id="age" label="Age" state={fields.age} />
       </div>
-      <RenderControl
-        children={() =>
-          nested.optional && (
-            <div>
-              <FTextField
-                id="optionalField"
-                label="Optional"
-                state={nested.optional.fields.optional}
-              />
-            </div>
-          )
-        }
-      />
-      <FormArray state={optionalArray}>
+      <RenderControl>
+        {renderOptional(nested, (c) => (
+          <div>
+            <FTextField
+              id="optionalField"
+              label="Optional"
+              state={c.fields.optional}
+            />
+          </div>
+        ))}
+      </RenderControl>
+      <FormArray control={optionalArray}>
         {(elems) => (
           <>
             {elems.map((x) => (
@@ -75,16 +74,11 @@ export default function OptionalsTest() {
         </button>
       </div>
       <RenderControl
-        children={() =>
-          nullable.optional && (
-            <div>
-              <FTextField
-                state={nullable.optional.fields.id}
-                label="Nullable"
-              />
-            </div>
-          )
-        }
+        children={renderOptional(nullable, (c) => (
+          <div>
+            <FTextField state={c.fields.id} label="Nullable" />
+          </div>
+        ))}
       />
       <div>
         <button

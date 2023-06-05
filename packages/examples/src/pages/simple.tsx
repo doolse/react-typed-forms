@@ -21,9 +21,9 @@ export default function SimpleExample() {
       }}
     >
       <label>First Name</label>
-      <Finput id="firstName" type="text" state={fields.firstName} />
+      <Finput id="firstName" type="text" control={fields.firstName} />
       <label>Last Name *</label>
-      <Finput id="lastName" type="text" state={fields.lastName} />
+      <Finput id="lastName" type="text" control={fields.lastName} />
       <div>
         <button id="submit">Validate and toObject()</button>
       </div>

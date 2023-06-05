@@ -31,17 +31,17 @@ export default function BasicFormExample() {
       </p>
       <form ref={formRef}>
         <div>
-          Text: <Finput type="text" state={fields.textField} />
+          Text: <Finput type="text" control={fields.textField} />
         </div>
         <div>
-          Checkbox: <Fcheckbox type="checkbox" state={fields.checked} />
+          Checkbox: <Fcheckbox type="checkbox" control={fields.checked} />
         </div>
         <div>
-          Checkbox: <Fcheckbox type="checkbox" state={fields.checked} />
+          Checkbox: <Fcheckbox type="checkbox" control={fields.checked} />
         </div>
         <div>
           <label>A number:</label>
-          <Fselect className="form-control" id="number" state={fields.select}>
+          <Fselect className="form-control" id="number" control={fields.select}>
             <option value="">None</option>
             <option value="one">1</option>
             <option value="two">2</option>

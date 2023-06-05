@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas",
-  "version": "3.0.0-dev.83",
+  "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -24,7 +24,7 @@
     "material-ui"
   ],
   "dependencies": {
-    "@react-typed-forms/core": "workspace:*"
+    "@react-typed-forms/core": "^3.0.0-dev"
   },
   "devDependencies": {
     "@types/react": "^18.0.22",

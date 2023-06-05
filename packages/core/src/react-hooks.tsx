@@ -148,15 +148,15 @@ export function useValueChangeEffect<V>(
 }
 
 export interface FormArrayProps<V> {
-  state: Control<V[] | undefined>;
+  control: Control<V[] | undefined>;
   children: (elems: Control<V>[]) => ReactNode;
 }
 
-export function FormArray<V>({ state, children }: FormArrayProps<V>) {
+export function FormArray<V>({ control, children }: FormArrayProps<V>) {
   return (
     <>
       {useControlValue(() => {
-        const v = state.optional?.elements;
+        const v = control.optional?.elements;
         return v ? children(v) : null;
       })}
     </>
@@ -468,4 +468,49 @@ export function RenderForm<V, E extends HTMLElement = HTMLElement>({
   children: (fcp: FormControlProps<V, E>) => ReactNode;
 }) {
   return <>{useControlValue(() => children(genericProps<V, E>(control)))}</>;
+}
+
+/**
+ * Optionally render based on whether the control contains a null or undefined.
+ * Useful for rendering loading spinners.
+ * @param control The control
+ * @param render Callback to render if the value is not null
+ * @param elseRender Content to render if the value is null
+ */
+export function renderOptional<V>(
+  control: Control<V | undefined | null>,
+  render: (c: Control<V>) => ReactNode,
+  elseRender?: ReactNode
+): () => ReactNode {
+  return () => {
+    const o = control.optional;
+    return o ? render(o) : elseRender ?? <></>;
+  };
+}
+
+type ValuesOfControls<A> = { [K in keyof A]: NonNullable<ControlValue<A[K]>> };
+
+/**
+ * Given an object containing nullable value controls, optionally render if all controls are not null.
+ * Useful for rendering loading spinners.
+ * @param controls The object containing nullable controls.
+ * @param render Callback which takes the non-null values of all the controls passed in.
+ * @param elseRender Content to render if any value is null
+ */
+export function renderOptionally<A extends Record<string, Control<any>>>(
+  controls: A,
+  render: (v: ValuesOfControls<A>) => ReactNode,
+  elseRender?: ReactNode
+): () => ReactNode {
+  return () => {
+    const out: Record<string, any> = {};
+    let ready = true;
+    Object.entries(controls).forEach((x) => {
+      const v = x[1].value;
+      if (v != null) {
+        out[x[0]] = v;
+      } else ready = false;
+    });
+    return ready ? render(out as ValuesOfControls<A>) : elseRender ?? <></>;
+  };
 }

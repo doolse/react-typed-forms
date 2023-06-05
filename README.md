@@ -87,7 +87,7 @@ export default function SimpleExample() {
 
 `useControl<V>(initialValue, controlSetup?)` is used to define a control which holds an immutable value of type V.
 
-Because `formState` is a `Control` which holds a value of type `SimpleForm`, you can access child `Control`s by using it's `fields` property.
+Because `formState` is a `Control` which holds a value of type `SimpleForm`, you can access a child `Control` by using the parent's `fields` property.
 
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/pages/simple.tsx&lines=23-26) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
@@ -99,8 +99,8 @@ Because `formState` is a `Control` which holds a value of type `SimpleForm`, you
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-`Finput` is a simple wrapper component around the standard DOM `input` tag, which supports showing validation errors with HTML5 setCustomValidity.. 
-The important thing to note here is that the parent component will not need to be re-rendered while typing, as would be needed with the standard useState() style form rendering.
+`Finput` is a simple wrapper component around the standard DOM `input` tag, which supports showing validation errors with HTML5 `setCustomValidity()`. 
+The important thing to note here is that the parent component will not need to be re-rendered while typing, as would be needed with the standard `useState()` style form rendering.
 
 Along with `Finput`, the core library provides `Fselect` and `Fcheckbox`. There is also a small library [(@react-typed-forms/mui)](packages/mui/src/index.tsx) which has renderers for various [MUI](https://material-ui.com/) components.
 

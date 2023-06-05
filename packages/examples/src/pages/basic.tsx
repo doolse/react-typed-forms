@@ -46,7 +46,7 @@ export default function BasicFormExample() {
             type="text"
             className="form-control"
             id="username"
-            state={fields.username}
+            control={fields.username}
           />
         </div>
         <div className="form-group">
@@ -55,12 +55,12 @@ export default function BasicFormExample() {
             type="password"
             id="password"
             className="form-control"
-            state={fields.password}
+            control={fields.password}
           />
         </div>
         <div className="form-group">
           <label>A number:</label>
-          <Fselect className="form-control" id="number" state={fields.number}>
+          <Fselect className="form-control" id="number" control={fields.number}>
             <option value="">None</option>
             <option value="one">1</option>
             <option value="two">2</option>

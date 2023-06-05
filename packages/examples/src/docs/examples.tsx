@@ -24,8 +24,8 @@ export default function SimpleExample() {
 
   return (
     <div>
-      <Finput type="text" state={fields.firstName} />
-      <Finput type="text" state={fields.lastName} />
+      <Finput type="text" control={fields.firstName} />
+      <Finput type="text" control={fields.lastName} />
     </div>
   );
 }

@@ -4,25 +4,25 @@ import { Control } from "../types";
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
-  state: Control<string | number | undefined>;
+  control: Control<string | number | undefined>;
 };
 
-export function Fselect({ state, children, ...others }: FselectProps) {
+export function Fselect({ control, children, ...others }: FselectProps) {
   // Update the HTML5 custom validity whenever the error message is changed/cleared
   useControlEffect(
-    () => state.error,
-    (s) => (state.element as HTMLSelectElement)?.setCustomValidity(s ?? "")
+    () => control.error,
+    (s) => (control.element as HTMLSelectElement)?.setCustomValidity(s ?? "")
   );
 
   return (
     <RenderForm
-      control={state}
+      control={control}
       children={({ errorText, ...theseProps }) => (
         <select
           {...theseProps}
           ref={(r) => {
-            state.element = r;
-            if (r) r.setCustomValidity(state.current.error ?? "");
+            control.element = r;
+            if (r) r.setCustomValidity(control.current.error ?? "");
           }}
           {...others}
         >
