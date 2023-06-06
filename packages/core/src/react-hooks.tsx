@@ -36,6 +36,14 @@ interface ComputeState<V> {
   compute?: () => V;
   effect?: () => void;
 }
+
+/**
+ * Run effects based when a computed value changes.
+ *
+ * @param compute A function which calculates a value, if the value ever changes (equality is a shallow equals), the `onChange` effect is called.
+ * @param onChange The effect to run when the calculated value changes
+ * @param initial This will be called first time if a function is passed in, or if `true` the `onChange` handler will run first time
+ */
 export function useControlEffect<V>(
   compute: () => V,
   onChange: (value: V) => void,
@@ -241,12 +249,21 @@ export function genericProps<V, E extends HTMLElement>(
   };
 }
 
+/**
+ * Initialise a control given an initial value. The api purposefully mirrors the common cases of the useState() hook.
+ * @param initialState The initial state to use or a callback to create it if the computation isn't trivial.
+ * @param configure Configuration for the control, in particular synchronous validators.
+ * @param afterInit A callback called directly after Control instantiation.
+ */
 export function useControl<V, M = any>(
   initialState: V | (() => V),
   configure?: ControlSetup<V, M>,
   afterInit?: (c: Control<V>) => void
 ): Control<V>;
 
+/**
+ * Initialise a control for the given type, but set it's initial value to undefined. The api purposefully mirrors the common cases of the useState() hook.
+ */
 export function useControl<V = undefined>(): Control<V | undefined>;
 
 export function useControl(
@@ -417,7 +434,7 @@ export function useComputed<V>(compute: () => V): Control<V> {
   return c;
 }
 
-export function useControlGroup<C extends { [k: string]: any }>(
+export function useControlGroup<C extends { [k: string]: Control<any> }>(
   fields: C,
   deps?: DependencyList
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }> {

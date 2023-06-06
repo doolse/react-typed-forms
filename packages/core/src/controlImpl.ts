@@ -768,7 +768,7 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
   ];
 }
 
-export function controlGroup<C extends { [k: string]: any }>(
+export function controlGroup<C extends { [k: string]: Control<any> }>(
   fields: C
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }> {
   return new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }>(
@@ -881,6 +881,14 @@ export function setFields<V, OTHER extends { [p: string]: any }>(
   return c.runChange(ControlChange.Value | ControlChange.Structure).as();
 }
 
+/**
+ * Add an element to a Control containing an array.
+ * @param control The Control containing an array
+ * @param child The child element
+ * @param index The array index or `Control` to insert at. If not supplied the element will be put at the end of the array.
+ * @param insertAfter If true it will insert after the given index, if not it will insert before.
+ * @return The newly created element `Control` will be returned.
+ */
 export function addElement<V>(
   control: Control<V[] | undefined | null>,
   child: V,
@@ -908,6 +916,11 @@ export function addElement<V>(
   }
 }
 
+/**
+ * Remove an element from a `Control` containing an array.
+ * @param control The Control containing an array
+ * @param child The child index or `Control` to remove from the array.
+ */
 export function removeElement<V>(
   control: Control<V[] | undefined>,
   child: number | Control<V>

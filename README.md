@@ -48,9 +48,9 @@ export default function SimpleExample() {
       }}
     >
       <label>First Name</label>
-      <Finput id="firstName" type="text" state={fields.firstName} />
+      <Finput id="firstName" type="text" control={fields.firstName} />
       <label>Last Name *</label>
-      <Finput id="lastName" type="text" state={fields.lastName} />
+      <Finput id="lastName" type="text" control={fields.lastName} />
       <div>
         <button id="submit">Validate and toObject()</button>
       </div>
@@ -85,7 +85,7 @@ export default function SimpleExample() {
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-`useControl<V>(initialValue, controlSetup?)` is used to define a control which holds an immutable value of type V.
+`useControl<V>(initialValue, configure)` is used to define a control which holds an immutable value of type V.
 
 Because `formState` is a `Control` which holds a value of type `SimpleForm`, you can access a child `Control` by using the parent's `fields` property.
 
@@ -93,9 +93,9 @@ Because `formState` is a `Control` which holds a value of type `SimpleForm`, you
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
 ```tsx
       <label>First Name</label>
-      <Finput id="firstName" type="text" state={fields.firstName} />
+      <Finput id="firstName" type="text" control={fields.firstName} />
       <label>Last Name *</label>
-      <Finput id="lastName" type="text" state={fields.lastName} />
+      <Finput id="lastName" type="text" control={fields.lastName} />
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -107,7 +107,7 @@ Along with `Finput`, the core library provides `Fselect` and `Fcheckbox`. There 
 ## Rendering with Controls
 
 Custom rendering of a `Control` boils down to the `useControlValue()` hook primitive. 
-It takes a function which returns a value which can be computed using any of the `Control`s 'tracked' properties. 
+It takes a function which returns a value which can be computed using any of the `Control`'s 'tracked' properties. 
 For example let's save you didn't want users to be able to click the save button unless they'd changed the data in the form and the form was valid, you could do this: 
 
 ```tsx
@@ -133,14 +133,116 @@ The solution in this case is to use the `RenderControl` component. Which is a si
 <RenderControl>{() => <button disabled={!form.valid || !form.dirty}>Save</button>}</RenderControl>
 ```
 
+There is another component specifically for rendering standard form like controls, 
+which gives you some properties which you can usually directly add to DOM elements:
+
+```tsx
+export interface FormControlProps<V, E extends HTMLElement> {
+    value: V;
+    onChange: (e: ChangeEvent<E & { value: any }>) => void;
+    onBlur: () => void;
+    disabled: boolean;
+    errorText?: string | null;
+    ref: (elem: HTMLElement | null) => void;
+}
+```
+
+The `Finput` component simply passes the properties through to the `<input>` tag.
+
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/html/Finput.tsx&lines=6-36) -->
+<!-- The below code snippet is automatically added from ./packages/core/src/html/Finput.tsx -->
+```tsx
+export type FinputProps<V extends string | number> =
+  React.InputHTMLAttributes<HTMLInputElement> & {
+    control: Control<V>;
+  };
+
+export function Finput<V extends string | number>({
+  control,
+  ...props
+}: FinputProps<V>) {
+  // Update the HTML5 custom validity whenever the error message is changed/cleared
+  useControlEffect(
+    () => control.error,
+    (s) => (control.element as HTMLInputElement)?.setCustomValidity(s ?? "")
+  );
+  return (
+    <RenderForm
+      control={control}
+      children={({ errorText, value, ...inputProps }) => (
+        <input
+          {...inputProps}
+          value={value == null ? "" : value}
+          ref={(r) => {
+            control.element = r;
+            if (r) r.setCustomValidity(control.current.error ?? "");
+          }}
+          {...props}
+        />
+      )}
+    />
+  );
+}
+```
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+
 ## Control Effects
 
-You can run effects directly from changes to `Control`s by using the `useControlEffect()`.
-TODO
+You can run effects directly from changes to a `Control` by using the `useControlEffect()` hook.
+
+```ts 
+function useControlEffect<V>(
+  compute: () => V,
+  onChange: (value: V) => void,
+  initial?: ((value: V) => void) | boolean
+): void;
+```
+
+The `compute` parameter calculates a value, if the value ever changes (equality is a shallow equals), the `onChange` effect is called.
+The `initial` callback will be called first time if it is passed in, or if true is passed in it will simply call the `onChange` handler first time.
 
 ## Validation
-TODO
 
+Synchronous validation can be added to a control upon initialisation via the `configure` parameter of `useControl()`.
+
+```ts 
+const mustBeHigherThan4 = useControl(0, {validator: (v: number) => v > 4 ? undefined : "Please enter a number greather than 4" })
+```
+
+## Arrays
+
+A `Control` containing an array can split each element out as it's own `Control` by using the 
+`<FormArray>` component.
+
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/arrays.tsx&lines=10-23) -->
+<!-- The below code snippet is automatically added from ./packages/examples/src/docs/arrays.tsx -->
+```tsx
+export function ListOfTextFields() {
+  const textFields = useControl<string[]>([]);
+
+  return (
+    <div>
+      <FormArray control={textFields}>
+        {(controls: Control<string>[]) =>
+          controls.map((x) => <Finput key={x.uniqueId} control={x} />)
+        }
+      </FormArray>
+      <button onClick={() => addElement(textFields, "")}>Add</button>
+    </div>
+  );
+}
+```
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+You can simple set the array value directly on the parent, or you can use the following 
+functions to manipulate the elements.
+
+```tsx
+function addElement<V>(control: Control<V[] | undefined | null>, child: V,
+           index?: number | Control<V> | undefined, insertAfter?: boolean): Control<V>
+function removeElement<V>(control: Control<V[] | undefined>, child: number | Control<V>): void 
+```
 ## Other hooks
 
 ### `useAsyncValidator()`

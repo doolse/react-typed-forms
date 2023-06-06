@@ -10,7 +10,7 @@ export type FinputProps<V extends string | number> =
 
 export function Finput<V extends string | number>({
   control,
-  ...others
+  ...props
 }: FinputProps<V>) {
   // Update the HTML5 custom validity whenever the error message is changed/cleared
   useControlEffect(
@@ -20,14 +20,15 @@ export function Finput<V extends string | number>({
   return (
     <RenderForm
       control={control}
-      children={({ errorText, ...theseProps }) => (
+      children={({ errorText, value, ...inputProps }) => (
         <input
-          {...theseProps}
+          {...inputProps}
+          value={value == null ? "" : value}
           ref={(r) => {
             control.element = r;
             if (r) r.setCustomValidity(control.current.error ?? "");
           }}
-          {...others}
+          {...props}
         />
       )}
     />
