@@ -22,27 +22,24 @@ export type ControlValidator<V> = ((v: V) => string | undefined) | null;
 export type ControlValue<C> = C extends Control<infer V> ? V : never;
 export type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : never;
 
-export interface ControlState<V> {
-  readonly value: V;
-  readonly initialValue: V;
-  readonly error?: string | null;
+export interface ControlProperties<V> {
+  value: V;
+  initialValue: V;
+  error?: string | null;
   readonly valid: boolean;
   readonly dirty: boolean;
-  readonly disabled: boolean;
-  readonly touched: boolean;
+  disabled: boolean;
+  touched: boolean;
   readonly optional: Control<NonNullable<V>> | undefined;
 }
 
-type Writeable<V> = {
-  -readonly [P in keyof V]: V[P];
+type Readonly<V> = {
+  readonly [P in keyof V]: V[P];
 };
 
-export interface Control<V>
-  extends Writeable<Omit<ControlState<V>, "dirty" | "valid">> {
+export interface Control<V> extends ControlProperties<V> {
   readonly uniqueId: number;
-  readonly valid: boolean;
-  readonly dirty: boolean;
-  current: ControlState<V>;
+  current: Readonly<ControlProperties<V>>;
   meta: { [key: string]: any };
 
   readonly fields: V extends string | number | Array<any> | undefined | null

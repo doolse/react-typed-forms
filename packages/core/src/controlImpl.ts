@@ -4,7 +4,7 @@ import {
   ControlChange,
   ControlFlags,
   ControlSetup,
-  ControlState,
+  ControlProperties,
   ControlValue,
   ElemType,
 } from "./types";
@@ -84,7 +84,7 @@ class ControlImpl<V> implements Control<V> {
   public meta: { [k: string]: any };
   public _fieldsProxy?: { [k: string]: Control<any> };
   public _elems?: Control<any>[];
-  public current: ControlState<V>;
+  public current: ControlProperties<V>;
 
   pendingChanges: ControlChange = 0;
 
@@ -1027,7 +1027,7 @@ export function trackControlChange(c: Control<any>, change: ControlChange) {
   collectChange(c, change);
 }
 
-class ControlStateImpl<V> implements ControlState<V> {
+class ControlStateImpl<V> implements ControlProperties<V> {
   constructor(private control: ControlImpl<V>) {}
 
   get value() {

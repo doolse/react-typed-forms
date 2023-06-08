@@ -63,10 +63,10 @@ export default function SimpleExample() {
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-## Declare a Control
+## Initialise a `Control`
 
-A `Control` is essentially an advanced [signal](https://preactjs.com/guide/v10/signals/) with additional state for tracking form metadata (valid, disabled, dirty, touched and an error message) 
-and the ability to treat object fields and array elements as a child `Control`.   
+A `Control` is essentially an advanced [signal](https://preactjs.com/guide/v10/signals/) with additional state for tracking form metadata, see [Control Properties](#control-properties) 
+and the ability to treat object fields and array elements as child `Control`s.   
 
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/pages/simple.tsx&lines=4-14) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/pages/simple.tsx -->
@@ -104,10 +104,36 @@ The important thing to note here is that the parent component will not need to b
 
 Along with `Finput`, the core library provides `Fselect` and `Fcheckbox`. There is also a small library [(@react-typed-forms/mui)](packages/mui/src/index.tsx) which has renderers for various [MUI](https://material-ui.com/) components.
 
+## Control properties
+
+Every `Control` implements `ControlProperties`:
+
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/types.ts&lines=25-34) -->
+<!-- The below code snippet is automatically added from ./packages/core/src/types.ts -->
+```ts
+export interface ControlProperties<V> {
+  value: V;
+  initialValue: V;
+  error?: string | null;
+  readonly valid: boolean;
+  readonly dirty: boolean;
+  disabled: boolean;
+  touched: boolean;
+  readonly optional: Control<NonNullable<V>> | undefined;
+}
+```
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+A control is `valid` if it has an empty error message AND all of it's children controls are `valid`.
+
+A control is `dirty` if the `initialValue` is not equal to the `value`.
+
+A control's `touched` flag generally gets set to true `onBlur()` and is generally used to prevent error messages from showing until the user has attempted to enter a value.
+
 ## Rendering with Controls
 
-Custom rendering of a `Control` boils down to the `useControlValue()` hook primitive. 
-It takes a function which computes a value, however  `Control`'s 'tracked' properties. 
+Custom rendering of a `Control` boils down to the `useControlValue()` hook primitive. It behaves like [computed() or effect()](https://preactjs.com/guide/v10/signals/#computedfn), but
+instead of re-renders the current component whenever any referenced `Control` property changes.
 For example let's say you didn't want users to be able to click the save button unless they'd changed the data in the form and the form was valid, you could do this: 
 
 ```tsx
@@ -152,6 +178,7 @@ The `Finput` component simply passes the properties through to the `<input>` tag
 <!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/html/Finput.tsx&lines=6-36) -->
 <!-- The below code snippet is automatically added from ./packages/core/src/html/Finput.tsx -->
 ```tsx
+// Only allow strings and numbers
 export type FinputProps<V extends string | number> =
   React.InputHTMLAttributes<HTMLInputElement> & {
     control: Control<V>;
@@ -182,7 +209,6 @@ export function Finput<V extends string | number>({
       )}
     />
   );
-}
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -213,9 +239,9 @@ const mustBeHigherThan4 = useControl(0, {validator: (v: number) => v > 4 ? undef
 ## Arrays
 
 A `Control` containing an array can split each element out as it's own `Control` by using the 
-`<FormArray>` component.
+`renderElements` helper function.
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/arrays.tsx&lines=10-23) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/arrays.tsx&lines=12-25) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/arrays.tsx -->
 ```tsx
 export function ListOfTextFields() {
@@ -223,11 +249,11 @@ export function ListOfTextFields() {
 
   return (
     <div>
-      <FormArray control={textFields}>
-        {(controls: Control<string>[]) =>
-          controls.map((x) => <Finput key={x.uniqueId} control={x} />)
-        }
-      </FormArray>
+      <RenderControl
+        render={renderElements(textFields, (x) => (
+          <Finput key={x.uniqueId} control={x} />
+        ))}
+      />
       <button onClick={() => addElement(textFields, "")}>Add</button>
     </div>
   );

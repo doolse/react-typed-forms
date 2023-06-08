@@ -3,6 +3,8 @@ import {
   Control,
   Finput,
   FormArray,
+  RenderControl,
+  renderElements,
   useControl,
 } from "@react-typed-forms/core";
 import React from "react";
@@ -12,11 +14,11 @@ export function ListOfTextFields() {
 
   return (
     <div>
-      <FormArray control={textFields}>
-        {(controls: Control<string>[]) =>
-          controls.map((x) => <Finput key={x.uniqueId} control={x} />)
-        }
-      </FormArray>
+      <RenderControl
+        render={renderElements(textFields, (x) => (
+          <Finput key={x.uniqueId} control={x} />
+        ))}
+      />
       <button onClick={() => addElement(textFields, "")}>Add</button>
     </div>
   );
