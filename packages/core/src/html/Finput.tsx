@@ -1,6 +1,7 @@
 import React from "react";
-import { RenderForm, useControlEffect } from "../react-hooks";
+import { useControlEffect } from "../react-hooks";
 import { Control } from "../types";
+import { RenderForm } from "../components";
 
 // Only allow strings and numbers
 export type FinputProps<V extends string | number> =

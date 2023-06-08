@@ -107,8 +107,8 @@ Along with `Finput`, the core library provides `Fselect` and `Fcheckbox`. There 
 ## Rendering with Controls
 
 Custom rendering of a `Control` boils down to the `useControlValue()` hook primitive. 
-It takes a function which returns a value which can be computed using any of the `Control`'s 'tracked' properties. 
-For example let's save you didn't want users to be able to click the save button unless they'd changed the data in the form and the form was valid, you could do this: 
+It takes a function which computes a value, however  `Control`'s 'tracked' properties. 
+For example let's say you didn't want users to be able to click the save button unless they'd changed the data in the form and the form was valid, you could do this: 
 
 ```tsx
 const form = useControl({firstName: "Joe", lastName: "Blogs"});

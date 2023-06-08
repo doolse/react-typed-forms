@@ -7,6 +7,7 @@ import {
   notEmpty,
   removeElement,
   RenderControl,
+  renderElements,
   updateElements,
   useControl,
   useControlValue,
@@ -76,45 +77,43 @@ export default function ArraysExample() {
       <h2>Arrays Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Strings</h5>
-        <FormArray control={fields.strings}>
-          {(elems) =>
-            elems.map((c, idx) => (
-              <div
-                key={c.uniqueId}
-                id={`string-${idx + 1}`}
-                className="form-inline"
-              >
-                <div className="form-group mb-2">
-                  <label className="mx-2">Value:</label>
-                  <Finput type="text" className="form-control" control={c} />
-                </div>
-                <div>
-                  <button
-                    className="btn mx-2"
-                    id={`rem-${idx + 1}`}
-                    onClick={() => removeElement(fields.strings, idx)}
-                  >
-                    X
-                  </button>
-                  <button
-                    className="btn mx-2"
-                    id={`before-${idx + 1}`}
-                    onClick={() => addElement(fields.strings, "Before", c)}
-                  >
-                    Insert before
-                  </button>
-                  <button
-                    className="btn mx-2"
-                    id={`after-${idx + 1}`}
-                    onClick={() => addElement(fields.strings, "After", c, true)}
-                  >
-                    Insert After
-                  </button>
-                </div>
+        <RenderControl
+          children={renderElements(fields.strings, (c, idx) => (
+            <div
+              key={c.uniqueId}
+              id={`string-${idx + 1}`}
+              className="form-inline"
+            >
+              <div className="form-group mb-2">
+                <label className="mx-2">Value:</label>
+                <Finput type="text" className="form-control" control={c} />
               </div>
-            ))
-          }
-        </FormArray>
+              <div>
+                <button
+                  className="btn mx-2"
+                  id={`rem-${idx + 1}`}
+                  onClick={() => removeElement(fields.strings, idx)}
+                >
+                  X
+                </button>
+                <button
+                  className="btn mx-2"
+                  id={`before-${idx + 1}`}
+                  onClick={() => addElement(fields.strings, "Before", c)}
+                >
+                  Insert before
+                </button>
+                <button
+                  className="btn mx-2"
+                  id={`after-${idx + 1}`}
+                  onClick={() => addElement(fields.strings, "After", c, true)}
+                >
+                  Insert After
+                </button>
+              </div>
+            </div>
+          ))}
+        />
         <div>
           <button
             id="addString"
@@ -134,54 +133,48 @@ export default function ArraysExample() {
       </div>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormArray control={fields.structured}>
-          {(elems) =>
-            elems.map((c, idx) => (
-              <div
-                id={`obj-${idx + 1}`}
-                key={c.uniqueId}
-                className="form-inline"
-              >
-                <div className="form-group mb-2">
-                  <label className="mx-2">Id:</label>
-                  <Finput
-                    type="text"
-                    className="idField form-control"
-                    control={c.fields.id}
-                  />
-                </div>
-                <div className="form-group mb-2">
-                  <label className="mx-2">Name:</label>
-                  <Finput
-                    type="text"
-                    className="nameField form-control"
-                    control={c.fields.name}
-                  />
-                </div>
-                <div>
-                  <button
-                    className="btn mx-2 remove"
-                    onClick={() => removeElement(fields.structured, idx)}
-                  >
-                    X
-                  </button>
-                  <button
-                    className="btn mx-2 up"
-                    onClick={() => moveUp(fields.structured, idx)}
-                  >
-                    Up
-                  </button>
-                  <button
-                    className="btn mx-2 down"
-                    onClick={() => moveDown(fields.structured, idx)}
-                  >
-                    Down
-                  </button>
-                </div>
+        <RenderControl
+          children={renderElements(fields.structured, (c, idx) => (
+            <div id={`obj-${idx + 1}`} key={c.uniqueId} className="form-inline">
+              <div className="form-group mb-2">
+                <label className="mx-2">Id:</label>
+                <Finput
+                  type="text"
+                  className="idField form-control"
+                  control={c.fields.id}
+                />
               </div>
-            ))
-          }
-        </FormArray>
+              <div className="form-group mb-2">
+                <label className="mx-2">Name:</label>
+                <Finput
+                  type="text"
+                  className="nameField form-control"
+                  control={c.fields.name}
+                />
+              </div>
+              <div>
+                <button
+                  className="btn mx-2 remove"
+                  onClick={() => removeElement(fields.structured, idx)}
+                >
+                  X
+                </button>
+                <button
+                  className="btn mx-2 up"
+                  onClick={() => moveUp(fields.structured, idx)}
+                >
+                  Up
+                </button>
+                <button
+                  className="btn mx-2 down"
+                  onClick={() => moveDown(fields.structured, idx)}
+                >
+                  Down
+                </button>
+              </div>
+            </div>
+          ))}
+        />
         <div>
           <button
             id="addObj"
