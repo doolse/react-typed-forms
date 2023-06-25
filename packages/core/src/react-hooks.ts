@@ -439,3 +439,36 @@ export function usePreviousValue<V>(
   );
   return withPrev;
 }
+
+export function controlValues<A, B>(a: Control<A>, b: Control<B>): () => [A, B];
+export function controlValues<A, B, C>(
+  a: Control<A>,
+  b: Control<B>,
+  c: Control<C>
+): () => [A, B, C];
+export function controlValues<A, B, C, D>(
+  a: Control<A>,
+  b: Control<B>,
+  c: Control<C>,
+  d: Control<D>
+): () => [A, B, C, D];
+export function controlValues<A, B, C, D, E>(
+  a: Control<A>,
+  b: Control<B>,
+  c: Control<C>,
+  d: Control<D>,
+  e: Control<E>
+): () => [A, B, C, D, E];
+export function controlValues<A extends Record<string, Control<any>>>(
+  controls: A
+): () => { [K in keyof A]: ControlValue<A[K]> };
+export function controlValues(
+  ...args: (Control<any> | Record<string, Control<any>>)[]
+): () => any {
+  return () => {
+    if (args.length === 1) {
+      return Object.entries(args).map((x) => [x[0], x[1].value]);
+    }
+    return args.map((x) => x.value);
+  };
+}

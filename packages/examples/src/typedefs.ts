@@ -1,4 +1,9 @@
-import { addElement, Control } from "@react-typed-forms/core";
+import {
+  addElement,
+  Control,
+  controlValues,
+  useControlEffect,
+} from "@react-typed-forms/core";
 
 function typeWithNull<A extends { id: string } | null>(c: Control<A>) {
   // @ts-expect-error
@@ -63,4 +68,19 @@ function anyControl(c: Control<any>) {
   addElement(c.fields?.["id"], "");
   typeWithNull(c);
   takesArray(c);
+}
+
+function someControls(
+  a: Control<{ something: string }>,
+  b: Control<string | undefined>,
+  c: Control<number>,
+  d: Control<string>
+) {
+  useControlEffect(controlValues({ c, d }), (a) => {});
+  useControlEffect(controlValues(a, b, c, d), (v) => {
+    const va: { something: string } = v[0];
+    const vb: string | undefined = v[1];
+    const vc: number = v[2];
+    const vd: string = v[3];
+  });
 }

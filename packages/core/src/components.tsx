@@ -3,35 +3,19 @@ import { Control, ControlValue } from "./types";
 import { FormControlProps, genericProps, useControlValue } from "./react-hooks";
 import React from "react";
 
-/**
- * Re-render `children` whenever any referenced Control properties change
- * @param children
- * @constructor
- */
-export function RenderControl({
-  children,
-}: {
-  children: () => ReactNode;
-}): ReactElement;
-
-/**
- * Re-render `render` whenever any referenced Control properties change
- * @param render
- * @constructor
- */
-export function RenderControl({
-  render,
-}: {
-  render: () => ReactNode;
-}): ReactElement;
-export function RenderControl({
-  children,
-  render,
-}: {
-  children?: () => ReactNode;
-  render?: () => ReactNode;
-}) {
-  return <>{useControlValue((children ?? render)!)}</>;
+export type RenderControlProps =
+  | {
+      children: () => ReactNode;
+    }
+  | {
+      render: () => ReactNode;
+    };
+export function RenderControl(props: RenderControlProps) {
+  return (
+    <>
+      {useControlValue(("children" in props ? props.children : props.render)!)}
+    </>
+  );
 }
 
 export function RenderValue<V>({
