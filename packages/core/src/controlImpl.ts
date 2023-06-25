@@ -157,7 +157,7 @@ class ControlImpl<V> implements Control<V> {
 
   isEqual(a: V, b: V): boolean {
     if (this.setup.equals) return this.setup.equals(a, b);
-    return a === b;
+    return basicShallowEquals(a, b);
   }
 
   isValueEqual(v: V): boolean {
