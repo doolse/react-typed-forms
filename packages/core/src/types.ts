@@ -60,12 +60,12 @@ export interface Control<V> extends ControlProperties<V> {
     ? never[]
     : V;
 
-  addChangeListener(
+  subscribe(
     listener: ChangeListenerFunc<V>,
     mask?: ControlChange
-  ): void;
+  ): Subscription;
 
-  removeChangeListener(listener: ChangeListenerFunc<V>): void;
+  unsubscribe(listener: ChangeListenerFunc<V>): void;
 
   setValue(v: (current: V) => V): Control<V>;
 
@@ -106,4 +106,8 @@ export type ChangeListenerFunc<V> = (
   control: Control<V>,
   cb: ControlChange
 ) => void;
-export type ChangeListener<V> = [ControlChange, ChangeListenerFunc<V>];
+
+export interface Subscription {
+  unsubscribe(): void;
+  changes: ControlChange;
+}

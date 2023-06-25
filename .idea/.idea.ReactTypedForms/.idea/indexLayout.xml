@@ -5,6 +5,11 @@
       <Path>.</Path>
     </attachedFolders>
     <explicitIncludes />
-    <explicitExcludes />
+    <explicitExcludes>
+      <Path>docs/_next</Path>
+      <Path>packages/core/lib</Path>
+      <Path>packages/mui/lib</Path>
+      <Path>packages/schemas/lib</Path>
+    </explicitExcludes>
   </component>
 </project>

@@ -150,8 +150,8 @@ export function useValueChangeEffect<V>(
       }
     };
     runInitial ? updater(control) : undefined;
-    control.addChangeListener(updater, ControlChange.Value);
-    return () => control.removeChangeListener(updater);
+    const s = control.subscribe(updater, ControlChange.Value);
+    return () => s.unsubscribe();
   }, [control]);
 }
 
@@ -317,7 +317,7 @@ export function useSelectableArray<V>(
 
     const selectableElems = groupSyncer(control).map(([s, value, is]) => {
       const selected = newControl(s, undefined, is === undefined ? s : is);
-      selected.addChangeListener(selectionChangeListener, ControlChange.Value);
+      selected.subscribe(selectionChangeListener, ControlChange.Value);
       return controlGroup({
         selected,
         value,
@@ -344,7 +344,7 @@ function removeListeners(
 ) {
   for (let i = 0; i < deps.length; i++) {
     const depC = deps[i++] as Control<any>;
-    depC.removeChangeListener(listener);
+    depC.unsubscribe(listener);
   }
 }
 
@@ -355,7 +355,7 @@ function attachListeners(
   for (let i = 0; i < deps.length; i++) {
     const depC = deps[i++] as Control<any>;
     const depChange = deps[i] as ControlChange;
-    depC.addChangeListener(listener, depChange);
+    depC.subscribe(listener, depChange);
   }
 }
 

@@ -1,14 +1,17 @@
 import {
-  ChangeListener,
+  ChangeListenerFunc,
   Control,
   ControlChange,
   ControlFlags,
-  ControlSetup,
   ControlProperties,
+  ControlSetup,
   ControlValue,
   ElemType,
+  Subscription,
 } from "./types";
 
+type ParentMeta = [string | number, Subscription | undefined];
+type ChangeListener = [ControlChange, ChangeListenerFunc<any>];
 enum ChildSyncFlags {
   Valid = 1,
   Dirty = 4,
@@ -79,8 +82,8 @@ class ControlImpl<V> implements Control<V> {
   uniqueId = ++controlCount;
   _childSync: ChildSyncFlags = 0;
 
-  public _childListener?: ChangeListener<any>;
-  public listeners: ChangeListener<V>[] = [];
+  public _childListener?: ChangeListener;
+  public listeners: ChangeListener[] = [];
   public meta: { [k: string]: any };
   public _fieldsProxy?: { [k: string]: Control<any> };
   public _elems?: Control<any>[];
@@ -295,7 +298,7 @@ class ControlImpl<V> implements Control<V> {
     return 0;
   }
 
-  get childListener(): ChangeListener<any> {
+  get childListener(): ChangeListener {
     if (!this._childListener) {
       this._childListener = makeChildListener<V>(this);
     }
@@ -442,19 +445,19 @@ class ControlImpl<V> implements Control<V> {
     return this;
   }
 
-  addChangeListener(
-    listener: (control: Control<V>, change: ControlChange) => void,
+  subscribe(
+    listener: ChangeListenerFunc<V>,
     mask?: ControlChange
-  ) {
-    this.listeners = [
-      ...this.listeners,
-      [mask ? mask : ControlChange.All, listener],
+  ): Subscription {
+    const newListener: ChangeListener = [
+      mask ? mask : ControlChange.All,
+      listener,
     ];
+    this.listeners = [...this.listeners, newListener];
+    return new SubscriptionImpl(this, newListener);
   }
 
-  removeChangeListener(
-    listener: (control: Control<V>, change: ControlChange) => void
-  ) {
+  unsubscribe(listener: ChangeListenerFunc<V>) {
     this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
   }
 
@@ -469,18 +472,35 @@ class ControlImpl<V> implements Control<V> {
     return this.runChange(ControlChange.Validate);
   }
 
-  parentMetaKey() {
-    return "$_" + this.uniqueId;
+  getParentMeta(c: Control<any>) {
+    const metaId = "$_" + this.uniqueId;
+    return c.meta[metaId] as ParentMeta | undefined;
   }
 
+  ensureParentMeta(c: Control<any>, childKey: number | string): ParentMeta {
+    const metaId = "$_" + this.uniqueId;
+    let meta = c.meta[metaId] as ParentMeta | undefined;
+    if (!meta) {
+      meta = [childKey, undefined];
+      c.meta[metaId] = meta;
+    }
+    return meta;
+  }
+
+  detachParentListener(c: Control<any>) {
+    let meta = this.getParentMeta(c);
+    if (meta) {
+      meta[1]?.unsubscribe();
+      meta[1] = undefined;
+    }
+  }
   attachParentListener<A>(
     c: Control<A>,
-    childData: number | string,
-    alreadyAttached?: boolean
+    childData: number | string
   ): Control<A> {
-    c.meta[this.parentMetaKey()] = childData;
-    if (!alreadyAttached) {
-      c.addChangeListener(this.childListener[1], this.childListener[0]);
+    const meta = this.ensureParentMeta(c, childData);
+    if (!meta[1]) {
+      meta[1] = c.subscribe(this.childListener[1], this.childListener[0]);
     }
     return c;
   }
@@ -725,7 +745,7 @@ export function newControl<V>(
   );
 }
 
-function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
+function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener {
   return [
     ControlChange.Value |
       ControlChange.Valid |
@@ -735,7 +755,7 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener<any> {
       ControlChange.Structure,
     (child, change) => {
       let flags: ControlChange = change & ControlChange.Structure;
-      const childKey = child.meta[pc.parentMetaKey()];
+      const childKey = pc.getParentMeta(child)![0];
       if (change & ControlChange.Value) {
         if (
           pc._childSync & ChildSyncFlags.Value ||
@@ -846,11 +866,11 @@ function ensureArrayAttachment(
   oldElems: Control<any>[]
 ) {
   newElems.forEach((x, i) => {
-    c.attachParentListener(x, i, oldElems.includes(x));
+    c.attachParentListener(x, i);
   });
   oldElems
     .filter((x) => !newElems.includes(x))
-    .forEach((x) => x.removeChangeListener(c.childListener[1]));
+    .forEach((x) => c.detachParentListener(x));
 }
 
 export function setFields<V, OTHER extends { [p: string]: any }>(
@@ -866,7 +886,7 @@ export function setFields<V, OTHER extends { [p: string]: any }>(
     const exField = exFields[k];
     if (exField !== newField) {
       changed = true;
-      if (exField) exField.removeChangeListener(c.childListener[1]);
+      if (exField) c.detachParentListener(exField);
       exFields[k] = newField;
       c.attachParentListener(newField, k);
     }
@@ -1123,4 +1143,19 @@ export function basicShallowEquals(a: any, b: any): boolean {
     return true;
   }
   return a !== a && b !== b;
+}
+
+class SubscriptionImpl implements Subscription {
+  constructor(private c: ControlImpl<any>, private l: ChangeListener) {}
+
+  get changes() {
+    return this.l[0];
+  }
+
+  set changes(c: ControlChange) {
+    this.l[0] = c;
+  }
+  unsubscribe(): void {
+    this.c.listeners = this.c.listeners.filter((cl) => cl !== this.l);
+  }
 }
