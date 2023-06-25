@@ -1,7 +1,6 @@
 import React from "react";
-import { useControlEffect } from "../react-hooks";
+import { formControlProps, useControlEffect } from "../react-hooks";
 import { Control } from "../types";
-import { RenderForm } from "../components";
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
@@ -14,22 +13,18 @@ export function Fselect({ control, children, ...others }: FselectProps) {
     () => control.error,
     (s) => (control.element as HTMLSelectElement)?.setCustomValidity(s ?? "")
   );
+  const { errorText, ...theseProps } = formControlProps(control);
 
   return (
-    <RenderForm
-      control={control}
-      children={({ errorText, ...theseProps }) => (
-        <select
-          {...theseProps}
-          ref={(r) => {
-            control.element = r;
-            if (r) r.setCustomValidity(control.current.error ?? "");
-          }}
-          {...others}
-        >
-          {children}
-        </select>
-      )}
-    />
+    <select
+      {...theseProps}
+      ref={(r) => {
+        control.element = r;
+        if (r) r.setCustomValidity(control.current.error ?? "");
+      }}
+      {...others}
+    >
+      {children}
+    </select>
   );
 }

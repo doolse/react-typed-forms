@@ -1,5 +1,5 @@
 import { FormHelperText, FormLabel, FormControl as FC } from "@mui/material";
-import { Control, genericProps, RenderForm } from "@react-typed-forms/core";
+import { Control, formControlProps } from "@react-typed-forms/core";
 import React, { ReactNode } from "react";
 
 export type RadioPropsFunc<A> = (value: A) => {
@@ -31,16 +31,12 @@ export function FRadioList<A extends string | number>({
       },
     };
   };
+  const { errorText } = formControlProps(state);
   return (
-    <RenderForm
-      control={state}
-      children={({ errorText }) => (
-        <FC error={Boolean(errorText)}>
-          <FormLabel>{label}</FormLabel>
-          {children(checkProps)}
-          <FormHelperText>{errorText ?? helperText}</FormHelperText>
-        </FC>
-      )}
-    />
+    <FC error={Boolean(errorText)}>
+      <FormLabel>{label}</FormLabel>
+      {children(checkProps)}
+      <FormHelperText>{errorText ?? helperText}</FormHelperText>
+    </FC>
   );
 }

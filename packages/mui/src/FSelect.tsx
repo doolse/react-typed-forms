@@ -1,4 +1,4 @@
-import { Control, genericProps, RenderForm } from "@react-typed-forms/core";
+import { Control, formControlProps } from "@react-typed-forms/core";
 import {
   MenuItem,
   Select,
@@ -33,40 +33,37 @@ export function FSelect({
   emptyText,
   ...props
 }: FSelectProps) {
+  const { ref, errorText, value, ...formProps } = formControlProps(state);
+
   return (
-    <RenderForm
-      control={state}
-      children={({ ref, errorText, value, ...formProps }) => (
-        <TextField
-          inputRef={ref}
-          {...formProps}
-          {...props}
-          value={value == null ? "" : value}
-          select
-          error={Boolean(errorText)}
-          helperText={errorText ?? helperText}
-          SelectProps={{
-            displayEmpty: true,
-            renderValue: (values) => {
-              const stringValue = values as stringOrNumber;
-              if (typeof stringValue != null)
-                return (
-                  options.find((x) => x.value === stringValue)?.name ??
-                  (!stringValue ? emptyText : `<unknown : ${stringValue}>`)
-                );
-              else return "";
-            },
-          }}
-          InputLabelProps={{ shrink: true }}
-        >
-          {options.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {renderItem?.(option.name, option.value == value) ?? option.name}
-            </MenuItem>
-          ))}
-        </TextField>
-      )}
-    />
+    <TextField
+      inputRef={ref}
+      {...formProps}
+      {...props}
+      value={value == null ? "" : value}
+      select
+      error={Boolean(errorText)}
+      helperText={errorText ?? helperText}
+      SelectProps={{
+        displayEmpty: true,
+        renderValue: (values) => {
+          const stringValue = values as stringOrNumber;
+          if (typeof stringValue != null)
+            return (
+              options.find((x) => x.value === stringValue)?.name ??
+              (!stringValue ? emptyText : `<unknown : ${stringValue}>`)
+            );
+          else return "";
+        },
+      }}
+      InputLabelProps={{ shrink: true }}
+    >
+      {options.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {renderItem?.(option.name, option.value == value) ?? option.name}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
@@ -83,34 +80,30 @@ export function FSelectOnly({
   renderItem,
   ...props
 }: FSelectOnlyProps) {
+  const { ref, value, onChange, ...formProps } = formControlProps(state);
   return (
-    <RenderForm
-      control={state}
-      children={({ ref, value, onChange, ...formProps }) => (
-        <Select
-          inputRef={ref}
-          {...formProps}
-          {...props}
-          onChange={(e, v) => console.log({ e, v })}
-          value={value == null ? "" : value}
-          displayEmpty
-          renderValue={(values) => {
-            const stringValue = values as stringOrNumber;
-            if (typeof stringValue === "string")
-              return (
-                options.find((x) => x.value === stringValue)?.name ??
-                `<unknown : ${stringValue}>`
-              );
-            else return "";
-          }}
-        >
-          {options.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {renderItem?.(option.name, option.value == value) ?? option.name}
-            </MenuItem>
-          ))}
-        </Select>
-      )}
-    />
+    <Select
+      inputRef={ref}
+      {...formProps}
+      {...props}
+      onChange={(e, v) => console.log({ e, v })}
+      value={value == null ? "" : value}
+      displayEmpty
+      renderValue={(values) => {
+        const stringValue = values as stringOrNumber;
+        if (typeof stringValue === "string")
+          return (
+            options.find((x) => x.value === stringValue)?.name ??
+            `<unknown : ${stringValue}>`
+          );
+        else return "";
+      }}
+    >
+      {options.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {renderItem?.(option.name, option.value == value) ?? option.name}
+        </MenuItem>
+      ))}
+    </Select>
   );
 }

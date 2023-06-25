@@ -1,6 +1,10 @@
 import { ReactElement, ReactNode } from "react";
 import { Control, ControlValue } from "./types";
-import { FormControlProps, genericProps, useControlValue } from "./react-hooks";
+import {
+  FormControlProps,
+  formControlProps,
+  useControlValue,
+} from "./react-hooks";
 import React from "react";
 
 export type RenderControlProps =
@@ -11,11 +15,7 @@ export type RenderControlProps =
       render: () => ReactNode;
     };
 export function RenderControl(props: RenderControlProps) {
-  return (
-    <>
-      {useControlValue(("children" in props ? props.children : props.render)!)}
-    </>
-  );
+  return <>{("children" in props ? props.children : props.render)()}</>;
 }
 
 export function RenderValue<V>({
@@ -29,6 +29,9 @@ export function RenderValue<V>({
   return <>{children(v)}</>;
 }
 
+/**
+ * @deprecated Use formControlProps() directly
+ */
 export function RenderForm<V, E extends HTMLElement = HTMLElement>({
   control,
   children,
@@ -36,7 +39,7 @@ export function RenderForm<V, E extends HTMLElement = HTMLElement>({
   control: Control<V>;
   children: (fcp: FormControlProps<V, E>) => ReactNode;
 }) {
-  return <>{useControlValue(() => children(genericProps<V, E>(control)))}</>;
+  return <>{children(formControlProps<V, E>(control))}</>;
 }
 
 /**
@@ -93,14 +96,8 @@ export interface FormArrayProps<V> {
  * @deprecated Use RenderControl with renderElements
  */
 export function FormArray<V>({ control, children }: FormArrayProps<V>) {
-  return (
-    <>
-      {useControlValue(() => {
-        const v = control.optional?.elements;
-        return v ? children(v) : null;
-      })}
-    </>
-  );
+  const v = control.optional?.elements;
+  return <>{v ? children(v) : null}</>;
 }
 
 /**

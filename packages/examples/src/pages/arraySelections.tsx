@@ -6,7 +6,6 @@ import {
   FormArray,
   notEmpty,
   removeElement,
-  RenderControl,
   SelectionGroup,
   useControl,
   useControlValue,
@@ -68,20 +67,12 @@ export default function ArraySelectionsExample() {
             ))
           }
         </FormArray>
-        <RenderControl>
-          {() => (
-            <span>
-              Dirty: <span id="dirtyFlag">{allFormState.dirty.toString()}</span>
-            </span>
-          )}
-        </RenderControl>{" "}
-        <RenderControl>
-          {() => (
-            <span>
-              Valid: <span id="validFlag">{allFormState.valid.toString()}</span>
-            </span>
-          )}
-        </RenderControl>
+        <span>
+          Dirty: <span id="dirtyFlag">{allFormState.dirty.toString()}</span>
+        </span>
+        <span>
+          Valid: <span id="validFlag">{allFormState.valid.toString()}</span>
+        </span>
       </div>
       <div>
         <button

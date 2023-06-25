@@ -32,11 +32,6 @@ import {
   ControlValue,
 } from "./types";
 
-enum EffectType {
-  Initial = 1,
-  OnChange,
-}
-
 class EffectSubscription<V> extends SubscriptionTracker {
   currentValue?: V;
   effect?: () => void;
@@ -61,7 +56,7 @@ class EffectSubscription<V> extends SubscriptionTracker {
   }
 }
 
-function useRefState<A>(init: () => A): [MutableRefObject<A>, boolean] {
+export function useRefState<A>(init: () => A): [MutableRefObject<A>, boolean] {
   const ref = useRef<A | null>(null);
   const isInitial = !ref.current;
   if (isInitial) {
@@ -85,25 +80,25 @@ export function useControlEffect<V>(
   const [stateRef, isInitial] = useRefState<EffectSubscription<V>>(
     () => new EffectSubscription<V>(compute, onChange, initial)
   );
-  let computeState = stateRef.current;
+  let effectState = stateRef.current;
   if (!isInitial) {
-    computeState.compute = compute;
-    computeState.onChange = onChange;
-    computeState.run(() => {
+    effectState.compute = compute;
+    effectState.onChange = onChange;
+    effectState.run(() => {
       const newValue = compute();
-      if (!basicShallowEquals(computeState.currentValue, newValue)) {
-        computeState.currentValue = newValue;
-        computeState.effect = () => onChange(newValue);
+      if (!basicShallowEquals(effectState.currentValue, newValue)) {
+        effectState.currentValue = newValue;
+        effectState.effect = () => onChange(newValue);
       }
     });
   }
 
   useEffect(() => {
-    if (computeState.effect) {
-      computeState.effect();
-      computeState.effect = undefined;
+    if (effectState.effect) {
+      effectState.effect();
+      effectState.effect = undefined;
     }
-  }, [computeState.effect]);
+  }, [effectState.effect]);
 
   useEffect(() => {
     return () => stateRef.current!.destroy();
@@ -196,7 +191,7 @@ export interface FormControlProps<V, E extends HTMLElement> {
   ref: (elem: HTMLElement | null) => void;
 }
 
-export function genericProps<V, E extends HTMLElement>(
+export function formControlProps<V, E extends HTMLElement>(
   state: Control<V>
 ): FormControlProps<V, E> {
   const error = state.error;

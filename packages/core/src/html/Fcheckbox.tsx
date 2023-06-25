@@ -1,7 +1,6 @@
 import React from "react";
-import { useControlEffect } from "../react-hooks";
+import { formControlProps, useControlEffect } from "../react-hooks";
 import { Control } from "../types";
-import { RenderForm } from "../components";
 
 export type FcheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
   control: Control<boolean>;
@@ -18,22 +17,19 @@ export function Fcheckbox({
     () => control.error,
     (s) => (control.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
+  const { value, onChange, errorText, ...theseProps } =
+    formControlProps(control);
   return (
-    <RenderForm
-      control={control}
-      children={({ value, onChange, errorText, ...theseProps }) => (
-        <input
-          {...theseProps}
-          checked={value}
-          ref={(r) => {
-            control.element = r;
-            if (r) r.setCustomValidity(control.current.error ?? "");
-          }}
-          onChange={(e) => (control.value = !value)}
-          type={type}
-          {...others}
-        />
-      )}
+    <input
+      {...theseProps}
+      checked={value}
+      ref={(r) => {
+        control.element = r;
+        if (r) r.setCustomValidity(control.current.error ?? "");
+      }}
+      onChange={(e) => (control.value = !value)}
+      type={type}
+      {...others}
     />
   );
 }

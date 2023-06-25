@@ -1,7 +1,6 @@
 import React from "react";
-import { useControlEffect } from "../react-hooks";
+import { formControlProps, useControlEffect } from "../react-hooks";
 import { Control } from "../types";
-import { RenderForm } from "../components";
 
 // Only allow strings and numbers
 export type FinputProps<V extends string | number> =
@@ -18,20 +17,16 @@ export function Finput<V extends string | number>({
     () => control.error,
     (s) => (control.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
+  const { errorText, value, ...inputProps } = formControlProps(control);
   return (
-    <RenderForm
-      control={control}
-      children={({ errorText, value, ...inputProps }) => (
-        <input
-          {...inputProps}
-          value={value == null ? "" : value}
-          ref={(r) => {
-            control.element = r;
-            if (r) r.setCustomValidity(control.current.error ?? "");
-          }}
-          {...props}
-        />
-      )}
+    <input
+      {...inputProps}
+      value={value == null ? "" : value}
+      ref={(r) => {
+        control.element = r;
+        if (r) r.setCustomValidity(control.current.error ?? "");
+      }}
+      {...props}
     />
   );
 }
