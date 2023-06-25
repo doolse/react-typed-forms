@@ -5,14 +5,15 @@ import React, {
   MutableRefObject,
   ReactElement,
   ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   addAfterChangesCallback,
-  collectChanges,
   controlGroup,
   newControl,
   newElement,
@@ -21,6 +22,7 @@ import {
   trackControlChange,
   updateElements,
   ValueAndDeps,
+  SubscriptionTracker,
 } from "./controlImpl";
 import {
   ChangeListenerFunc,
@@ -30,11 +32,42 @@ import {
   ControlValue,
 } from "./types";
 
-interface ComputeState<V> {
-  value?: ValueAndDeps<V>;
-  listener?: ChangeListenerFunc<any>;
-  compute?: () => V;
+enum EffectType {
+  Initial = 1,
+  OnChange,
+}
+
+class EffectSubscription<V> extends SubscriptionTracker {
+  currentValue?: V;
   effect?: () => void;
+  constructor(
+    public compute: () => V,
+    public onChange: (value: V) => void,
+    initial?: ((value: V) => void) | boolean
+  ) {
+    super();
+    const firstValue = this.run(compute);
+    if (typeof initial === "function") this.effect = () => initial(firstValue);
+    else if (initial) this.effect = () => onChange(firstValue);
+    this.listener = () => {
+      this.run(() => {
+        const newValue = this.compute();
+        if (!basicShallowEquals(this.currentValue, newValue)) {
+          this.currentValue = newValue;
+          if (!this.effect) this.onChange(newValue);
+        }
+      });
+    };
+  }
+}
+
+function useRefState<A>(init: () => A): [MutableRefObject<A>, boolean] {
+  const ref = useRef<A | null>(null);
+  const isInitial = !ref.current;
+  if (isInitial) {
+    ref.current = init();
+  }
+  return [ref as MutableRefObject<A>, isInitial];
 }
 
 /**
@@ -49,79 +82,32 @@ export function useControlEffect<V>(
   onChange: (value: V) => void,
   initial?: ((value: V) => void) | boolean
 ) {
-  const lastRef = useRef<ComputeState<V>>({ compute });
-  lastRef.current.compute = compute;
-  function checkEffect(dontRunEffect?: boolean) {
-    const changes = collectChanges(lastRef.current.compute!);
-    const changed = adjustListeners(lastRef, changes, checkEffect);
-    const res = changes[0];
-    const effectFunction =
-      changed === undefined
-        ? typeof initial === "function"
-          ? initial
-          : initial
-          ? onChange
-          : undefined
-        : changed[0]
-        ? onChange
-        : undefined;
-    if (effectFunction) {
-      if (dontRunEffect) {
-        lastRef.current.effect = () => effectFunction(res);
-      } else {
-        effectFunction(res);
+  const [stateRef, isInitial] = useRefState<EffectSubscription<V>>(
+    () => new EffectSubscription<V>(compute, onChange, initial)
+  );
+  let computeState = stateRef.current;
+  if (!isInitial) {
+    computeState.compute = compute;
+    computeState.onChange = onChange;
+    computeState.run(() => {
+      const newValue = compute();
+      if (!basicShallowEquals(computeState.currentValue, newValue)) {
+        computeState.currentValue = newValue;
+        computeState.effect = () => onChange(newValue);
       }
-    }
+    });
   }
 
-  checkEffect(true);
   useEffect(() => {
-    const effect = lastRef.current.effect;
-    if (effect) {
-      lastRef.current.effect = undefined;
-      effect();
+    if (computeState.effect) {
+      computeState.effect();
+      computeState.effect = undefined;
     }
-  });
-  useClearListeners(lastRef);
-}
+  }, [computeState.effect]);
 
-function useClearListeners<V>(lastRef: MutableRefObject<ComputeState<V>>) {
-  return useEffect(() => {
-    return () => {
-      const c = lastRef.current;
-      if (c.value) {
-        removeListeners(c.listener!, c.value[1]);
-        c.value[1] = [];
-      }
-    };
+  useEffect(() => {
+    return () => stateRef.current!.destroy();
   }, []);
-}
-
-function adjustListeners<V>(
-  lastRef: MutableRefObject<ComputeState<V>>,
-  computed: ValueAndDeps<V>,
-  changeListener: () => void
-) {
-  const [res, deps] = computed;
-  const c = lastRef.current;
-  if (c.value) {
-    const [oldRes, oldDeps] = c.value;
-    const depsChanged =
-      oldDeps.length !== deps.length || deps.some((x, i) => x !== oldDeps[i]);
-    if (depsChanged) {
-      removeListeners(c.listener!, oldDeps);
-      c.listener = makeAfterChangeListener(changeListener);
-      attachListeners(c.listener, deps);
-    }
-    c.value = computed;
-    return [!basicShallowEquals(res, oldRes), depsChanged];
-  } else {
-    const listener = makeAfterChangeListener(changeListener);
-    attachListeners(listener, deps);
-    c.value = computed;
-    c.listener = listener;
-    return undefined;
-  }
 }
 
 export function useValueChangeEffect<V>(
@@ -151,7 +137,7 @@ export function useValueChangeEffect<V>(
     };
     runInitial ? updater(control) : undefined;
     const s = control.subscribe(updater, ControlChange.Value);
-    return () => s.unsubscribe();
+    return () => control.unsubscribe(s);
   }, [control]);
 }
 
@@ -183,7 +169,7 @@ export function useAsyncValidator<V>(
         abortController.current = aborter;
         validator(control, aborter.signal)
           .then((error) => {
-            const [live] = collectChanges(() => validCheckValue(control));
+            const live = validCheckValue(control);
             if (live === currentVersion) {
               control.touched = true;
               control.error = error;
@@ -338,37 +324,28 @@ export function useSelectableArray<V>(
   return selectable;
 }
 
-function removeListeners(
-  listener: ChangeListenerFunc<any>,
-  deps: (Control<any> | ControlChange)[]
-) {
-  for (let i = 0; i < deps.length; i++) {
-    const depC = deps[i++] as Control<any>;
-    depC.unsubscribe(listener);
-  }
-}
+class ControlValueState<V> extends SubscriptionTracker {
+  currentValue?: V;
+  changeCount = 0;
 
-function attachListeners(
-  listener: ChangeListenerFunc<any>,
-  deps: (Control<any> | ControlChange)[]
-) {
-  for (let i = 0; i < deps.length; i++) {
-    const depC = deps[i++] as Control<any>;
-    const depChange = deps[i] as ControlChange;
-    depC.subscribe(listener, depChange);
+  constructor(public compute: (previous?: V) => V) {
+    super();
   }
-}
 
-function makeAfterChangeListener(effect: () => void): ChangeListenerFunc<any> {
-  let afterCbAdded = false;
-  return () => {
-    if (!afterCbAdded) {
-      afterCbAdded = true;
-      addAfterChangesCallback(() => {
-        effect();
-        afterCbAdded = false;
-      });
-    }
+  getSnapshot: () => number = () => {
+    return this.changeCount;
+  };
+
+  getServerSnapshot = this.getSnapshot;
+
+  subscribe: (onChange: () => void) => () => void = (onChange) => {
+    this.listener = (c, change) => {
+      this.changeCount++;
+      onChange();
+    };
+    return () => {
+      this.listener = undefined;
+    };
   };
 }
 
@@ -393,23 +370,52 @@ export function useControlValue<V>(
     typeof controlOrValue === "function"
       ? controlOrValue
       : () => controlOrValue.value;
-  const lastRef = useRef<ComputeState<V>>({});
-
-  const [_, rerender] = useState(0);
-  const computed = collectChanges(compute);
-
+  const [stateRef, initial] = useRefState<ControlValueState<V>>(
+    () => new ControlValueState<V>(compute)
+  );
+  let computeState = stateRef.current;
+  if (!initial) {
+    computeState.compute = compute;
+  }
+  const previous = computeState.currentValue;
   useEffect(() => {
-    adjustListeners(lastRef, computed, () => rerender((x) => x + 1));
-  });
+    return () => stateRef.current!.destroy();
+  }, []);
 
-  useClearListeners(lastRef);
-  return computed[0];
+  const newValue = computeState.run(() => computeState!.compute(previous));
+  computeState.currentValue = newValue;
+  useSyncExternalStore(
+    computeState.subscribe,
+    computeState.getSnapshot,
+    computeState.getServerSnapshot
+  );
+  return newValue;
+}
+
+class ComputeTracker<V> extends SubscriptionTracker {
+  control!: Control<V>;
+  constructor(public compute: () => V) {
+    super();
+    this.run(() => {
+      const v = compute();
+      this.control = newControl(v);
+    });
+    this.listener = () => {
+      this.run(() => {
+        this.control.value = this.compute();
+      });
+    };
+  }
 }
 
 export function useComputed<V>(compute: () => V): Control<V> {
-  const c = useControl(() => collectChanges(compute)[0]);
-  useControlEffect(compute, (v) => (c.value = v), true);
-  return c;
+  const trackerRef = useRef<ComputeTracker<V> | null>(null);
+  let tracker = trackerRef.current;
+  if (!tracker) {
+    tracker = new ComputeTracker(compute);
+    trackerRef.current = tracker;
+  } else tracker.compute = compute;
+  return tracker.control;
 }
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(

@@ -25,21 +25,10 @@ export type ValueAndDeps<V> = [V, (Control<any> | ControlChange)[]];
 
 let controlCount = 0;
 
-let hasWarned = false;
-
 const pendingChangeSet: Set<ControlImpl<any>> = new Set<ControlImpl<any>>();
 let freezeCount = 0;
 let runningListeners = 0;
-let collectChange: (control: Control<any>, change: ControlChange) => void = (
-  c
-) => {
-  if (!hasWarned) {
-    hasWarned = true;
-    console.trace(
-      "Changes will not be tracked, if this is intentional please use .current"
-    );
-  }
-};
+let collectChange: ChangeListenerFunc<any> = () => {};
 
 export function groupedChanges<A>(change: () => A) {
   freezeCount++;
@@ -454,11 +443,12 @@ class ControlImpl<V> implements Control<V> {
       listener,
     ];
     this.listeners = [...this.listeners, newListener];
-    return new SubscriptionImpl(this, newListener);
+    return newListener;
   }
 
-  unsubscribe(listener: ChangeListenerFunc<V>) {
-    this.listeners = this.listeners.filter((cl) => cl[1] !== listener);
+  unsubscribe(listener: ChangeListenerFunc<V> | Subscription) {
+    const l = Array.isArray(listener) ? listener[1] : listener;
+    this.listeners = this.listeners.filter((cl) => cl[1] !== l);
   }
 
   set error(error: string | null | undefined) {
@@ -489,9 +479,10 @@ class ControlImpl<V> implements Control<V> {
 
   detachParentListener(c: Control<any>) {
     let meta = this.getParentMeta(c);
-    if (meta) {
-      meta[1]?.unsubscribe();
-      meta[1] = undefined;
+    const s = meta?.[1];
+    if (s) {
+      c.unsubscribe(s);
+      meta![1] = undefined;
     }
   }
   attachParentListener<A>(
@@ -1026,23 +1017,6 @@ function debugChange(syncFlags: ControlChange) {
   }
   return flags.length === 0 ? "None" : flags.join("|");
 }
-
-export function collectChanges<V>(compute: () => V): ValueAndDeps<V> {
-  const controlAndChanges: (Control<any> | ControlChange)[] = [];
-  const prevChange = collectChange;
-  try {
-    collectChange = (c, ch) => {
-      const ex = controlAndChanges.indexOf(c);
-      if (ex >= 0) (controlAndChanges[ex + 1] as ControlChange) |= ch;
-      else controlAndChanges.push(c, ch);
-    };
-    const ret = compute();
-    return [ret, controlAndChanges];
-  } finally {
-    collectChange = prevChange;
-  }
-}
-
 export function trackControlChange(c: Control<any>, change: ControlChange) {
   collectChange(c, change);
 }
@@ -1145,17 +1119,56 @@ export function basicShallowEquals(a: any, b: any): boolean {
   return a !== a && b !== b;
 }
 
-class SubscriptionImpl implements Subscription {
-  constructor(private c: ControlImpl<any>, private l: ChangeListener) {}
+export class SubscriptionTracker {
+  private _listener: ChangeListenerFunc<any> = (control, change) => {
+    if (this.listener) this.listener(control, change);
+  };
+  listener?: ChangeListenerFunc<any>;
+  subscribed: [Control<any>, Subscription | undefined, ControlChange][] = [];
+  previousTracker?: ChangeListenerFunc<any>;
 
-  get changes() {
-    return this.l[0];
+  start() {
+    this.previousTracker = collectChange;
+    collectChange = (c, change) => {
+      const existing = this.subscribed.find((x) => x[0] === c);
+      if (existing) {
+        existing[2] |= change;
+      } else {
+        this.subscribed.push([c, undefined, change]);
+      }
+    };
   }
 
-  set changes(c: ControlChange) {
-    this.l[0] = c;
+  run<V>(cb: () => V): V {
+    this.start();
+    try {
+      return cb();
+    } finally {
+      this.stop();
+    }
   }
-  unsubscribe(): void {
-    this.c.listeners = this.c.listeners.filter((cl) => cl !== this.l);
+
+  stop() {
+    if (this.previousTracker) collectChange = this.previousTracker;
+    let removed = false;
+    this.subscribed.forEach((sub) => {
+      const [c, s, latest] = sub;
+      if (s && s[0] === latest) return;
+      if (s) {
+        if (!latest) {
+          removed = true;
+          c.unsubscribe(s);
+          sub[1] = undefined;
+        } else s[0] = latest;
+      } else {
+        sub[1] = c.subscribe(this._listener, latest);
+      }
+      sub[2] = 0;
+    });
+    if (removed) this.subscribed = this.subscribed.filter((x) => x[1]);
+  }
+
+  destroy() {
+    this.subscribed.forEach((x) => x[0].unsubscribe(this._listener));
   }
 }
