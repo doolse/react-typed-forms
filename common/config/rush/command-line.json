@@ -42,6 +42,20 @@
       "name": "watch",
       "summary": "build in watch mode",
       "shellCommand": "(cd packages/core && rushx watch) & (cd packages/mui && rushx watch) & (cd packages/schemas && rushx watch) & (cd packages/schemas-mui && rushx watch)"
+    },
+    {
+      "commandKind": "global",
+      "name": "devbuild",
+      "summary": "Build packages to test in external project",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush version --bump && rush build && rush publish --pack --include-all --publish --release-folder /tmp"
+    },
+    {
+      "commandKind": "global",
+      "name": "build-and-publish",
+      "summary": "Build packages to test in external project",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --publish"
     }
 
     // {

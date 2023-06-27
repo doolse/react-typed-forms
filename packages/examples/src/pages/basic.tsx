@@ -7,10 +7,7 @@ type SimpleForm = {
   number: string;
 };
 
-let renders = 0;
-
 export default function BasicFormExample() {
-  renders++;
   const formState = useControl(
     {
       username: "",
@@ -27,13 +24,16 @@ export default function BasicFormExample() {
       },
     }
   );
+  const renders = useRef(0);
+  renders.current++;
   const fields = formState.fields;
   const [formData, setFormData] = useState<SimpleForm>();
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <div className="container">
       <h2>
-        Basic Form Example - <span id="renderCount">{renders}</span> render(s)
+        Basic Form Example - <span id="renderCount">{renders.current}</span>{" "}
+        render(s)
       </h2>
       <p>
         Hitting the toObject() button will also trigger the html5 validity

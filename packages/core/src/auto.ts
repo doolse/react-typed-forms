@@ -144,8 +144,9 @@ const dispatcherMachinePROD = createMachine({
 */
 
 let stopTracking: (() => void) | null = null;
-let lock = false;
-let currentDispatcher: ReactDispatcher | null = null;
+let lock = typeof window === "undefined";
+let currentDispatcher: ReactDispatcher | null =
+  ReactInternals.ReactCurrentDispatcher.current;
 
 function installCurrentDispatcherHook() {
   Object.defineProperty(ReactInternals.ReactCurrentDispatcher, "current", {
@@ -164,6 +165,7 @@ function installCurrentDispatcherHook() {
       // Update the current dispatcher now so the hooks inside of the
       // useSyncExternalStore shim get the right dispatcher.
       currentDispatcher = nextDispatcher;
+      if (currentDispatcher == null) debugger;
       if (
         isEnteringComponentRender(currentDispatcherType, nextDispatcherType)
       ) {
@@ -173,7 +175,11 @@ function installCurrentDispatcherHook() {
       } else if (
         isExitingComponentRender(currentDispatcherType, nextDispatcherType)
       ) {
-        stopTracking?.();
+        const st = stopTracking;
+        if (st != null) {
+          stopTracking = null;
+          st();
+        }
       }
     },
   });
@@ -186,13 +192,14 @@ const MountDispatcherType = 1 << 2;
 const UpdateDispatcherType = 1 << 3;
 const RerenderDispatcherType = 1 << 4;
 const ServerDispatcherType = 1 << 5;
+const StackTraceDispatcherType = 1 << 6;
 const BrowserClientDispatcherType =
   MountDispatcherType | UpdateDispatcherType | RerenderDispatcherType;
 
 const dispatcherTypeCache = new Map<ReactDispatcher, DispatcherType>();
 function getDispatcherType(dispatcher: ReactDispatcher | null): DispatcherType {
   // Treat null the same as the ContextOnlyDispatcher.
-  if (!dispatcher) return ContextOnlyDispatcherType;
+  if (!dispatcher) return StackTraceDispatcherType;
 
   const cached = dispatcherTypeCache.get(dispatcher);
   if (cached !== undefined) return cached;
