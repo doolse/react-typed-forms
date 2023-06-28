@@ -1,8 +1,8 @@
 import {
   addElement,
-  FormArray,
   RenderControl,
-  renderOptional,
+  RenderElements,
+  RenderOptional,
   useControl,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -42,8 +42,8 @@ export default function OptionalsTest() {
       <div>
         <FNumberField id="age" label="Age" state={fields.age} />
       </div>
-      <RenderControl>
-        {renderOptional(nested, (c) => (
+      <RenderOptional control={nested}>
+        {(c) => (
           <div>
             <FTextField
               id="optionalField"
@@ -51,19 +51,15 @@ export default function OptionalsTest() {
               state={c.fields.optional}
             />
           </div>
-        ))}
-      </RenderControl>
-      <FormArray control={optionalArray}>
-        {(elems) => (
-          <>
-            {elems.map((x) => (
-              <div key={x.uniqueId}>
-                <FTextField label="String elem" state={x} />
-              </div>
-            ))}
-          </>
         )}
-      </FormArray>
+      </RenderOptional>
+      <RenderElements control={optionalArray}>
+        {(x) => (
+          <div>
+            <FTextField label="String elem" state={x} />
+          </div>
+        )}
+      </RenderElements>
       <div>
         <button
           onClick={() => {
@@ -73,12 +69,13 @@ export default function OptionalsTest() {
           Add optional string
         </button>
       </div>
-      <RenderControl
-        children={renderOptional(nullable, (c) => (
+      <RenderOptional
+        control={nullable}
+        children={(c) => (
           <div>
             <FTextField state={c.fields.id} label="Nullable" />
           </div>
-        ))}
+        )}
       />
       <div>
         <button

@@ -1,7 +1,7 @@
 import {
   addElement,
-  FormArray,
   notEmpty,
+  RenderElements,
   useControl,
   useControlValue,
 } from "@react-typed-forms/core";
@@ -33,9 +33,9 @@ export default function CharliePage() {
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />
       <FTextField state={fields.field2} label="Two" />
-      <FormArray control={fields.strings}>
-        {(elems) => elems.map((v) => <FTextField state={v} label="Strings" />)}
-      </FormArray>
+      <RenderElements control={fields.strings}>
+        {(v) => <FTextField state={v} label="Strings" />}
+      </RenderElements>
       <Button onClick={() => addElement(fields.strings, "")}>Add string</Button>
       {subFields && <FTextField state={subFields.coolBeans} label={"Beans"} />}
       <Button onClick={() => (fields.subObject.value = undefined)}>

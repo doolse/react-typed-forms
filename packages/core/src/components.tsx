@@ -1,11 +1,17 @@
-import { Fragment, ReactElement, ReactNode } from "react";
+import React, {
+  createContext,
+  ReactElement,
+  ReactNode,
+  useContext,
+} from "react";
 import { Control, ControlValue } from "./types";
 import {
   FormControlProps,
   formControlProps,
   useControlValue,
 } from "./react-hooks";
-import React from "react";
+
+export const NotDefinedContext = createContext<ReactNode>(<></>);
 
 export type RenderControlProps =
   | {
@@ -49,15 +55,18 @@ export function RenderForm<V, E extends HTMLElement = HTMLElement>({
  * @param render Callback to render if the value is not null
  * @param elseRender Content to render if the value is null
  */
-export function renderOptional<V>(
-  control: Control<V | undefined | null>,
-  render: (c: Control<V>) => ReactNode,
-  elseRender?: ReactNode
-): () => ReactNode {
-  return () => {
-    const o = control.optional;
-    return o ? render(o) : elseRender ?? <></>;
-  };
+export function RenderOptional<V>({
+  control,
+  children,
+  notDefined,
+}: {
+  control: Control<V | undefined | null>;
+  children: (c: Control<V>) => ReactNode;
+  notDefined?: ReactNode;
+}): ReactElement {
+  const o = control.optional;
+  notDefined ??= useContext(NotDefinedContext);
+  return <>{o ? children(o) : notDefined}</>;
 }
 
 type ValuesOfControls<A> = { [K in keyof A]: NonNullable<ControlValue<A[K]>> };
@@ -92,7 +101,7 @@ export interface RenderElementsProps<V> {
   children: (element: Control<V>, index: number, total: number) => ReactNode;
   notDefined?: ReactNode;
   empty?: ReactNode;
-  wrap?: (children: ReactNode, elements: Control<V>[]) => ReactElement;
+  container?: (children: ReactNode, elements: Control<V>[]) => ReactElement;
 }
 
 /**
@@ -101,12 +110,13 @@ export function RenderElements<V>({
   control,
   children,
   notDefined,
-  wrap = (children) => <>{children}</>,
+  container = (children) => <>{children}</>,
   empty,
 }: RenderElementsProps<V>) {
   const v = control.optional?.elements;
+  notDefined ??= useContext(NotDefinedContext);
   return v ? (
-    wrap(v.length ? renderAll(v) : empty, v)
+    container(v.length ? renderAll(v) : empty, v)
   ) : (
     <>{notDefined ? notDefined : empty}</>
   );
@@ -119,26 +129,4 @@ export function RenderElements<V>({
       </RenderControl>
     ));
   }
-}
-
-export interface FormArrayProps<V> {
-  control: Control<V[] | undefined>;
-  children: (elems: Control<V>[]) => ReactNode;
-}
-
-/**
- * @deprecated Use RenderControl with renderElements
- */
-export function FormArray<V>({ control, children }: FormArrayProps<V>) {
-  const v = control.optional?.elements;
-  return <>{v ? children(v) : null}</>;
-}
-
-/**
- * @deprecated Use RenderControl with renderElements
- */
-export function renderAll<V>(
-  render: (c: Control<V>, index: number) => ReactNode
-): (elems: Control<V>[]) => ReactNode {
-  return (e) => e.map(render);
 }

@@ -1,7 +1,7 @@
 import {
   addElement,
-  FormArray,
   notEmpty,
+  RenderElements,
   useAsyncValidator,
   useControl,
   useControlValue,
@@ -68,17 +68,9 @@ export default function ValidationExample() {
         state={fields.async}
         showValid
       />
-      <FormArray control={fields.array}>
-        {(elems) =>
-          elems.map((s) => (
-            <FormInput
-              key={s.uniqueId}
-              state={s.fields.notBlank}
-              label="Not blank"
-            />
-          ))
-        }
-      </FormArray>
+      <RenderElements control={fields.array}>
+        {(s) => <FormInput state={s.fields.notBlank} label="Not blank" />}
+      </RenderElements>
       <div>
         <button
           className="btn btn-secondary"

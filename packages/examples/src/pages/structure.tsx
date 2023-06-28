@@ -2,13 +2,12 @@ import {
   addElement,
   Control,
   Finput,
-  FormArray,
   RenderControl,
-  renderAll,
   RenderValue,
   useComputed,
   useControl,
   useValueChangeEffect,
+  RenderElements,
 } from "@react-typed-forms/core";
 import React, { ReactElement } from "react";
 
@@ -38,15 +37,13 @@ export default function SimpleExample() {
         children={(count) => <h2>{count} notifications</h2>}
       />
       <RenderControl children={() => <div>{mapped.value}</div>} />
-      <FormArray control={fields.stringChildren}>
-        {(s) =>
-          s.map((x) => (
-            <div key={x.uniqueId}>
-              <label>String</label> <Finput control={x} />
-            </div>
-          ))
-        }
-      </FormArray>
+      <RenderElements control={fields.stringChildren}>
+        {(x) => (
+          <div>
+            <label>String</label> <Finput control={x} />
+          </div>
+        )}
+      </RenderElements>
       <button
         onClick={() =>
           addElement(
@@ -78,11 +75,9 @@ function TreeStructure({
         <Finput control={fields.id} />
       </div>
       <div style={{ paddingLeft: 10, margin: 10 }}>
-        <FormArray
+        <RenderElements
           control={fields.children}
-          children={renderAll((x) => (
-            <TreeStructure control={x} />
-          ))}
+          children={(x) => <TreeStructure control={x} />}
         />
       </div>
       <div>

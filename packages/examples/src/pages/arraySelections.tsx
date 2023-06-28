@@ -3,9 +3,9 @@ import {
   ensureSelectableValues,
   Fcheckbox,
   Finput,
-  FormArray,
   notEmpty,
   removeElement,
+  RenderElements,
   SelectionGroup,
   useControl,
   useControlValue,
@@ -55,18 +55,16 @@ export default function ArraySelectionsExample() {
       <h2>Array Selections Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <FormArray control={formState}>
-          {(elems) =>
-            elems.map((x, idx) => (
-              <StructuredRow
-                state={x}
-                key={x.uniqueId}
-                index={idx}
-                onDelete={() => removeElement(formState, x)}
-              />
-            ))
-          }
-        </FormArray>
+        <RenderElements control={formState}>
+          {(x, idx) => (
+            <StructuredRow
+              state={x}
+              key={x.uniqueId}
+              index={idx}
+              onDelete={() => removeElement(formState, x)}
+            />
+          )}
+        </RenderElements>
         <span>
           Dirty: <span id="dirtyFlag">{allFormState.dirty.toString()}</span>
         </span>

@@ -11,8 +11,8 @@ import {
 } from "@mui/material";
 import {
   Control,
-  FormArray,
   groupedChanges,
+  RenderElements,
   SelectionGroup,
   useControlValue,
 } from "@react-typed-forms/core";
@@ -34,8 +34,9 @@ export function FSelectionList<A>({
   elevation?: number;
 }) {
   return (
-    <FormArray control={control}>
-      {(items) => {
+    <RenderElements
+      control={control}
+      container={(children, items) => {
         const numChecked = items
           .map((x) => x.fields.selected.value)
           .reduce((c, n) => (n ? c + 1 : c), 0);
@@ -67,21 +68,23 @@ export function FSelectionList<A>({
               component="div"
               role="list"
             >
-              {items.map((i) => (
-                <SelectionEntry
-                  key={i.uniqueId}
-                  disabled={control.disabled}
-                  control={i}
-                  entryName={entryName}
-                  entrySelected={entrySelected}
-                />
-              ))}
+              {children}
               <ListItem />
             </List>
           </Card>
         );
       }}
-    </FormArray>
+    >
+      {(i) => (
+        <SelectionEntry
+          key={i.uniqueId}
+          disabled={control.disabled}
+          control={i}
+          entryName={entryName}
+          entrySelected={entrySelected}
+        />
+      )}
+    </RenderElements>
   );
 
   function handleToggleAll(items: Control<SelectionGroup<A>>[]) {

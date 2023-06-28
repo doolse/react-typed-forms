@@ -88,7 +88,7 @@ export function useControlEffect<V>(
       const newValue = compute();
       if (!basicShallowEquals(effectState.currentValue, newValue)) {
         effectState.currentValue = newValue;
-        effectState.effect = () => onChange(newValue);
+        effectState.effect = () => effectState.onChange(newValue);
       }
     });
   }
