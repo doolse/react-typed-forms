@@ -7,15 +7,20 @@ import {
 } from "@react-typed-forms/core";
 
 export default function DebugComponent() {
-  const control = useControl<{ one: string; two: string }[]>([]);
+  const control = useControl<{ one: string; two: string }[]>();
   return (
     <>
       <RenderElements
         control={control}
-        header={() => <div>Header</div>}
+        wrap={(children, c) => (
+          <>
+            <div>Header</div>
+            {children}
+            {`${c.length} elements`}
+          </>
+        )}
         empty={"This empty"}
         notDefined={"This not defined"}
-        footer={(i) => `${i.length} elements`}
       >
         {(x) => x.fields.one.value + " - " + x.fields.two.value}
       </RenderElements>

@@ -92,8 +92,7 @@ export interface RenderElementsProps<V> {
   children: (element: Control<V>, index: number, total: number) => ReactNode;
   notDefined?: ReactNode;
   empty?: ReactNode;
-  header?: (elements: Control<V>[]) => ReactNode;
-  footer?: (elements: Control<V>[]) => ReactNode;
+  wrap?: (children: ReactNode, elements: Control<V>[]) => ReactElement;
 }
 
 /**
@@ -102,17 +101,12 @@ export function RenderElements<V>({
   control,
   children,
   notDefined,
-  header,
-  footer,
+  wrap = (children) => <>{children}</>,
   empty,
 }: RenderElementsProps<V>) {
   const v = control.optional?.elements;
   return v ? (
-    <>
-      {header?.(v)}
-      {v.length ? renderAll(v) : empty}
-      {footer?.(v)}
-    </>
+    wrap(v.length ? renderAll(v) : empty, v)
   ) : (
     <>{notDefined ? notDefined : empty}</>
   );
