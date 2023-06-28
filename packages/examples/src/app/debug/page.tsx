@@ -1,23 +1,34 @@
 "use client";
 import React, { ReactNode } from "react";
-import { useControl } from "@react-typed-forms/core";
+import {
+  addElement,
+  RenderElements,
+  useControl,
+} from "@react-typed-forms/core";
 
 export default function DebugComponent() {
-  const control = useControl("");
-  return <ExternalComponent something="wow" />;
-}
-
-function ExternalComponent(props: { something: string }) {
-  console.log(props);
+  const control = useControl<{ one: string; two: string }[]>([]);
   return (
-    <div>
-      {[1, 2, 3].map((x) => (
-        <AnotherComponent>{x}</AnotherComponent>
-      ))}
-    </div>
+    <>
+      <RenderElements
+        control={control}
+        header={() => <div>Header</div>}
+        empty={"This empty"}
+        notDefined={"This not defined"}
+        footer={(i) => `${i.length} elements`}
+      >
+        {(x) => x.fields.one.value + " - " + x.fields.two.value}
+      </RenderElements>
+      <button
+        onClick={() =>
+          addElement(control, {
+            one: (control.elements?.length ?? 1).toString(),
+            two: "TWO",
+          })
+        }
+      >
+        Add
+      </button>
+    </>
   );
-}
-
-function AnotherComponent({ children }: { children: ReactNode }) {
-  return <div>{children}</div>;
 }

@@ -3,11 +3,10 @@ import {
   Control,
   ControlSetup,
   Finput,
-  FormArray,
   notEmpty,
   removeElement,
   RenderControl,
-  renderElements,
+  RenderElements,
   updateElements,
   useControl,
   useControlValue,
@@ -77,13 +76,9 @@ export default function ArraysExample() {
       <h2>Arrays Example - {renders} render(s)</h2>
       <div className="my-3">
         <h5>Strings</h5>
-        <RenderControl
-          children={renderElements(fields.strings, (c, idx) => (
-            <div
-              key={c.uniqueId}
-              id={`string-${idx + 1}`}
-              className="form-inline"
-            >
+        <RenderElements control={fields.strings}>
+          {(c, idx) => (
+            <div id={`string-${idx + 1}`} className="form-inline">
               <div className="form-group mb-2">
                 <label className="mx-2">Value:</label>
                 <Finput type="text" className="form-control" control={c} />
@@ -112,8 +107,8 @@ export default function ArraysExample() {
                 </button>
               </div>
             </div>
-          ))}
-        />
+          )}
+        </RenderElements>
         <div>
           <button
             id="addString"
@@ -133,9 +128,9 @@ export default function ArraysExample() {
       </div>
       <div className="my-3">
         <h5>Structured elements</h5>
-        <RenderControl
-          children={renderElements(fields.structured, (c, idx) => (
-            <div id={`obj-${idx + 1}`} key={c.uniqueId} className="form-inline">
+        <RenderElements control={fields.structured}>
+          {(c, idx) => (
+            <div id={`obj-${idx + 1}`} className="form-inline">
               <div className="form-group mb-2">
                 <label className="mx-2">Id:</label>
                 <Finput
@@ -173,8 +168,8 @@ export default function ArraysExample() {
                 </button>
               </div>
             </div>
-          ))}
-        />
+          )}
+        </RenderElements>
         <div>
           <button
             id="addObj"

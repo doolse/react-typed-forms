@@ -165,7 +165,6 @@ function installCurrentDispatcherHook() {
       // Update the current dispatcher now so the hooks inside of the
       // useSyncExternalStore shim get the right dispatcher.
       currentDispatcher = nextDispatcher;
-      if (currentDispatcher == null) debugger;
       if (
         isEnteringComponentRender(currentDispatcherType, nextDispatcherType)
       ) {

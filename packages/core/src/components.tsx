@@ -1,4 +1,4 @@
-import { ReactElement, ReactNode } from "react";
+import { Fragment, ReactElement, ReactNode } from "react";
 import { Control, ControlValue } from "./types";
 import {
   FormControlProps,
@@ -87,6 +87,43 @@ export function renderOptionally<A extends Record<string, Control<any>>>(
   };
 }
 
+export interface RenderElementsProps<V> {
+  control: Control<V[] | undefined | null>;
+  children: (element: Control<V>, index: number) => ReactNode;
+  notDefined?: ReactNode;
+  empty?: ReactNode;
+  header?: (elements: Control<V>[]) => ReactNode;
+  footer?: (elements: Control<V>[]) => ReactNode;
+}
+
+/**
+ */
+export function RenderElements<V>({
+  control,
+  children,
+  notDefined,
+  header,
+  footer,
+  empty,
+}: RenderElementsProps<V>) {
+  const v = control.optional?.elements;
+  return v ? (
+    <>
+      {header?.(v)}
+      {v.length
+        ? v.map((x, i) => (
+            <RenderControl key={x.uniqueId}>
+              {() => children(x, i)}
+            </RenderControl>
+          ))
+        : empty}
+      {footer?.(v)}
+    </>
+  ) : (
+    <>{notDefined ? notDefined : empty}</>
+  );
+}
+
 export interface FormArrayProps<V> {
   control: Control<V[] | undefined>;
   children: (elems: Control<V>[]) => ReactNode;
@@ -107,14 +144,4 @@ export function renderAll<V>(
   render: (c: Control<V>, index: number) => ReactNode
 ): (elems: Control<V>[]) => ReactNode {
   return (e) => e.map(render);
-}
-
-export function renderElements<V>(
-  control: Control<V[] | undefined | null>,
-  renderElement: (c: Control<V>, index: number) => ReactNode
-): () => ReactNode {
-  return () => {
-    const v = control.optional?.elements;
-    return <>{v?.map(renderElement)}</>;
-  };
 }

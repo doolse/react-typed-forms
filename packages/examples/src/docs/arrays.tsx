@@ -1,10 +1,7 @@
 import {
   addElement,
-  Control,
   Finput,
-  FormArray,
-  RenderControl,
-  renderElements,
+  RenderElements,
   useControl,
 } from "@react-typed-forms/core";
 import React from "react";
@@ -14,10 +11,9 @@ export function ListOfTextFields() {
 
   return (
     <div>
-      <RenderControl
-        render={renderElements(textFields, (x) => (
-          <Finput key={x.uniqueId} control={x} />
-        ))}
+      <RenderElements
+        control={textFields}
+        children={(x) => <Finput control={x} />}
       />
       <button onClick={() => addElement(textFields, "")}>Add</button>
     </div>
