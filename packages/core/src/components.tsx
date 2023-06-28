@@ -89,7 +89,7 @@ export function renderOptionally<A extends Record<string, Control<any>>>(
 
 export interface RenderElementsProps<V> {
   control: Control<V[] | undefined | null>;
-  children: (element: Control<V>, index: number) => ReactNode;
+  children: (element: Control<V>, index: number, total: number) => ReactNode;
   notDefined?: ReactNode;
   empty?: ReactNode;
   header?: (elements: Control<V>[]) => ReactNode;
@@ -110,18 +110,21 @@ export function RenderElements<V>({
   return v ? (
     <>
       {header?.(v)}
-      {v.length
-        ? v.map((x, i) => (
-            <RenderControl key={x.uniqueId}>
-              {() => children(x, i)}
-            </RenderControl>
-          ))
-        : empty}
+      {v.length ? renderAll(v) : empty}
       {footer?.(v)}
     </>
   ) : (
     <>{notDefined ? notDefined : empty}</>
   );
+
+  function renderAll(v: Control<V>[]) {
+    const total = v.length;
+    return v.map((x, i) => (
+      <RenderControl key={x.uniqueId}>
+        {() => children(x, i, total)}
+      </RenderControl>
+    ));
+  }
 }
 
 export interface FormArrayProps<V> {
