@@ -340,6 +340,8 @@ class ControlValueState<V> extends SubscriptionTracker {
     };
     return () => {
       this.listener = undefined;
+      this.changeCount++;
+      this.destroy();
     };
   };
 }
@@ -369,10 +371,6 @@ export function useControlValue<V>(
     computeState.compute = compute;
   }
   const previous = computeState.currentValue;
-  useEffect(() => {
-    return () => stateRef.current!.destroy();
-  }, []);
-
   const newValue = computeState.run(() => computeState!.compute(previous));
   computeState.currentValue = newValue;
   useSyncExternalStore(
@@ -400,12 +398,11 @@ class ComputeTracker<V> extends SubscriptionTracker {
 }
 
 export function useComputed<V>(compute: () => V): Control<V> {
-  const trackerRef = useRef<ComputeTracker<V> | null>(null);
+  const [trackerRef, initial] = useRefState<ComputeTracker<V>>(
+    () => new ComputeTracker<V>(compute)
+  );
   let tracker = trackerRef.current;
-  if (!tracker) {
-    tracker = new ComputeTracker(compute);
-    trackerRef.current = tracker;
-  } else tracker.compute = compute;
+  tracker.compute = compute;
   return tracker.control;
 }
 

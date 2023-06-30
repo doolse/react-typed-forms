@@ -28,7 +28,9 @@ let controlCount = 0;
 const pendingChangeSet: Set<ControlImpl<any>> = new Set<ControlImpl<any>>();
 let freezeCount = 0;
 let runningListeners = 0;
-let collectChange: ChangeListenerFunc<any> = () => {};
+
+let nopCollectChange: ChangeListenerFunc<any> = () => {};
+let collectChange = nopCollectChange;
 
 export function groupedChanges<A>(change: () => A) {
   freezeCount++;
@@ -300,11 +302,14 @@ class ControlImpl<V> implements Control<V> {
   private runListeners(changed: ControlChange) {
     this.pendingChanges = 0;
     runningListeners++;
+    const prev = collectChange;
     try {
+      collectChange = nopCollectChange;
       this.listeners.forEach(([m, cb]) => {
         if ((m & changed) !== 0) cb(this, changed);
       });
     } finally {
+      collectChange = prev;
       runningListeners--;
     }
   }
@@ -1134,7 +1139,7 @@ export class SubscriptionTracker {
       if (existing) {
         existing[2] |= change;
       } else {
-        this.subscribed.push([c, undefined, change]);
+        this.subscribed.push([c, c.subscribe(this._listener, change), change]);
       }
     };
   }
@@ -1170,5 +1175,6 @@ export class SubscriptionTracker {
 
   destroy() {
     this.subscribed.forEach((x) => x[0].unsubscribe(this._listener));
+    this.subscribed = [];
   }
 }

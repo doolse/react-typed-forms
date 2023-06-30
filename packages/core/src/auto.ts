@@ -345,9 +345,6 @@ export function useComponentTracking(): () => void {
     tracker.getSnapshot,
     tracker.getServerSnapshot
   );
-  useEffect(() => {
-    return () => tracker.destroy();
-  }, []);
   return () => {
     tracker.stop();
   };
@@ -373,6 +370,8 @@ class ComponentTracker<V> extends SubscriptionTracker {
     };
     return () => {
       this.listener = undefined;
+      this.changeCount++;
+      this.destroy();
     };
   };
 }

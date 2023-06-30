@@ -1,14 +1,17 @@
 "use client";
-import React, { ReactNode } from "react";
+import React from "react";
 import {
   addElement,
+  Finput,
   NotDefinedContext,
   RenderElements,
   useControl,
 } from "@react-typed-forms/core";
+import { Child } from "./Child";
 
 export default function DebugComponent() {
   const control = useControl<{ one: string; two: string }[]>();
+  const child = useControl("child");
   return (
     <NotDefinedContext.Provider value={"Loading"}>
       <RenderElements
@@ -34,6 +37,8 @@ export default function DebugComponent() {
       >
         Add
       </button>
+      <Child control={child} />
+      <h1>{child.value}</h1>
     </NotDefinedContext.Provider>
   );
 }

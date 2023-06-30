@@ -46,14 +46,14 @@
     {
       "commandKind": "global",
       "name": "devbuild",
-      "summary": "Build packages to test in external project",
+      "summary": "Bump version and build packages to test in external project",
       "safeForSimultaneousRushProcesses": true,
       "shellCommand": "rush version --bump && rush build && rush publish --pack --include-all --publish --release-folder /tmp"
     },
     {
       "commandKind": "global",
       "name": "build-and-publish",
-      "summary": "Build packages to test in external project",
+      "summary": "Build and publish to npm",
       "safeForSimultaneousRushProcesses": true,
       "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --publish"
     }
