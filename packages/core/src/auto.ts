@@ -355,6 +355,9 @@ class ComponentTracker<V> extends SubscriptionTracker {
 
   constructor() {
     super();
+    this.listener = (c, change) => {
+      this.changeCount++;
+    };
   }
 
   getSnapshot: () => number = () => {

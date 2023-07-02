@@ -325,6 +325,9 @@ class ControlValueState<V> extends SubscriptionTracker {
 
   constructor(public compute: (previous?: V) => V) {
     super();
+    this.listener = (c, change) => {
+      this.changeCount++;
+    };
   }
 
   getSnapshot: () => number = () => {
