@@ -33,17 +33,17 @@ import {
 } from "./types";
 
 class EffectSubscription<V> extends SubscriptionTracker {
-  currentValue?: V;
-  effect?: () => void;
+  currentValue: V;
+  effect?: (v: V) => void;
   constructor(
     public compute: () => V,
     public onChange: (value: V) => void,
     initial?: ((value: V) => void) | boolean
   ) {
     super();
-    const firstValue = this.run(compute);
-    if (typeof initial === "function") this.effect = () => initial(firstValue);
-    else if (initial) this.effect = () => onChange(firstValue);
+    this.currentValue = this.run(compute);
+    this.effect =
+      typeof initial === "function" ? initial : initial ? onChange : undefined;
     this.listener = () => {
       this.run(() => {
         const newValue = this.compute();
@@ -88,20 +88,22 @@ export function useControlEffect<V>(
       const newValue = compute();
       if (!basicShallowEquals(effectState.currentValue, newValue)) {
         effectState.currentValue = newValue;
-        effectState.effect = () => effectState.onChange(newValue);
+        effectState.effect = onChange;
       }
     });
   }
 
   useEffect(() => {
     if (effectState.effect) {
-      effectState.effect();
+      effectState.effect(effectState.currentValue!);
       effectState.effect = undefined;
     }
   }, [effectState.effect]);
 
   useEffect(() => {
-    return () => stateRef.current!.destroy();
+    return () => {
+      stateRef.current!.destroy();
+    };
   }, []);
 }
 

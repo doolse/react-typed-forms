@@ -9,6 +9,7 @@ import {
   RenderElements,
   useComputed,
   useControl,
+  useControlEffect,
 } from "@react-typed-forms/core";
 import { Child } from "./Child";
 
@@ -28,6 +29,10 @@ export default function DebugComponent() {
       (c, k) => c + (control.fields[k as keyof SomeFields].disabled ? 1 : 0),
       0
     )
+  );
+  useControlEffect(
+    () => disabledCount.value,
+    (c) => console.log({ c })
   );
   const v = disabledCount.value;
   return (
