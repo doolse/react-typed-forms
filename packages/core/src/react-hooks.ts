@@ -466,7 +466,9 @@ export function controlValues(
 ): () => any {
   return () => {
     if (args.length === 1) {
-      return Object.entries(args).map((x) => [x[0], x[1].value]);
+      return Object.fromEntries(
+        Object.entries(args[0]).map((x) => [x[0], x[1].value])
+      );
     }
     return args.map((x) => x.value);
   };

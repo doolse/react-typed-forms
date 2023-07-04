@@ -1,17 +1,12 @@
 "use client";
 import React from "react";
 import {
-  addElement,
   Control,
-  Finput,
-  NotDefinedContext,
-  RenderControl,
-  RenderElements,
+  controlValues,
   useComputed,
   useControl,
   useControlEffect,
 } from "@react-typed-forms/core";
-import { Child } from "./Child";
 
 interface SomeFields {
   one: string;
@@ -34,6 +29,7 @@ export default function DebugComponent() {
     () => disabledCount.value,
     (c) => console.log({ c })
   );
+  useControlEffect(controlValues({ disabledCount }), (c) => console.log({ c }));
   const v = disabledCount.value;
   return (
     <>
