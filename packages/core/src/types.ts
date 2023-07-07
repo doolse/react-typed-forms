@@ -30,7 +30,17 @@ export interface ControlProperties<V> {
   readonly dirty: boolean;
   disabled: boolean;
   touched: boolean;
-  readonly optional: Control<NonNullable<V>> | undefined;
+  readonly fields: V extends string | number | Array<any> | undefined | null
+    ? undefined
+    : V extends { [a: string]: any }
+    ? { [K in keyof V]-?: Control<V[K]> }
+    : V;
+  readonly elements: V extends (infer A)[]
+    ? Control<A>[]
+    : V extends string | number | { [k: string]: any }
+    ? never[]
+    : V;
+  readonly isNull: boolean;
 }
 
 type Readonly<V> = {
@@ -41,24 +51,6 @@ export interface Control<V> extends ControlProperties<V> {
   readonly uniqueId: number;
   current: Readonly<ControlProperties<V>>;
   meta: { [key: string]: any };
-
-  readonly fields: V extends string | number | Array<any> | undefined | null
-    ? {}
-    : V extends { [a: string]: any }
-    ? { [K in keyof V]-?: Control<V[K]> }
-    : V;
-
-  readonly elements: V extends (infer A)[]
-    ? Control<A>[]
-    : V extends string | number | { [k: string]: any }
-    ? never[]
-    : V;
-
-  readonly elementsStructure: V extends (infer A)[]
-    ? Control<A>[]
-    : V extends string | number | { [k: string]: any }
-    ? never[]
-    : V;
 
   subscribe(
     listener: ChangeListenerFunc<V>,

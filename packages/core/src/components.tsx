@@ -60,13 +60,18 @@ export function RenderOptional<V>({
   children,
   notDefined,
 }: {
-  control: Control<V | undefined | null>;
+  control: Control<V | undefined | null> | null | undefined;
   children: (c: Control<V>) => ReactNode;
   notDefined?: ReactNode;
 }): ReactElement {
-  const o = control.optional;
-  notDefined ??= useContext(NotDefinedContext);
-  return <>{o ? children(o) : notDefined}</>;
+  const ndc = useContext(NotDefinedContext);
+  return (
+    <>
+      {control && !control.isNull
+        ? children(control.as<V>())
+        : notDefined ?? ndc}
+    </>
+  );
 }
 
 type ValuesOfControls<A> = { [K in keyof A]: NonNullable<ControlValue<A[K]>> };
@@ -113,12 +118,13 @@ export function RenderElements<V>({
   container = (children) => <>{children}</>,
   empty,
 }: RenderElementsProps<V>) {
-  const v = control.optional?.elements;
-  notDefined ??= useContext(NotDefinedContext);
+  const v = control.elements;
+  const ndc = useContext(NotDefinedContext);
+  notDefined ??= ndc;
   return v ? (
     container(v.length ? renderAll(v) : empty, v)
   ) : (
-    <>{notDefined ? notDefined : empty}</>
+    <>{notDefined ?? empty}</>
   );
 
   function renderAll(v: Control<V>[]) {

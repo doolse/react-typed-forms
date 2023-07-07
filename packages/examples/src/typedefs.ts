@@ -8,9 +8,6 @@ import {
 function typeWithNull<A extends { id: string } | null>(c: Control<A>) {
   // @ts-expect-error
   c.fields.id;
-  // @ts-expect-error
-  c.optional.fields.id;
-  c.optional?.fields.id;
 }
 
 function typeWithUndefined<A extends { id: string } | undefined>(
@@ -19,9 +16,7 @@ function typeWithUndefined<A extends { id: string } | undefined>(
 ) {
   // @ts-expect-error
   c.fields.id;
-  // @ts-expect-error
-  c.optional.fields.id;
-  c.optional?.fields.id;
+  c.fields?.id;
   // @ts-expect-error
   c.elements?.map((x) => x.id);
 }
@@ -42,21 +37,17 @@ function takesArray<A extends { id: string } | undefined>(
 ) {
   // @ts-expect-error
   c.elements[0];
-  c.optional && c.optional.elements[0];
   c.elements?.[0];
-  c.optional?.elements.map((x) => x.optional?.fields.id);
 }
 
 function takesArrayO<A extends { id: string }>(c: Control<A[] | undefined>) {
   // @ts-expect-error
   c.elements[0];
-  c.optional && c.optional.elements[0];
   c.elements?.[0];
   c.elements?.map((x) => x.fields.id);
 }
 
 function takesArrayNO<A extends { id: string }>(c: Control<A[]>) {
-  c.optional && c.optional.elements[0];
   c.elements?.[0];
   c.elements.map((x) => x.fields.id);
 }

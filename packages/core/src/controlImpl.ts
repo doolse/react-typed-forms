@@ -104,57 +104,19 @@ class ControlImpl<V> implements Control<V> {
     setup.afterCreate?.(this);
   }
 
-  get optional() {
+  get isNull() {
     collectChange(this, ControlChange.Structure);
-    return this.current.optional;
+    return this.current.isNull;
   }
 
   get fields() {
-    const c = this as unknown as ControlImpl<{ [k: string]: any }>;
-    c._fields ??= {};
-    if (!c._fieldsProxy) {
-      c._fieldsProxy = new Proxy<{ [k: string]: Control<any> }>(c._fields, {
-        get(
-          target: { [k: string | symbol]: Control<any> },
-          p: string | symbol,
-          receiver: any
-        ): any {
-          if (p in target) {
-            return target[p];
-          }
-          const thisInitial = c.current.initialValue;
-          const v = c.current.value[p as string];
-          const iv = thisInitial?.[p as string];
-          const newChild = newControl(v, c.setup.fields?.[p as string], iv);
-          newChild.touched = c.current.touched;
-          newChild.disabled = c.current.disabled;
-          c.attachParentListener(newChild, p as string);
-          target[p] = newChild;
-          return newChild;
-        },
-      });
-    }
-    return c._fieldsProxy as any;
-  }
-
-  get elementsStructure(): any {
     collectChange(this, ControlChange.Structure);
-    return this.elements;
+    return this.current.fields;
   }
 
   get elements(): any {
-    const c = this as unknown as ControlImpl<V[]>;
-    const e = c._elems;
-    if (e) {
-      return e;
-    } else {
-      const valueArr = (c._value as any) ?? [];
-      const initialArr = (c._initialValue as any) ?? [];
-      c._elems = createArrayChildren<any>(valueArr, initialArr, (n, i, iv) =>
-        c.attachParentListener(newControl(i, c.setup.elems, iv), n)
-      );
-    }
-    return c._elems;
+    collectChange(this, ControlChange.Structure);
+    return this.current.elements;
   }
 
   isEqual(a: V, b: V): boolean {
@@ -208,13 +170,11 @@ class ControlImpl<V> implements Control<V> {
     let index = 0;
     while (index < path.length && base) {
       const childId = path[index];
-      const o = base.current.optional;
-      if (o) {
-        if (typeof childId === "string") {
-          base = o.fields[childId];
-        } else {
-          base = o.elements[childId];
-        }
+      const c = base.current;
+      if (typeof childId === "string") {
+        base = c.fields?.[childId];
+      } else {
+        base = c.elements?.[childId];
       }
       index++;
     }
@@ -836,8 +796,7 @@ export function findElement<T>(
   control: Control<T[] | undefined> | undefined,
   pred: (c: Control<T>) => unknown
 ): Control<T> | undefined {
-  const c = control?.current.optional;
-  return c && c.elements.find(pred);
+  return control?.current.elements?.find(pred);
 }
 
 export function updateElements<V>(
@@ -845,7 +804,7 @@ export function updateElements<V>(
   cb: (elems: Control<V>[]) => Control<V>[]
 ): void {
   const c = control as unknown as ControlImpl<V[]>;
-  const e = control.elements;
+  const e = control.current.elements;
   const newElems = cb(e);
   if (!basicShallowEquals(e, newElems)) {
     ensureArrayAttachment(c, newElems, e);
@@ -911,9 +870,9 @@ export function addElement<V>(
   index?: number | Control<V> | undefined,
   insertAfter?: boolean
 ): Control<V> {
-  if (control.current.optional) {
+  const e = control.current.elements;
+  if (e) {
     const c = control as unknown as ControlImpl<V[]>;
-    const e = (c as unknown as Control<any[]>).elements;
     const newChild = newControl(child, c.setup.elems);
     if (typeof index === "object") {
       index = e.indexOf(index as any);
@@ -928,7 +887,7 @@ export function addElement<V>(
     return newChild;
   } else {
     control.value = [child];
-    return control.as<V[]>().elements[0];
+    return control.as<V[]>().current.elements[0];
   }
 }
 
@@ -941,12 +900,13 @@ export function removeElement<V>(
   control: Control<V[] | undefined>,
   child: number | Control<V>
 ): void {
-  const o = control.current.optional;
-  if (o) {
-    const c = o.elements;
+  const c = control.current.elements;
+  if (c) {
     const wantedIndex = typeof child === "number" ? child : c.indexOf(child);
     if (wantedIndex < 0 || wantedIndex >= c.length) return;
-    updateElements(o, (ex) => ex.filter((x, i) => i !== wantedIndex));
+    updateElements(control as Control<V[]>, (ex) =>
+      ex.filter((x, i) => i !== wantedIndex)
+    );
   }
 }
 
@@ -1029,6 +989,39 @@ export function trackControlChange(c: Control<any>, change: ControlChange) {
 class ControlStateImpl<V> implements ControlProperties<V> {
   constructor(private control: ControlImpl<V>) {}
 
+  get fields() {
+    if (this.isNull) return undefined;
+    const c = this.control as unknown as ControlImpl<{ [k: string]: any }>;
+    c._fields ??= {};
+    if (!c._fieldsProxy) {
+      c._fieldsProxy = new Proxy<{ [k: string]: Control<any> }>(c._fields, {
+        get(
+          target: { [k: string | symbol]: Control<any> },
+          p: string | symbol,
+          receiver: any
+        ): any {
+          if (p in target) {
+            return target[p];
+          }
+          const thisInitial = c.current.initialValue;
+          const v = c.current.value[p as string];
+          const iv = thisInitial?.[p as string];
+          const newChild = newControl(v, c.setup.fields?.[p as string], iv);
+          newChild.touched = c.current.touched;
+          newChild.disabled = c.current.disabled;
+          c.attachParentListener(newChild, p as string);
+          target[p] = newChild;
+          return newChild;
+        },
+      });
+    }
+    return c._fieldsProxy as any;
+  }
+
+  get isNull() {
+    return this.control._value == null;
+  }
+
   get value() {
     const c = this.control;
     if (!(c._childSync & ChildSyncFlags.Value)) return c._value;
@@ -1089,10 +1082,20 @@ class ControlStateImpl<V> implements ControlProperties<V> {
     return Boolean(this.control.flags & ControlFlags.Disabled);
   }
 
-  get optional() {
-    return this.control._value != null
-      ? (this.control as Control<NonNullable<V>>)
-      : undefined;
+  get elements(): any {
+    if (this.isNull) return undefined;
+    const c = this.control as unknown as ControlImpl<V[]>;
+    const e = c._elems;
+    if (e) {
+      return e;
+    } else {
+      const valueArr = (c._value as any) ?? [];
+      const initialArr = (c._initialValue as any) ?? [];
+      c._elems = createArrayChildren<any>(valueArr, initialArr, (n, i, iv) =>
+        c.attachParentListener(newControl(i, c.setup.elems, iv), n)
+      );
+    }
+    return c._elems;
   }
 }
 

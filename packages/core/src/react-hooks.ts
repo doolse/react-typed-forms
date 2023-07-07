@@ -259,7 +259,7 @@ type SelectionGroupSync<V> = (
 ) => [boolean, Control<V>, boolean?][];
 
 const defaultSelectionCreator: SelectionGroupSync<any> = (original) => {
-  return original.elements.map((x) => [true, x]);
+  return original.current.elements.map((x) => [true, x]);
 };
 
 export function ensureSelectableValues<V>(
@@ -292,7 +292,7 @@ export function useSelectableArray<V>(
     const selectable = newControl<SelectionGroup<V>[]>([], setup);
     const selectionChangeListener = () => {
       updateElements(control, () =>
-        selectable.elements
+        selectable.current.elements
           .filter((x) => x.fields.selected.current.value)
           .map((x) => x.fields.value)
       );
@@ -313,7 +313,7 @@ export function useSelectableArray<V>(
 
   useEffect(() => {
     updateElements(control, () =>
-      selectable.elements
+      selectable.current.elements
         .filter((x) => x.fields.selected.current.value)
         .map((x) => x.fields.value)
     );

@@ -28,7 +28,7 @@ export default function CharliePage() {
     }
   );
   const fields = fc.fields;
-  const subFields = useControlValue(() => fields.subObject.optional?.fields);
+  const subFields = fields.subObject.fields;
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <FTextField state={fields.field1} label="Fair call" />
