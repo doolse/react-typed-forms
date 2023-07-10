@@ -380,7 +380,7 @@ class ControlImpl<V> implements Control<V> {
         this.runChange(this.syncChanges(changed));
       });
     } else {
-      this.runListeners(changed);
+      this.runListeners(changed | this.pendingChanges);
     }
   }
 
