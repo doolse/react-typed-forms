@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  Key,
   ReactElement,
   ReactNode,
   useContext,
@@ -131,6 +132,43 @@ export function RenderElements<V>({
     const total = v.length;
     return v.map((x, i) => (
       <RenderControl key={x.uniqueId}>
+        {() => children(x, i, total)}
+      </RenderControl>
+    ));
+  }
+}
+
+export interface RenderArrayElementsProps<V> {
+  array: V[] | undefined | null;
+  children: (element: V, index: number, total: number) => ReactNode;
+  notDefined?: ReactNode;
+  empty?: ReactNode;
+  getKey?: (element: V, index: number) => Key;
+  container?: (children: ReactNode, elements: V[]) => ReactElement;
+}
+
+/**
+ */
+export function RenderArrayElements<V>({
+  array,
+  children,
+  notDefined,
+  container = (children) => <>{children}</>,
+  getKey = (_, i) => i,
+  empty,
+}: RenderArrayElementsProps<V>) {
+  const ndc = useContext(NotDefinedContext);
+  notDefined ??= ndc;
+  return array ? (
+    container(array.length ? renderAll(array) : empty, array)
+  ) : (
+    <>{notDefined ?? empty}</>
+  );
+
+  function renderAll(v: V[]) {
+    const total = v.length;
+    return v.map((x, i) => (
+      <RenderControl key={getKey(x, i)}>
         {() => children(x, i, total)}
       </RenderControl>
     ));
