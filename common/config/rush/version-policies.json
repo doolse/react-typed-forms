@@ -105,5 +105,13 @@
     "version": "3.0.0-dev.101",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/core"
+  },
+  {
+    "policyName": "schemasRelease",
+    "definitionName": "lockStepVersion",
+    "version": "1.0.0-dev.1",
+    "nextBump": "prerelease",
+    "mainProject": "@react-typed-forms/schemas"
   }
+
 ]

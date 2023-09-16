@@ -6,8 +6,8 @@ import {
   ExpressionType,
   FieldOption,
   FieldValueExpression,
-  ScalarField,
   ControlDefinition,
+  SchemaField,
 } from "./types";
 import {
   ActionControlProperties,
@@ -21,7 +21,7 @@ import {
   isScalarField,
 } from "./controlRender";
 import { useMemo } from "react";
-import { Control, newControl, useControlValue } from "@react-typed-forms/core";
+import { Control, newControl } from "@react-typed-forms/core";
 
 export type ExpressionHook = (
   expr: EntityExpression,
@@ -29,7 +29,7 @@ export type ExpressionHook = (
 ) => any;
 export function useDefaultValue(
   definition: DataControlDefinition,
-  field: ScalarField,
+  field: SchemaField,
   formState: FormEditState,
   useExpression: ExpressionHook
 ) {
@@ -58,7 +58,7 @@ export function useIsControlVisible(
   const { typeControl, compoundField } = useMemo(() => {
     const typeField = schemaFields.find(
       (x) => isScalarField(x) && x.isTypeField
-    ) as ScalarField | undefined;
+    ) as SchemaField | undefined;
 
     const typeControl = ((typeField &&
       formState.data.fields?.[typeField.field]) ??
@@ -75,17 +75,16 @@ export function useIsControlVisible(
     fieldName ? findField(schemaFields, fieldName) : undefined
   )?.onlyForTypes;
 
-  return useControlValue(
-    () =>
-      (!compoundField || compoundField.value != null) &&
-      (!onlyForTypes ||
-        onlyForTypes.length === 0 ||
-        Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)))
+  return (
+    (!compoundField || compoundField.value != null) &&
+    (!onlyForTypes ||
+      onlyForTypes.length === 0 ||
+      Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)))
   );
 }
 export function getDefaultScalarControlProperties(
   control: DataControlDefinition,
-  field: ScalarField,
+  field: SchemaField,
   visible: boolean,
   defaultValue: any,
   readonly?: boolean
@@ -100,9 +99,9 @@ export function getDefaultScalarControlProperties(
 }
 
 export function getOptionsForScalarField(
-  field: ScalarField
+  field: SchemaField
 ): FieldOption[] | undefined {
-  const opts = field.restrictions?.options;
+  const opts = field.options ?? field.restrictions?.options;
   if (opts?.length ?? 0 > 0) {
     return opts;
   }
@@ -116,9 +115,7 @@ export const defaultExpressionHook: ExpressionHook = (
   switch (expr.type) {
     case ExpressionType.FieldValue:
       const fvExpr = expr as FieldValueExpression;
-      return useControlValue(
-        () => controlForField(fvExpr.field, formState).value === fvExpr.value
-      );
+      return controlForField(fvExpr.field, formState).value === fvExpr.value;
     default:
       return undefined;
   }
@@ -131,7 +128,7 @@ export function createFormEditHooks(
     useDataProperties(
       formState: FormEditState,
       definition: DataControlDefinition,
-      field: ScalarField
+      field: SchemaField
     ): DataControlProperties {
       const visible = useIsControlVisible(definition, formState, useExpression);
       const defaultValue = useDefaultValue(

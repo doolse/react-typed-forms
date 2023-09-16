@@ -75,7 +75,6 @@ export default function RenderAForm() {
           groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
           children: [
             {
-              renderOptions: { type: DataRenderType.Standard },
               required: true,
               title: undefined,
               type: ControlDefinitionType.Data,

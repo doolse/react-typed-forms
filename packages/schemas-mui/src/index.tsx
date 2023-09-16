@@ -90,7 +90,7 @@ function muiControlRenderer(
   );
 
   function renderCollection(control: Control<any[]>) {
-    switch (renderOptions.type) {
+    switch (renderOptions?.type) {
       case DataRenderType.CheckList:
         return (
           <RenderChecklist control={control} options={options} title={title} />
@@ -163,7 +163,7 @@ function muiControlRenderer(
         if (options) {
           return optionRenderer(stringFC, options);
         }
-        switch (renderOptions.type) {
+        switch (renderOptions?.type) {
           default:
             return (
               <FTextField
@@ -196,7 +196,7 @@ function muiControlRenderer(
   }
 
   function optionRenderer(control: Control<any>, allOptions: FieldOption[]) {
-    if (renderOptions.type === DataRenderType.IconList) {
+    if (renderOptions?.type === DataRenderType.IconList) {
       const iconRenderOptions = renderOptions as IconListRenderOptions;
       return (
         <IconList

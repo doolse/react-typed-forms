@@ -7,24 +7,18 @@ import {
   DataControlDefinition,
   DisplayControlDefinition,
   FieldOption,
+  FieldType,
   GroupedControlsDefinition,
-  ScalarField,
   SchemaField,
-  SchemaFieldType,
 } from "./types";
 import React, { createContext, Key, ReactElement, useContext } from "react";
-import {
-  Control,
-  ControlChange,
-  newControl,
-  useControlEffect,
-} from "@react-typed-forms/core";
+import { Control, newControl, useControlEffect } from "@react-typed-forms/core";
 
 export interface FormEditHooks {
   useDataProperties(
     formState: FormEditState,
     definition: DataControlDefinition,
-    field: ScalarField
+    field: SchemaField
   ): DataControlProperties;
   useGroupProperties(
     formState: FormEditState,
@@ -119,7 +113,7 @@ export interface ActionRendererProps {
 export interface DataRendererProps {
   definition: DataControlDefinition;
   properties: DataControlProperties;
-  field: ScalarField;
+  field: SchemaField;
   formEditState?: FormEditState;
 }
 
@@ -147,17 +141,16 @@ export interface CompoundGroupRendererProps {
   ) => ReactElement;
 }
 
-export function isScalarField(sf: SchemaField): sf is ScalarField {
-  return sf.schemaType === SchemaFieldType.Scalar;
+export function isScalarField(sf: SchemaField): sf is SchemaField {
+  return !isCompoundField(sf);
 }
 
 export function isCompoundField(sf: SchemaField): sf is CompoundField {
-  return sf.schemaType === SchemaFieldType.Compound;
+  return sf.type === FieldType.Compound;
 }
 
 export type AnySchemaFields =
   | SchemaField
-  | ScalarField
   | (Omit<CompoundField, "children"> & { children: AnySchemaFields[] });
 
 export function applyDefaultValues(
@@ -166,7 +159,7 @@ export function applyDefaultValues(
 ): any {
   if (!v) return defaultValueForFields(fields);
   const applyValue = fields.filter(
-    (x) => x.schemaType === SchemaFieldType.Compound || !(x.field in v)
+    (x) => isCompoundField(x) || !(x.field in v)
   );
   if (!applyValue.length) return v;
   const out = { ...v };
@@ -212,21 +205,21 @@ export function defaultValueForField(sf: SchemaField): any {
       : undefined;
   }
   if (sf.collection) return [];
-  return (sf as ScalarField).defaultValue;
+  return sf.defaultValue;
 }
 
 export function elementValueForField(sf: SchemaField): any {
   if (isCompoundField(sf)) {
     return defaultValueForFields(sf.children);
   }
-  return (sf as ScalarField).defaultValue;
+  return sf.defaultValue;
 }
 
 export function findScalarField(
   fields: SchemaField[],
   field: string
-): ScalarField | undefined {
-  return findField(fields, field) as ScalarField | undefined;
+): SchemaField | undefined {
+  return findField(fields, field);
 }
 
 export function findCompoundField(
@@ -323,7 +316,7 @@ function DataRenderer({
   hooks: FormEditHooks;
   controlDef: DataControlDefinition;
   formState: FormEditState;
-  fieldData: ScalarField;
+  fieldData: SchemaField;
   wrapElem: (db: ReactElement) => ReactElement;
 }) {
   const renderer = useFormRendererComponents();
@@ -478,14 +471,14 @@ export function controlForField(
 }
 
 export function fieldForControl(c: ControlDefinition) {
-  return isSchemaControl(c)
+  return isDataControl(c)
     ? c.field
     : isGroupControl(c)
     ? c.compoundField
     : undefined;
 }
 
-export function isSchemaControl(
+export function isDataControl(
   c: ControlDefinition
 ): c is DataControlDefinition {
   return c.type === ControlDefinitionType.Data;

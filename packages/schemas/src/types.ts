@@ -1,18 +1,20 @@
 export interface SchemaField {
-  schemaType: SchemaFieldType;
+  type: string;
   field: string;
-  displayName: string;
-  type: FieldType;
-  tags: string[];
-  system: boolean;
-  collection: boolean;
-  onlyForTypes: string[];
-  required: boolean;
-}
-
-export enum SchemaFieldType {
-  Scalar = "Scalar",
-  Compound = "Compound",
+  displayName?: string;
+  tags?: string[];
+  system?: boolean;
+  collection?: boolean;
+  onlyForTypes?: string[];
+  required?: boolean;
+  defaultValue?: any;
+  isTypeField?: boolean;
+  searchable?: boolean;
+  options?: FieldOption[];
+  /**
+   * @deprecated Use options directly
+   */
+  restrictions?: SchemaRestrictions | undefined;
 }
 
 export enum FieldType {
@@ -28,13 +30,10 @@ export enum FieldType {
   Image = "Image",
 }
 
-export interface ScalarField extends SchemaField {
+export interface EntityRefField extends SchemaField {
+  type: FieldType.EntityRef;
   entityRefType: string;
   parentField: string;
-  searchable: boolean;
-  defaultValue: any;
-  isTypeField: boolean;
-  restrictions: SchemaRestrictions | undefined;
 }
 
 export interface SchemaRestrictions {
@@ -47,8 +46,9 @@ export interface FieldOption {
 }
 
 export interface CompoundField extends SchemaField {
+  type: FieldType.Compound;
   children: SchemaField[];
-  treeChildren: boolean;
+  treeChildren?: boolean;
 }
 
 export type AnyControlDefinition =
@@ -126,13 +126,13 @@ export interface DataControlDefinition extends ControlDefinition {
   type: ControlDefinitionType.Data;
   field: string;
   required?: boolean;
-  renderOptions: RenderOptions;
+  renderOptions?: RenderOptions;
   defaultValue?: any;
   readonly?: boolean;
 }
 
 export interface RenderOptions {
-  type: DataRenderType;
+  type: string;
 }
 
 export enum DataRenderType {
@@ -144,7 +144,6 @@ export enum DataRenderType {
   UserSelection = "UserSelection",
   Synchronised = "Synchronised",
   IconSelector = "IconSelector",
-
   DateTime = "DateTime",
 }
 

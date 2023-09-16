@@ -1,25 +1,15 @@
-import {
-  CompoundField,
-  FieldOption,
-  FieldType,
-  ScalarField,
-  SchemaField,
-  SchemaFieldType,
-} from "./types";
+import { CompoundField, FieldOption, FieldType, SchemaField } from "./types";
 
 type AllowedSchema<T> = T extends string
-  ? ScalarField & {
-      schemaType: SchemaFieldType.Scalar;
+  ? SchemaField & {
       type: FieldType.String | FieldType.Date | FieldType.DateTime;
     }
   : T extends number
-  ? ScalarField & {
-      schemaType: SchemaFieldType.Scalar;
+  ? SchemaField & {
       type: FieldType.Int | FieldType.Double;
     }
   : T extends boolean
-  ? ScalarField & {
-      schemaType: SchemaFieldType.Scalar;
+  ? SchemaField & {
       type: FieldType.Bool;
     }
   : T extends Array<infer E>
@@ -28,7 +18,6 @@ type AllowedSchema<T> = T extends string
     }
   : T extends { [key: string]: any }
   ? CompoundField & {
-      schemaType: SchemaFieldType.Compound;
       type: FieldType.Compound;
     }
   : never;
@@ -44,9 +33,13 @@ export function buildSchema<T>(def: {
 
 export function stringField(
   displayName: string,
-  options?: Partial<Omit<ScalarField, "schemaType" | "type">>
+  options?: Partial<Omit<SchemaField, "type">>
 ) {
-  return makeScalarField({ type: FieldType.String, displayName, ...options });
+  return makeScalarField({
+    type: FieldType.String as const,
+    displayName,
+    ...options,
+  });
 }
 
 export function stringOptionsField(
@@ -54,29 +47,28 @@ export function stringOptionsField(
   ...options: FieldOption[]
 ) {
   return makeScalarField({
-    type: FieldType.String,
+    type: FieldType.String as const,
     displayName,
-    restrictions: { options },
+    options,
   });
 }
 
-export function withScalarOptions<S extends ScalarField>(
-  options: Partial<ScalarField>,
+export function withScalarOptions<S extends SchemaField>(
+  options: Partial<SchemaField>,
   v: (name: string) => S
 ): (name: string) => S {
   return (n) => ({ ...v(n), ...options });
 }
 
-export function makeScalarField<S extends Partial<ScalarField>>(
+export function makeScalarField<S extends Partial<SchemaField>>(
   options: S
-): (name: string) => ScalarField & { schemaType: SchemaFieldType.Scalar } & S {
+): (name: string) => SchemaField & S {
   return (n) => ({ ...defaultScalarField(n, n), ...options });
 }
 
 export function makeCompoundField<S extends Partial<CompoundField>>(
   options: S
 ): (name: string) => CompoundField & {
-  schemaType: SchemaFieldType.Compound;
   type: FieldType.Compound;
 } & S {
   return (n) => ({ ...defaultCompoundField(n, n, false), ...options });
@@ -84,16 +76,24 @@ export function makeCompoundField<S extends Partial<CompoundField>>(
 
 export function intField(
   displayName: string,
-  options?: Partial<Omit<ScalarField, "schemaType" | "type">>
+  options?: Partial<Omit<SchemaField, "type">>
 ) {
-  return makeScalarField({ type: FieldType.Int, displayName, ...options });
+  return makeScalarField({
+    type: FieldType.Int as const,
+    displayName,
+    ...options,
+  });
 }
 
 export function boolField(
   displayName: string,
-  options?: Partial<Omit<ScalarField, "schemaType" | "type">>
+  options?: Partial<Omit<SchemaField, "type">>
 ) {
-  return makeScalarField({ type: FieldType.Bool, displayName, ...options });
+  return makeScalarField({
+    type: FieldType.Bool as const,
+    displayName,
+    ...options,
+  });
 }
 
 export function compoundField<
@@ -103,8 +103,6 @@ export function compoundField<
   fields: SchemaField[],
   other: Other
 ): (name: string) => CompoundField & {
-  schemaType: SchemaFieldType.Compound;
-  type: FieldType.Compound;
   collection: Other["collection"];
 } {
   return (field) =>
@@ -118,28 +116,13 @@ export function compoundField<
 export function defaultScalarField(
   field: string,
   displayName: string
-): ScalarField & {
-  schemaType: SchemaFieldType.Scalar;
+): Omit<SchemaField, "type"> & {
   type: FieldType.String;
 } {
   return {
-    restrictions: {
-      options: [],
-    },
-    tags: [],
     field,
     displayName,
     type: FieldType.String,
-    collection: false,
-    searchable: false,
-    schemaType: SchemaFieldType.Scalar,
-    system: false,
-    entityRefType: "",
-    parentField: "",
-    required: false,
-    defaultValue: undefined,
-    onlyForTypes: [],
-    isTypeField: false,
   };
 }
 
@@ -149,7 +132,6 @@ export function defaultCompoundField(
   collection: boolean
 ): CompoundField & {
   type: FieldType.Compound;
-  schemaType: SchemaFieldType.Compound;
 } {
   return {
     tags: [],
@@ -157,7 +139,6 @@ export function defaultCompoundField(
     displayName,
     type: FieldType.Compound,
     collection,
-    schemaType: SchemaFieldType.Compound,
     system: false,
     treeChildren: false,
     children: [],
