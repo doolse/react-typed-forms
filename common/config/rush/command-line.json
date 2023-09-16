@@ -52,10 +52,17 @@
     },
     {
       "commandKind": "global",
-      "name": "build-and-publish",
+      "name": "publish-core",
       "summary": "Build and publish to npm",
       "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --publish"
+      "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --version-policy publicRelease --publish"
+    },
+    {
+      "commandKind": "global",
+      "name": "publish-schemas",
+      "summary": "Build and publish to npm",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --version-policy schemasRelease --publish"
     }
 
     // {
