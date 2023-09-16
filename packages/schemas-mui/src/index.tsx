@@ -74,8 +74,9 @@ function muiControlRenderer(
   const {
     definition: { title: _title, required, renderOptions, adornments },
     field,
-    properties: { options, readonly },
+    properties: { options, readonly, visible },
   } = props;
+  if (!visible) return <></>;
   const title = controlTitle(_title, field);
 
   return renderAdornments(
@@ -296,7 +297,10 @@ function muiGroupRenderer({
   definition: { title, groupOptions, adornments },
   childCount,
   renderChild,
+  properties: { visible },
 }: GroupRendererProps): ReactElement {
+  if (!visible) return <></>;
+
   const gridOptions =
     groupOptions.type === GroupRenderType.Grid
       ? (groupOptions as GridRenderer)
@@ -318,9 +322,12 @@ function muiCompoundRenderer(
     definition: { title: _title, children, groupOptions },
     field,
     renderChild,
+    properties: { visible },
   }: CompoundGroupRendererProps,
   control: Control<any>
 ): ReactElement {
+  if (!visible) return <></>;
+
   const title = controlTitle(_title, field);
   return field.collection
     ? renderCollection(control.as())
@@ -354,7 +361,10 @@ function muiCompoundRenderer(
 
 function muiDisplayRenderer({
   definition: { displayData },
+  properties: { visible },
 }: DisplayRendererProps) {
+  if (!visible) return <></>;
+
   switch (displayData.type) {
     case DisplayDataType.Text:
       return (
@@ -375,8 +385,12 @@ function muiDisplayRenderer({
   }
 }
 
-function muiActionRenderer({ definition, properties }: ActionRendererProps) {
-  return <Button onClick={properties.onClick}>{definition.title}</Button>;
+function muiActionRenderer({
+  definition,
+  properties: { visible, onClick },
+}: ActionRendererProps) {
+  if (!visible) return <></>;
+  return <Button onClick={onClick}>{definition.title}</Button>;
 }
 
 export const MuiFormRenderer: FormRendererComponents = {

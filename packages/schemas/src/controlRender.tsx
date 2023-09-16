@@ -36,15 +36,13 @@ export interface FormEditHooks {
 }
 
 export interface DataControlProperties {
-  readonly: boolean;
+  control: Control<any>;
   visible: boolean;
-  options: FieldOption[] | undefined;
+  readonly: boolean;
   defaultValue: any;
   required: boolean;
-  customRender?: (
-    props: DataRendererProps,
-    control: Control<any>
-  ) => ReactElement;
+  options: FieldOption[] | undefined;
+  customRender?: (props: DataRendererProps) => ReactElement;
 }
 
 export interface GroupControlProperties {
@@ -321,20 +319,6 @@ function DataRenderer({
 }) {
   const renderer = useFormRendererComponents();
   const props = hooks.useDataProperties(formState, controlDef, fieldData);
-  const scalarControl =
-    formState.data.fields[fieldData.field] ?? newControl(undefined);
-  useControlEffect(
-    () => scalarControl.value,
-    (v) => {
-      if (props.defaultValue && !v) {
-        scalarControl.value = props.defaultValue;
-      }
-    },
-    true
-  );
-  if (!props.visible) {
-    return <></>;
-  }
   const scalarProps: DataRendererProps = {
     formEditState: formState,
     field: fieldData,
@@ -344,7 +328,7 @@ function DataRenderer({
   return wrapElem(
     (props.customRender ?? renderer.renderData)(
       scalarProps,
-      scalarControl,
+      props.control,
       false,
       renderer
     )
@@ -367,10 +351,6 @@ function ActionRenderer({
     formState,
     actionDef
   );
-  if (!actionControlProperties.visible) {
-    return <></>;
-  }
-
   return wrapElem(
     renderAction({ definition: actionDef, properties: actionControlProperties })
   );
@@ -390,9 +370,6 @@ function GroupRenderer({
   const renderers = useFormRendererComponents();
 
   const groupProps = hooks.useGroupProperties(formState, groupDef, hooks);
-  if (!groupProps.visible) {
-    return <></>;
-  }
   const compoundField = groupDef.compoundField
     ? findCompoundField(formState.fields, groupDef.compoundField)
     : undefined;
@@ -452,9 +429,6 @@ function DisplayRenderer({
   const { renderDisplay } = useFormRendererComponents();
 
   const displayProps = hooks.useDisplayProperties(formState, displayDef);
-  if (!displayProps.visible) {
-    return <></>;
-  }
   return wrapElem(
     renderDisplay({ definition: displayDef, properties: displayProps })
   );

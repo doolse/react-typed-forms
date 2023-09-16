@@ -1,12 +1,12 @@
 import {
   ActionControlDefinition,
+  ControlDefinition,
   DataControlDefinition,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
   FieldOption,
   FieldValueExpression,
-  ControlDefinition,
   SchemaField,
 } from "./types";
 import {
@@ -20,7 +20,7 @@ import {
   isGroupControl,
   isScalarField,
 } from "./controlRender";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Control, newControl } from "@react-typed-forms/core";
 
 export type ExpressionHook = (
@@ -83,18 +83,20 @@ export function useIsControlVisible(
   );
 }
 export function getDefaultScalarControlProperties(
-  control: DataControlDefinition,
+  definition: DataControlDefinition,
   field: SchemaField,
   visible: boolean,
   defaultValue: any,
+  control: Control<any>,
   readonly?: boolean
 ): DataControlProperties {
   return {
     defaultValue,
     options: getOptionsForScalarField(field),
-    required: control.required ?? false,
+    required: definition.required ?? false,
     visible,
-    readonly: readonly ?? control.readonly ?? false,
+    readonly: readonly ?? definition.readonly ?? false,
+    control,
   };
 }
 
@@ -137,11 +139,20 @@ export function createFormEditHooks(
         formState,
         useExpression
       );
+      const scalarControl = formState.data.fields[field.field];
+
+      useEffect(() => {
+        if (!visible) scalarControl.value = null;
+        else if (scalarControl.current.value == null) {
+          scalarControl.value = defaultValue;
+        }
+      }, [visible, defaultValue]);
       return getDefaultScalarControlProperties(
         definition,
         field,
         visible,
         defaultValue,
+        scalarControl,
         formState.readonly
       );
     },

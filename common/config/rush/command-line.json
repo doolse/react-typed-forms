@@ -63,7 +63,22 @@
       "summary": "Build and publish to npm",
       "safeForSimultaneousRushProcesses": true,
       "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --version-policy schemasRelease --publish"
+    },
+    {
+      "commandKind": "global",
+      "name": "bump-schemas",
+      "summary": "Bump the schemas version",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush version --bump --version-policy schemasRelease"
+    },
+    {
+      "commandKind": "global",
+      "name": "bump-core",
+      "summary": "Bump the core version",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush version --bump --version-policy publicRelease"
     }
+
 
     // {
     //   /**

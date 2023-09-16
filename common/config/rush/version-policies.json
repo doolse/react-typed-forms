@@ -109,7 +109,7 @@
   {
     "policyName": "schemasRelease",
     "definitionName": "lockStepVersion",
-    "version": "1.0.0-dev.2",
+    "version": "1.0.0-dev.3",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/schemas"
   }
