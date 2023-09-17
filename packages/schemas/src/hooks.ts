@@ -102,7 +102,7 @@ export function getDefaultScalarControlProperties(
 
 export function getOptionsForScalarField(
   field: SchemaField
-): FieldOption[] | undefined {
+): FieldOption[] | undefined | null {
   const opts = field.options ?? field.restrictions?.options;
   if (opts?.length ?? 0 > 0) {
     return opts;

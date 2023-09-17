@@ -1,20 +1,20 @@
 export interface SchemaField {
   type: string;
   field: string;
-  displayName?: string;
-  tags?: string[];
-  system?: boolean;
-  collection?: boolean;
-  onlyForTypes?: string[];
-  required?: boolean;
+  displayName?: string | null;
+  tags?: string[] | null;
+  system?: boolean | null;
+  collection?: boolean | null;
+  onlyForTypes?: string[] | null;
+  required?: boolean | null;
   defaultValue?: any;
-  isTypeField?: boolean;
-  searchable?: boolean;
-  options?: FieldOption[];
+  isTypeField?: boolean | null;
+  searchable?: boolean | null;
+  options?: FieldOption[] | null;
   /**
    * @deprecated Use options directly
    */
-  restrictions?: SchemaRestrictions | undefined;
+  restrictions?: SchemaRestrictions | undefined | null;
 }
 
 export enum FieldType {
@@ -37,7 +37,7 @@ export interface EntityRefField extends SchemaField {
 }
 
 export interface SchemaRestrictions {
-  options: FieldOption[] | undefined;
+  options?: FieldOption[] | null;
 }
 
 export interface FieldOption {
@@ -59,9 +59,9 @@ export type AnyControlDefinition =
 
 export interface ControlDefinition {
   type: string;
-  title?: string;
-  dynamic?: DynamicProperty[];
-  adornments?: ControlAdornment[];
+  title?: string | null;
+  dynamic?: DynamicProperty[] | null;
+  adornments?: ControlAdornment[] | null;
 }
 
 export enum ControlDefinitionType {
@@ -125,10 +125,10 @@ export interface AccordionAdornment extends ControlAdornment {
 export interface DataControlDefinition extends ControlDefinition {
   type: ControlDefinitionType.Data;
   field: string;
-  required?: boolean;
-  renderOptions?: RenderOptions;
+  required?: boolean | null;
+  renderOptions?: RenderOptions | null;
   defaultValue?: any;
-  readonly?: boolean;
+  readonly?: boolean | null;
 }
 
 export interface RenderOptions {
@@ -156,7 +156,7 @@ export interface HtmlEditorRenderOptions extends RenderOptions {
 }
 
 export interface DateTimeRenderOptions extends RenderOptions {
-  format?: string;
+  format?: string | null;
 }
 
 export interface IconListRenderOptions extends RenderOptions {
@@ -165,7 +165,7 @@ export interface IconListRenderOptions extends RenderOptions {
 
 export interface IconMapping {
   value: string;
-  materialIcon: string | undefined;
+  materialIcon?: string | null;
 }
 
 export interface CheckListRenderOptions extends RenderOptions {}
@@ -191,13 +191,13 @@ export interface IconSelectionRenderOptions extends RenderOptions {}
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
   children: AnyControlDefinition[];
-  compoundField?: string;
+  compoundField?: string | null;
   groupOptions: GroupRenderOptions;
 }
 
 export interface GroupRenderOptions {
   type: GroupRenderType;
-  hideTitle?: boolean;
+  hideTitle?: boolean | null;
 }
 
 export enum GroupRenderType {
@@ -213,7 +213,7 @@ export interface GroupElementRenderer extends GroupRenderOptions {
 }
 
 export interface GridRenderer extends GroupRenderOptions {
-  columns: number | undefined;
+  columns?: number | null;
 }
 
 export interface DisplayControlDefinition extends ControlDefinition {

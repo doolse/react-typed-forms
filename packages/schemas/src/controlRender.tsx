@@ -41,7 +41,7 @@ export interface DataControlProperties {
   readonly: boolean;
   defaultValue: any;
   required: boolean;
-  options: FieldOption[] | undefined;
+  options: FieldOption[] | undefined | null;
   customRender?: (props: DataRendererProps) => ReactElement;
 }
 
