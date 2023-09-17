@@ -12,7 +12,8 @@ import {
   SchemaField,
 } from "./types";
 import React, { createContext, Key, ReactElement, useContext } from "react";
-import { Control, newControl, useControlEffect } from "@react-typed-forms/core";
+import { Control, newControl } from "@react-typed-forms/core";
+import { fieldDisplayName } from "./index";
 
 export interface FormEditHooks {
   useDataProperties(
@@ -233,12 +234,10 @@ export function findField(
 ): SchemaField | undefined {
   return fields.find((x) => x.field === field);
 }
-
-export function fieldDisplayName(sf: SchemaField): string {
-  return sf.displayName ? sf.displayName : sf.field;
-}
-
-export function controlTitle(title: string | undefined, field: SchemaField) {
+export function controlTitle(
+  title: string | undefined | null,
+  field: SchemaField
+) {
   return title ? title : fieldDisplayName(field);
 }
 

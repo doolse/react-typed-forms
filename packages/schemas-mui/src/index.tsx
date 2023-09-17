@@ -72,9 +72,9 @@ function muiControlRenderer(
   renderer: FormRendererComponents
 ): ReactElement {
   const {
-    definition: { title: _title, required, renderOptions, adornments },
+    definition: { title: _title, renderOptions, adornments },
     field,
-    properties: { options, readonly, visible },
+    properties: { options, readonly, visible, required },
   } = props;
   if (!visible) return <></>;
   const title = controlTitle(_title, field);
@@ -246,7 +246,7 @@ function RenderChecklist({
   title,
 }: {
   control: Control<any[]>;
-  options: FieldOption[] | undefined;
+  options: FieldOption[] | undefined | null;
   title: string;
 }) {
   return (
@@ -264,14 +264,14 @@ function RenderChecklist({
 }
 
 function renderGrid(
-  title: string | undefined,
-  hideTitle: boolean | undefined,
+  title: string | undefined | null,
+  hideTitle: boolean | undefined | null,
   childrenCount: number,
   renderChild: (
     c: number,
     wrapChild: (key: string | number, childElem: ReactElement) => ReactElement
   ) => ReactElement,
-  columns?: number
+  columns?: number | null
 ) {
   return (
     <Grid container spacing={2}>
@@ -402,7 +402,7 @@ export const MuiFormRenderer: FormRendererComponents = {
 };
 
 function renderAdornments(
-  adornments: ControlAdornment[] | undefined,
+  adornments: ControlAdornment[] | undefined | null,
   elem: ReactElement
 ) {
   return adornments?.reduce(renderAdornment, elem) ?? elem;
