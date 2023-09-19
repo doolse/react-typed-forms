@@ -1,3 +1,5 @@
+import { DataControlProperties } from "./controlRender";
+
 export interface SchemaField {
   type: string;
   field: string;
@@ -190,7 +192,7 @@ export interface IconSelectionRenderOptions extends RenderOptions {}
 
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
-  children: AnyControlDefinition[];
+  children: ControlDefinition[];
   compoundField?: string | null;
   groupOptions: GroupRenderOptions;
 }
@@ -241,4 +243,54 @@ export interface HtmlDisplay extends DisplayData {
 export interface ActionControlDefinition extends ControlDefinition {
   type: ControlDefinitionType.Action;
   actionId: string;
+}
+
+export function isDataControlDefinition(
+  x: ControlDefinition
+): x is DataControlDefinition {
+  return x.type === ControlDefinitionType.Data;
+}
+
+export function isGroupControlsDefinition(
+  x: ControlDefinition
+): x is GroupedControlsDefinition {
+  return x.type === ControlDefinitionType.Group;
+}
+
+export function isDisplayControlsDefinition(
+  x: ControlDefinition
+): x is DisplayControlDefinition {
+  return x.type === ControlDefinitionType.Display;
+}
+
+export function isActionControlsDefinition(
+  x: ControlDefinition
+): x is ActionControlDefinition {
+  return x.type === ControlDefinitionType.Action;
+}
+
+export interface ControlVisitor<A> {
+  data(d: DataControlDefinition): A;
+  group(d: GroupedControlsDefinition): A;
+  display(d: DisplayControlDefinition): A;
+  action(d: ActionControlDefinition): A;
+}
+
+export function visitControlDefinition<A>(
+  x: ControlDefinition,
+  visitor: ControlVisitor<A>,
+  defaultValue: (c: ControlDefinition) => A
+): A {
+  switch (x.type) {
+    case ControlDefinitionType.Action:
+      return visitor.action(x as ActionControlDefinition);
+    case ControlDefinitionType.Data:
+      return visitor.data(x as DataControlDefinition);
+    case ControlDefinitionType.Display:
+      return visitor.display(x as DisplayControlDefinition);
+    case ControlDefinitionType.Group:
+      return visitor.group(x as GroupedControlsDefinition);
+    default:
+      return defaultValue(x);
+  }
 }

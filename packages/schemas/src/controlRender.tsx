@@ -10,6 +10,7 @@ import {
   FieldType,
   GroupedControlsDefinition,
   SchemaField,
+  visitControlDefinition,
 } from "./types";
 import React, { createContext, Key, ReactElement, useContext } from "react";
 import { Control, newControl } from "@react-typed-forms/core";
@@ -241,62 +242,61 @@ export function controlTitle(
   return title ? title : fieldDisplayName(field);
 }
 
-export function renderControl(
-  definition: AnyControlDefinition,
+export function renderControl<S extends ControlDefinition>(
+  definition: S,
   formState: FormEditState,
   hooks: FormEditHooks,
   key: Key,
   wrapChild?: (key: Key, db: ReactElement) => ReactElement
 ): ReactElement {
   const { fields } = formState;
-  switch (definition.type) {
-    case ControlDefinitionType.Data:
-      const def = definition as DataControlDefinition;
-      const fieldData = findScalarField(fields, def.field);
-      if (!fieldData) return <h1>No schema field for: {def.field}</h1>;
-      return (
-        <DataRenderer
-          key={key}
-          wrapElem={wrapElem}
-          formState={formState}
-          hooks={hooks}
-          controlDef={def}
-          fieldData={fieldData}
-        />
-      );
-    case ControlDefinitionType.Group:
-      return (
+  return visitControlDefinition(
+    definition,
+    {
+      data: (def) => {
+        const fieldData = findScalarField(fields, def.field);
+        if (!fieldData) return <h1>No schema field for: {def.field}</h1>;
+        return (
+          <DataRenderer
+            key={key}
+            wrapElem={wrapElem}
+            formState={formState}
+            hooks={hooks}
+            controlDef={def}
+            fieldData={fieldData}
+          />
+        );
+      },
+      group: (d: GroupedControlsDefinition) => (
         <GroupRenderer
           key={key}
           hooks={hooks}
-          groupDef={definition as GroupedControlsDefinition}
+          groupDef={d}
           formState={formState}
           wrapElem={wrapElem}
         />
-      );
-    case ControlDefinitionType.Display:
-      return (
-        <DisplayRenderer
-          key={key}
-          hooks={hooks}
-          formState={formState}
-          wrapElem={wrapElem}
-          displayDef={definition as DisplayControlDefinition}
-        />
-      );
-    case ControlDefinitionType.Action:
-      return (
+      ),
+      action: (d: ActionControlDefinition) => (
         <ActionRenderer
           key={key}
           hooks={hooks}
           formState={formState}
           wrapElem={wrapElem}
-          actionDef={definition as ActionControlDefinition}
+          actionDef={d}
         />
-      );
-    default:
-      return <h1>Unknown control: {(definition as any).type}</h1>;
-  }
+      ),
+      display: (d: DisplayControlDefinition) => (
+        <DisplayRenderer
+          key={key}
+          hooks={hooks}
+          formState={formState}
+          wrapElem={wrapElem}
+          displayDef={d}
+        />
+      ),
+    },
+    () => <h1>Unknown control: {(definition as any).type}</h1>
+  );
 
   function wrapElem(e: ReactElement): ReactElement {
     return wrapChild?.(key, e) ?? e;
