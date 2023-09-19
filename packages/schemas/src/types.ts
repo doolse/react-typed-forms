@@ -74,7 +74,7 @@ export enum ControlDefinitionType {
 }
 
 export interface DynamicProperty {
-  type: DynamicPropertyType;
+  type: string;
   expr: EntityExpression;
 }
 
