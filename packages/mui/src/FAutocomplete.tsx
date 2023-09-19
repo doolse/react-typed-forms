@@ -3,7 +3,7 @@ import { Autocomplete, AutocompleteProps, TextField } from "@mui/material";
 import React, { ReactElement } from "react";
 
 export type FAutocompleteProps<T> = {
-  state: Control<string | undefined>;
+  state: Control<string | undefined | null>;
   label?: string;
 } & Omit<AutocompleteProps<T, false, false, true>, "renderInput">;
 

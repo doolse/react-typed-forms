@@ -5,7 +5,7 @@ import { Autocomplete, AutocompleteProps } from "@mui/material";
 
 export type FSelectAutocompleteProps<T> = {
   query: Control<string>;
-  state: Control<T | undefined>;
+  state: Control<T | undefined | null>;
   label?: string;
 } & Omit<AutocompleteProps<T, false, false, false>, "renderInput">;
 

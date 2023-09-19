@@ -95,14 +95,14 @@ importers:
 
   ../../packages/schemas:
     specifiers:
-      '@react-typed-forms/core': workspace:*
+      '@react-typed-forms/core': ^3.0.0-dev
       '@types/react': ^18.0.22
       nswag: ^13.18.2
       react: ^18.2.0
       react-dom: ^18.2.0
       rimraf: ^3.0.2
     dependencies:
-      '@react-typed-forms/core': link:../core
+      '@react-typed-forms/core': 3.0.0-dev.102_react-dom@18.2.0+react@18.2.0
     devDependencies:
       '@types/react': 18.0.22
       nswag: 13.18.2
@@ -114,8 +114,8 @@ importers:
     specifiers:
       '@mui/icons-material': ^5
       '@mui/material': ^5
-      '@react-typed-forms/core': workspace:*
-      '@react-typed-forms/mui': workspace:*
+      '@react-typed-forms/core': ^3.0.0-dev
+      '@react-typed-forms/mui': ^3.0.0-dev
       '@react-typed-forms/schemas': workspace:*
       '@types/react': ^18.0.22
       date-fns: ^2.29.3
@@ -125,8 +125,8 @@ importers:
       rimraf: ^3.0.2
       typescript: 4.9.3
     dependencies:
-      '@react-typed-forms/core': link:../core
-      '@react-typed-forms/mui': link:../mui
+      '@react-typed-forms/core': 3.0.0-dev.102_react-dom@18.2.0+react@18.2.0
+      '@react-typed-forms/mui': 3.0.0-dev.102_a934f4e084b4d7a1a344045e6d63e543
       '@react-typed-forms/schemas': link:../schemas
       date-fns: 2.29.3
     devDependencies:
@@ -766,6 +766,28 @@ packages:
 
   /@popperjs/core/2.11.6:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
+
+  /@react-typed-forms/core/3.0.0-dev.102_react-dom@18.2.0+react@18.2.0:
+    resolution: {integrity: sha512-LczmQbrZspcHjPJLT6dFq52k44SZAxyjeeE+0pIIoCUrhF5O/JnrLUqUUmUiRMXQb+skf3UrPkdalJpShdfxAA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18
+      react-dom: ^16.8.0 || ^17 || ^18
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
+
+  /@react-typed-forms/mui/3.0.0-dev.102_a934f4e084b4d7a1a344045e6d63e543:
+    resolution: {integrity: sha512-retp1ABo3cknR4u0qQ5YQUvuOkJeRvPpkRV48W4DK7EAY4k9yT+y/OEkbHo+KvJ/uegy+EIc2e331u1d+dX9uQ==}
+    peerDependencies:
+      '@mui/material': ^5
+    dependencies:
+      '@mui/material': 5.10.10_dc814835b1afd6d75f665817c1b1a67f
+      '@react-typed-forms/core': 3.0.0-dev.102_react-dom@18.2.0+react@18.2.0
+    transitivePeerDependencies:
+      - react
+      - react-dom
+    dev: false
 
   /@swc/helpers/0.5.1:
     resolution: {integrity: sha512-sJ902EfIzn1Fa+qYmjdQqh8tPsoxyBz+8yBKC2HKUxyezKJFwPGOn7pv4WY6QuQW//ySQi5lJjA/ZT9sNWWNTg==}

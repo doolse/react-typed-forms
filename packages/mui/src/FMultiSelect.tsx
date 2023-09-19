@@ -8,7 +8,7 @@ export interface MultiSelectOption<V = any> {
 }
 
 export type FMultiSelectProps<V extends string | number> = {
-  state: Control<V[] | undefined>;
+  state: Control<V[] | undefined | null>;
   options: MultiSelectOption[];
   renderItem?: (name: string, selected: boolean) => ReactNode;
 } & Omit<TextFieldProps, "onChange" | "children" | "select">;
