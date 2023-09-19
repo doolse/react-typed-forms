@@ -84,7 +84,7 @@ export enum DynamicPropertyType {
 }
 
 export interface EntityExpression {
-  type: ExpressionType;
+  type: string;
 }
 
 export enum ExpressionType {
@@ -94,20 +94,23 @@ export enum ExpressionType {
 }
 
 export interface JsonataExpression extends EntityExpression {
+  type: ExpressionType.Jsonata;
   expression: string;
 }
 
 export interface FieldValueExpression extends EntityExpression {
+  type: ExpressionType.FieldValue;
   field: string;
   value: any;
 }
 
 export interface UserMatchExpression extends EntityExpression {
+  type: ExpressionType.UserMatch;
   userMatch: string;
 }
 
 export interface ControlAdornment {
-  type: ControlAdornmentType;
+  type: string;
 }
 
 export enum ControlAdornmentType {
@@ -116,10 +119,12 @@ export enum ControlAdornmentType {
 }
 
 export interface TooltipAdornment extends ControlAdornment {
+  type: ControlAdornmentType.Tooltip;
   tooltip: string;
 }
 
 export interface AccordionAdornment extends ControlAdornment {
+  type: ControlAdornmentType.Accordion;
   title: string;
   defaultExpanded: boolean;
 }
@@ -149,19 +154,26 @@ export enum DataRenderType {
   DateTime = "DateTime",
 }
 
-export interface RadioButtonRenderOptions extends RenderOptions {}
+export interface RadioButtonRenderOptions extends RenderOptions {
+  type: DataRenderType.Radio;
+}
 
-export interface StandardRenderer extends RenderOptions {}
+export interface StandardRenderer extends RenderOptions {
+  type: DataRenderType.Standard;
+}
 
 export interface HtmlEditorRenderOptions extends RenderOptions {
+  type: DataRenderType.HtmlEditor;
   allowImages: boolean;
 }
 
 export interface DateTimeRenderOptions extends RenderOptions {
+  type: DataRenderType.DateTime;
   format?: string | null;
 }
 
 export interface IconListRenderOptions extends RenderOptions {
+  type: DataRenderType.IconList;
   iconMappings: IconMapping[];
 }
 
@@ -170,9 +182,12 @@ export interface IconMapping {
   materialIcon?: string | null;
 }
 
-export interface CheckListRenderOptions extends RenderOptions {}
+export interface CheckListRenderOptions extends RenderOptions {
+  type: DataRenderType.CheckList;
+}
 
 export interface SynchronisedRenderOptions extends RenderOptions {
+  type: DataRenderType.Synchronised;
   fieldToSync: string;
   syncType: SyncTextType;
 }
@@ -184,11 +199,14 @@ export enum SyncTextType {
 }
 
 export interface UserSelectionRenderOptions extends RenderOptions {
+  type: DataRenderType.UserSelection;
   noGroups: boolean;
   noUsers: boolean;
 }
 
-export interface IconSelectionRenderOptions extends RenderOptions {}
+export interface IconSelectionRenderOptions extends RenderOptions {
+  type: DataRenderType.IconSelector;
+}
 
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
@@ -198,7 +216,7 @@ export interface GroupedControlsDefinition extends ControlDefinition {
 }
 
 export interface GroupRenderOptions {
-  type: GroupRenderType;
+  type: string;
   hideTitle?: boolean | null;
 }
 
@@ -208,13 +226,17 @@ export enum GroupRenderType {
   GroupElement = "GroupElement",
 }
 
-export interface StandardGroupRenderer extends GroupRenderOptions {}
+export interface StandardGroupRenderer extends GroupRenderOptions {
+  type: GroupRenderType.Standard;
+}
 
 export interface GroupElementRenderer extends GroupRenderOptions {
+  type: GroupRenderType.GroupElement;
   value: any;
 }
 
 export interface GridRenderer extends GroupRenderOptions {
+  type: GroupRenderType.Grid;
   columns?: number | null;
 }
 
@@ -224,7 +246,7 @@ export interface DisplayControlDefinition extends ControlDefinition {
 }
 
 export interface DisplayData {
-  type: DisplayDataType;
+  type: string;
 }
 
 export enum DisplayDataType {
@@ -233,10 +255,12 @@ export enum DisplayDataType {
 }
 
 export interface TextDisplay extends DisplayData {
+  type: DisplayDataType.Text;
   text: string;
 }
 
 export interface HtmlDisplay extends DisplayData {
+  type: DisplayDataType.Html;
   html: string;
 }
 
