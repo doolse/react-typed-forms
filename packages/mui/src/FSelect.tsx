@@ -18,7 +18,7 @@ export interface SelectOption {
 type FSelectValue = stringOrNumber;
 
 export type FSelectProps = {
-  state: Control<FSelectValue | undefined>;
+  state: Control<FSelectValue | undefined | null>;
   options: SelectOption[];
   renderItem?: (name: string, selected: boolean) => ReactNode;
   emptyText?: string;
@@ -68,7 +68,7 @@ export function FSelect({
 }
 
 export type FSelectOnlyProps = {
-  state: Control<FSelectValue | undefined>;
+  state: Control<FSelectValue | undefined | null>;
   options: SelectOption[];
   renderItem?: (name: string, selected: boolean) => ReactNode;
 } & Omit<SelectProps, "onChange" | "children" | "select">;
