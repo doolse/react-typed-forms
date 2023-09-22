@@ -30,6 +30,7 @@ export enum FieldType {
   Compound = "Compound",
   AutoId = "AutoId",
   Image = "Image",
+  Any = "Any",
 }
 
 export interface EntityRefField extends SchemaField {
