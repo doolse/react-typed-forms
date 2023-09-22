@@ -20,7 +20,7 @@ type AllowedSchema<T> = T extends string
   ? CompoundField & {
       type: FieldType.Compound;
     }
-  : never;
+  : SchemaField & { type: FieldType.Any };
 type AllowedField<T> = (name: string) => AllowedSchema<T>;
 
 export function buildSchema<T>(def: {
