@@ -897,7 +897,7 @@ export function addElement<V>(
  * @param child The child index or `Control` to remove from the array.
  */
 export function removeElement<V>(
-  control: Control<V[] | undefined>,
+  control: Control<V[] | undefined | null>,
   child: number | Control<V>
 ): void {
   const c = control.current.elements;
