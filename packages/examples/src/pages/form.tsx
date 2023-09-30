@@ -4,14 +4,17 @@ import {
   compoundField,
   ControlDefinitionType,
   createFormEditHooks,
+  dataControl,
   DataRenderType,
   DateTimeRenderOptions,
   defaultExpressionHook,
+  fieldValueExpr,
   FormRendererComponentsContext,
   GroupRenderType,
   renderControl,
   stringField,
   stringOptionsField,
+  visibility,
 } from "@react-typed-forms/schemas";
 import { useControl } from "@react-typed-forms/core";
 import { MuiFormRenderer } from "@react-typed-forms/schemas-mui";
@@ -19,6 +22,7 @@ import { FieldType, makeScalarField } from "@react-typed-forms/schemas/lib";
 
 interface NameForm {
   first: string;
+  middle: string;
   last: string;
   gender: string;
   date: string;
@@ -39,6 +43,7 @@ const nestSchema = buildSchema<{ nest: string }>({
 
 const nameFormSchema = buildSchema<NameForm>({
   first: stringField("First Name"),
+  middle: stringField("Middle Name"),
   last: stringField("Last Name"),
   gender: stringOptionsField(
     "Gender",
@@ -80,6 +85,9 @@ export default function RenderAForm() {
               type: ControlDefinitionType.Data,
               field: "first",
             },
+            dataControl("middle", {
+              dynamic: [visibility(fieldValueExpr("first", "Jolse"))],
+            }),
             {
               renderOptions: { type: DataRenderType.Standard },
               required: true,

@@ -25,7 +25,7 @@ import {
   Control,
   RenderControl,
 } from "@react-typed-forms/core";
-import React, { ReactElement } from "react";
+import React, { Fragment, ReactElement } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -273,23 +273,23 @@ function renderGrid(
   ) => ReactElement,
   columns?: number | null
 ) {
+  const cols = columns ?? 1;
   return (
-    <Grid container spacing={2}>
-      {!hideTitle && (
-        <Grid item xs={12} key="title">
-          <Typography variant="h5">{title}</Typography>
-          {/*<motion.div layout="position">*/}
-          {/*</motion.div>*/}
-        </Grid>
-      )}
-      {Array.from({ length: childrenCount }, (_, x) =>
-        renderChild(x, (key, c) => (
-          <Grid item xs={12 / (columns ?? 1)} key={key}>
-            {c}
-          </Grid>
-        ))
-      )}
-    </Grid>
+    <>
+      {!hideTitle && <Typography variant="h5">{title}</Typography>}
+
+      <div
+        style={{
+          display: "grid",
+          gap: 10,
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        }}
+      >
+        {Array.from({ length: childrenCount }, (_, x) =>
+          renderChild(x, (key, c) => <Fragment key={key} children={c} />)
+        )}
+      </div>
+    </>
   );
 }
 
