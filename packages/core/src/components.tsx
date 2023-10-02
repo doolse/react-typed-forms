@@ -1,4 +1,5 @@
 import React, {
+  Context,
   createContext,
   Key,
   ReactElement,
@@ -12,7 +13,13 @@ import {
   useControlValue,
 } from "./react-hooks";
 
-export const NotDefinedContext = createContext<ReactNode>(<></>);
+let _NotDefinedContext: Context<ReactNode> | null = null;
+export function NotDefinedContext() {
+  if (!_NotDefinedContext) {
+    _NotDefinedContext = createContext<ReactNode>(<></>);
+  }
+  return _NotDefinedContext;
+}
 
 export type RenderControlProps =
   | {
@@ -65,7 +72,7 @@ export function RenderOptional<V>({
   children: (c: Control<V>) => ReactNode;
   notDefined?: ReactNode;
 }): ReactElement {
-  const ndc = useContext(NotDefinedContext);
+  const ndc = useContext(NotDefinedContext());
   return (
     <>
       {control && !control.isNull
@@ -120,7 +127,7 @@ export function RenderElements<V>({
   empty,
 }: RenderElementsProps<V>) {
   const v = control.elements;
-  const ndc = useContext(NotDefinedContext);
+  const ndc = useContext(NotDefinedContext());
   notDefined ??= ndc;
   return v ? (
     container(v.length ? renderAll(v) : empty, v)
@@ -157,7 +164,7 @@ export function RenderArrayElements<V>({
   getKey = (_, i) => i,
   empty,
 }: RenderArrayElementsProps<V>) {
-  const ndc = useContext(NotDefinedContext);
+  const ndc = useContext(NotDefinedContext());
   notDefined ??= ndc;
   return array ? (
     container(array.length ? renderAll(array) : empty, array)
