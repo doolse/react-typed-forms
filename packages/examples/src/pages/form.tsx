@@ -9,7 +9,7 @@ import {
   DateTimeRenderOptions,
   defaultExpressionHook,
   fieldValueExpr,
-  FormRendererComponentsContext,
+  FormRendererProvider,
   GroupRenderType,
   renderControl,
   stringField,
@@ -73,7 +73,7 @@ const hooks = createFormEditHooks(defaultExpressionHook);
 export default function RenderAForm() {
   const form = useControl(withDefaults);
   return (
-    <FormRendererComponentsContext.Provider value={MuiFormRenderer}>
+    <FormRendererProvider value={MuiFormRenderer}>
       {renderControl(
         {
           type: ControlDefinitionType.Group,
@@ -175,6 +175,6 @@ export default function RenderAForm() {
         hooks,
         ""
       )}
-    </FormRendererComponentsContext.Provider>
+    </FormRendererProvider>
   );
 }

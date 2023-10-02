@@ -12,7 +12,14 @@ import {
   SchemaField,
   visitControlDefinition,
 } from "./types";
-import React, { createContext, Key, ReactElement, useContext } from "react";
+import React, {
+  Context,
+  createContext,
+  Key,
+  ReactElement,
+  ReactNode,
+  useContext,
+} from "react";
 import { Control, newControl } from "@react-typed-forms/core";
 import { fieldDisplayName } from "./index";
 
@@ -88,12 +95,32 @@ export interface FormRendererComponents {
   renderAction: (props: ActionRendererProps) => ReactElement;
 }
 
-export const FormRendererComponentsContext = createContext<
+let _FormRendererComponentsContext: Context<
   FormRendererComponents | undefined
->(undefined);
+> | null = null;
+
+function FormRendererComponentsContext() {
+  if (!_FormRendererComponentsContext) {
+    _FormRendererComponentsContext = createContext<
+      FormRendererComponents | undefined
+    >(undefined);
+  }
+  return _FormRendererComponentsContext;
+}
+
+export function FormRendererProvider({
+  value,
+  children,
+}: {
+  value: FormRendererComponents;
+  children: ReactNode;
+}) {
+  const { Provider } = FormRendererComponentsContext();
+  return <Provider value={value} children={children} />;
+}
 
 export function useFormRendererComponents() {
-  const c = useContext(FormRendererComponentsContext);
+  const c = useContext(FormRendererComponentsContext());
   if (!c) {
     throw "Need to use FormRendererComponentContext.Provider";
   }
