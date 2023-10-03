@@ -6,7 +6,12 @@ const withMDX = mdx({
     rehypePlugins: [],
   },
 });
-export default withMDX({
+
+/** @type {import('next').NextConfig} */
+const config = {
   pageExtensions: ["tsx", "mdx", "ts"],
-  basePath: "/react-typed-forms"
-});
+  basePath: "/react-typed-forms",
+  reactStrictMode: false
+};
+
+export default withMDX(config);

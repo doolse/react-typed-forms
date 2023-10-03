@@ -34,7 +34,8 @@
 		"@types/react": "^18.0.22",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"rimraf": "^3.0.2"
+		"rimraf": "^3.0.2",
+		"typescript": "5.2.2"
 	},
 	"gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
 	"scripts": {

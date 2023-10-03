@@ -1,3 +1,4 @@
+"use client";
 import {
   applyDefaultValues,
   buildSchema,
@@ -66,8 +67,6 @@ const withDefaults = applyDefaultValues(
   { date: "0001-01-01T11:43:21.861+09:40" },
   nameFormSchema
 );
-
-console.log(withDefaults);
 
 const hooks = createFormEditHooks(defaultExpressionHook);
 export default function RenderAForm() {
