@@ -159,6 +159,7 @@ function muiControlRenderer(
             required={required}
           />
         );
+      case FieldType.Any:
       case FieldType.String:
         const stringFC = control as Control<string>;
         if (options) {
