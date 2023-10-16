@@ -13,6 +13,7 @@ import {
 type ParentMeta = [string | number, Subscription | undefined];
 type ChangeListener = [ControlChange, ChangeListenerFunc<any>];
 enum ChildSyncFlags {
+  None = 0,
   Valid = 1,
   Dirty = 4,
   Value = 16,
@@ -80,7 +81,7 @@ class ControlImpl<V> implements Control<V> {
   public _elems?: Control<any>[];
   public current: ControlProperties<V>;
 
-  pendingChanges: ControlChange = 0;
+  pendingChanges: ControlChange = ControlChange.None;
 
   constructor(
     public _value: V,
@@ -696,7 +697,7 @@ export function newControl<V>(
     value,
     initial,
     error,
-    valid ? ControlFlags.Valid : 0,
+    valid ? ControlFlags.Valid : ControlFlags.None,
     realSetup
   );
 }

@@ -25,7 +25,7 @@ import {
   Control,
   RenderControl,
 } from "@react-typed-forms/core";
-import React, { Fragment, ReactElement } from "react";
+import React, { Fragment, Key, ReactElement } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -270,7 +270,7 @@ function renderGrid(
   childrenCount: number,
   renderChild: (
     c: number,
-    wrapChild: (key: string | number, childElem: ReactElement) => ReactElement
+    wrapChild: (key: Key, childElem: ReactElement) => ReactElement
   ) => ReactElement,
   columns?: number | null
 ) {

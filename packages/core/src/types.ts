@@ -1,4 +1,5 @@
 export enum ControlFlags {
+  None = 0,
   Valid = 1,
   Touched = 2,
   Dirty = 4,
@@ -6,6 +7,7 @@ export enum ControlFlags {
 }
 
 export enum ControlChange {
+  None = 0,
   Valid = 1,
   Touched = 2,
   Dirty = 4,

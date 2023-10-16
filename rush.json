@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.66.2",
+  "rushVersion": "5.109.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -50,7 +50,7 @@
      *
      * The default value is "local".
      */
-    // "pnpmStore": "local",
+    "pnpmStore": "global",
 
     /**
      * If true, then Rush will add the "--strict-peer-dependencies" option when invoking PNPM.
@@ -62,7 +62,7 @@
      * The default value is false to avoid legacy compatibility issues.
      * It is strongly recommended to set strictPeerDependencies=true.
      */
-    // "strictPeerDependencies": true,
+//    "strictPeerDependencies": true,
 
     /**
      * Configures the strategy used to select versions during installation.

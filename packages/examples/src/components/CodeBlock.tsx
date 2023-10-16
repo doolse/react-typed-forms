@@ -1,18 +1,9 @@
-import Highlight, { defaultProps } from "prism-react-renderer";
-import theme from "prism-react-renderer/themes/github";
-// @ts-ignore
-import Prism from "prism-react-renderer/prism";
+import { Highlight, themes } from "prism-react-renderer";
 
 export default function CodeBlock({ code }: { code: string }) {
   return (
     <div>
-      <Highlight
-        {...defaultProps}
-        language="jsx"
-        theme={theme}
-        Prism={Prism}
-        code={code}
-      >
+      <Highlight language="jsx" theme={themes.github} code={code}>
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre className={className} style={{ ...style, padding: "20px" }}>
             {tokens.map((line, i) => (
