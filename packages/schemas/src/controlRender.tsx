@@ -6,6 +6,7 @@ import {
   ControlDefinitionType,
   DataControlDefinition,
   DisplayControlDefinition,
+  EntityExpression,
   FieldOption,
   FieldType,
   GroupedControlsDefinition,
@@ -22,6 +23,11 @@ import React, {
 } from "react";
 import { Control, newControl } from "@react-typed-forms/core";
 import { fieldDisplayName } from "./index";
+
+export type ExpressionHook = (
+  expr: EntityExpression,
+  formState: FormEditState
+) => any;
 
 export interface FormEditHooks {
   useDataProperties(
@@ -42,6 +48,7 @@ export interface FormEditHooks {
     formState: FormEditState,
     definition: ActionControlDefinition
   ): ActionControlProperties;
+  useExpression: ExpressionHook;
 }
 
 export interface DataControlProperties {

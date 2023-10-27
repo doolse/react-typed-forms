@@ -45,8 +45,8 @@ importers:
       '@next/mdx': ^13.5.5
       '@react-typed-forms/core': workspace:^*
       '@react-typed-forms/mui': workspace:^*
-      '@react-typed-forms/schemas': workspace:^*
-      '@react-typed-forms/schemas-mui': workspace:^*
+      '@react-typed-forms/schemas': workspace:^1.0.0-dev.14
+      '@react-typed-forms/schemas-mui': workspace:^1.0.0-dev.14
       '@types/mdx': ^2.0.8
       '@types/node': ^20.8.6
       '@types/react': ^18.2.28
@@ -121,7 +121,7 @@ importers:
       '@mui/material': ^5.14.13
       '@react-typed-forms/core': workspace:^*
       '@react-typed-forms/mui': workspace:^*
-      '@react-typed-forms/schemas': workspace:^*
+      '@react-typed-forms/schemas': workspace:^1.0.0-dev.14
       '@types/react': ^18.2.28
       date-fns: ^2.29.3
       nswag: ^13.18.2

@@ -13,6 +13,7 @@ import {
   ActionControlProperties,
   controlForField,
   DataControlProperties,
+  ExpressionHook,
   fieldForControl,
   findField,
   FormEditHooks,
@@ -23,10 +24,6 @@ import {
 import { useEffect, useMemo } from "react";
 import { Control, newControl } from "@react-typed-forms/core";
 
-export type ExpressionHook = (
-  expr: EntityExpression,
-  formState: FormEditState
-) => any;
 export function useDefaultValue(
   definition: DataControlDefinition,
   field: SchemaField,
@@ -127,6 +124,7 @@ export function createFormEditHooks(
   useExpression: ExpressionHook
 ): FormEditHooks {
   return {
+    useExpression,
     useDataProperties(
       formState: FormEditState,
       definition: DataControlDefinition,
