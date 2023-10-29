@@ -21,10 +21,13 @@ type AllowedSchema<T> = T extends string
       type: FieldType.Compound;
     }
   : SchemaField & { type: FieldType.Any };
-type AllowedField<T> = (name: string) => AllowedSchema<T>;
 
-export function buildSchema<T>(def: {
-  [K in keyof T]-?: AllowedField<T[K]>;
+type AllowedField<T, K> = (
+  name: string
+) => (SchemaField & { type: K }) | AllowedSchema<T>;
+
+export function buildSchema<T, Custom = "">(def: {
+  [K in keyof T]-?: AllowedField<T[K], Custom>;
 }): SchemaField[] {
   return Object.entries(def).map((x) =>
     (x[1] as (n: string) => SchemaField)(x[0])
