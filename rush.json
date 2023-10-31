@@ -430,7 +430,8 @@
     },
     {
       "packageName": "@react-typed-forms/transform",
-      "projectFolder": "packages/transform"
+      "projectFolder": "packages/transform",
+      "versionPolicyName": "transformRelease"
     }
 
 

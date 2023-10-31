@@ -102,22 +102,22 @@
   {
     "policyName": "publicRelease",
     "definitionName": "lockStepVersion",
-    "version": "3.0.0-dev.110",
+    "version": "3.0.0-dev.111",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/core"
   },
   {
     "policyName": "schemasRelease",
     "definitionName": "lockStepVersion",
-    "version": "1.0.0-dev.15",
+    "version": "1.0.0-dev.16",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/schemas"
   },
   {
-    "policyName": "schemasRelease",
+    "policyName": "transformRelease",
     "definitionName": "lockStepVersion",
     "version": "0.1.0",
     "nextBump": "prerelease",
-    "mainProject": "@react-typed-forms/transform"
+    "mainProject": "@react-typed-forms/schemas"
   }
 ]
