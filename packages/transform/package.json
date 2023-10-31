@@ -1,11 +1,28 @@
 {
   "name": "@react-typed-forms/transform",
   "version": "0.1.0",
-  "license": "MIT",
   "main": "lib/transform.js",
   "module": "lib/transform.module.js",
   "types": "lib/transform.d.ts",
   "source": "index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doolse/react-typed-forms.git"
+  },
+  "author": "Jolse Maginnis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/doolse/react-typed-forms/issues"
+  },
+  "homepage": "https://github.com/doolse/react-typed-forms#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "forms"
+  ],
   "exports": {
     ".": {
       "types": "./lib/transform.d.ts",

@@ -33,11 +33,11 @@
   },
   "devDependencies": {
     "@react-typed-forms/transform": "workspace:^0.1.0",
-    "microbundle": "^0.15.1",
-    "typescript": "5.2.2",
     "@types/react": "^18.2.28",
+    "markdown-magic": "^2.6.1",
+    "microbundle": "^0.15.1",
     "rimraf": "^3.0.2",
-    "markdown-magic": "^2.6.1"
+    "typescript": "5.2.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6"
 }

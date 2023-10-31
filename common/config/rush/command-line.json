@@ -12,6 +12,11 @@
    */
   "commands": [
     {
+      "commandKind": "bulk",
+      "name": "build",
+      allowWarningsInSuccessfulBuild: true
+    },
+    {
       "commandKind": "global",
       "name": "cypress",
       "summary": "Run cypress test",
