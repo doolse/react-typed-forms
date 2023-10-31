@@ -1,6 +1,6 @@
 {
 	"name": "@react-typed-forms/mui",
-	"version": "3.0.0-dev.109",
+	"version": "3.0.0-dev.110",
 	"description": "",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
@@ -24,7 +24,7 @@
 		"material-ui"
 	],
 	"dependencies": {
-		"@react-typed-forms/core": "workspace:^3.0.0-dev.109",
+		"@react-typed-forms/core": "workspace:^3.0.0-dev.110",
 		"@mui/material": "^5.14.13"
 	},
 	"devDependencies": {
