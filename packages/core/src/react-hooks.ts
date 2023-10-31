@@ -473,3 +473,46 @@ export function controlValues(
     return args.map((x) => x.value);
   };
 }
+
+export function useComponentTracking(): () => void {
+  const [trackerRef] = useRefState(() => new ComponentTracker());
+  const tracker = trackerRef.current;
+  tracker.start();
+  useSyncExternalStore(
+    tracker.subscribe,
+    tracker.getSnapshot,
+    tracker.getServerSnapshot
+  );
+  return () => {
+    tracker.stop();
+  };
+}
+
+class ComponentTracker<V> extends SubscriptionTracker {
+  changeCount = 0;
+
+  constructor() {
+    super();
+    this.listener = (c, change) => {
+      this.changeCount++;
+    };
+  }
+
+  getSnapshot: () => number = () => {
+    return this.changeCount;
+  };
+
+  getServerSnapshot = this.getSnapshot;
+
+  subscribe: (onChange: () => void) => () => void = (onChange) => {
+    this.listener = (c, change) => {
+      this.changeCount++;
+      onChange();
+    };
+    return () => {
+      this.listener = undefined;
+      this.changeCount++;
+      this.destroy();
+    };
+  };
+}

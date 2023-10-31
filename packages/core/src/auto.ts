@@ -1,6 +1,5 @@
-import React, { useEffect, useSyncExternalStore } from "react";
-import { SubscriptionTracker } from "./controlImpl";
-import { useRefState } from "./react-hooks";
+import React from "react";
+import { useComponentTracking } from "./react-hooks";
 
 const ReactInternals = (React as any)
   .__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
@@ -154,6 +153,7 @@ function installCurrentDispatcherHook() {
       return currentDispatcher;
     },
     set(nextDispatcher: ReactDispatcher) {
+      console.log("It's happening");
       if (lock) {
         currentDispatcher = nextDispatcher;
         return;
@@ -334,47 +334,4 @@ function isExitingComponentRender(
 
 export function installAutoComponentTracking() {
   installCurrentDispatcherHook();
-}
-
-export function useComponentTracking(): () => void {
-  const [trackerRef] = useRefState(() => new ComponentTracker());
-  const tracker = trackerRef.current;
-  tracker.start();
-  useSyncExternalStore(
-    tracker.subscribe,
-    tracker.getSnapshot,
-    tracker.getServerSnapshot
-  );
-  return () => {
-    tracker.stop();
-  };
-}
-
-class ComponentTracker<V> extends SubscriptionTracker {
-  changeCount = 0;
-
-  constructor() {
-    super();
-    this.listener = (c, change) => {
-      this.changeCount++;
-    };
-  }
-
-  getSnapshot: () => number = () => {
-    return this.changeCount;
-  };
-
-  getServerSnapshot = this.getSnapshot;
-
-  subscribe: (onChange: () => void) => () => void = (onChange) => {
-    this.listener = (c, change) => {
-      this.changeCount++;
-      onChange();
-    };
-    return () => {
-      this.listener = undefined;
-      this.changeCount++;
-      this.destroy();
-    };
-  };
 }

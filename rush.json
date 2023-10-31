@@ -423,7 +423,17 @@
       "packageName": "@react-typed-forms/schemas-mui",
       "projectFolder": "packages/schemas-mui",
       "versionPolicyName": "schemasRelease"
+    },
+    {
+      "packageName": "nextjs-test",
+      "projectFolder": "packages/nextjs-test"
+    },
+    {
+      "packageName": "@react-typed-forms/transform",
+      "projectFolder": "packages/transform"
     }
+
+
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)

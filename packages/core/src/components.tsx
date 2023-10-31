@@ -14,6 +14,8 @@ import {
 } from "./react-hooks";
 
 let _NotDefinedContext: Context<ReactNode> | null = null;
+
+/** @noTrackControls */
 export function NotDefinedContext() {
   if (!_NotDefinedContext) {
     _NotDefinedContext = createContext<ReactNode>(<></>);

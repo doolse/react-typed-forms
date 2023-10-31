@@ -22,7 +22,7 @@ import React, {
   useContext,
 } from "react";
 import { Control, newControl } from "@react-typed-forms/core";
-import { fieldDisplayName } from "./index";
+import { fieldDisplayName } from "./util";
 
 export type ExpressionHook = (
   expr: EntityExpression,

@@ -1,5 +1,6 @@
 import {
   Control,
+  Finput,
   RenderControl,
   useComputed,
   useControl,
@@ -38,11 +39,7 @@ export default function MappedTest() {
     <div className="container">
       <h2>Mapped control test</h2>
       <div>
-        <FTextField
-          label="First Name"
-          id="firstName"
-          state={fields.firstName}
-        />
+        <Finput id="firstName" control={fields.firstName} />
         <button id="sel1" onClick={() => (selected.value = fields.firstName)}>
           Select
         </button>

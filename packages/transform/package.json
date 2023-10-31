@@ -1,0 +1,40 @@
+{
+  "name": "@react-typed-forms/transform",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "lib/transform.js",
+  "module": "lib/transform.module.js",
+  "types": "lib/transform.d.ts",
+  "source": "index.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/transform.d.ts",
+      "import": "./lib/transform.mjs",
+      "require": "./lib/transform.js"
+    }
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "microbundle --raw --no-compress"
+  },
+  "dependencies": {
+    "@babel/helper-module-imports": "^7.22.5",
+    "@babel/helper-plugin-utils": "^7.22.5"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "microbundle": "^0.15.1",
+    "@babel/core": "^7.22.8",
+    "@types/babel__core": "^7.20.1",
+    "@types/babel__helper-module-imports": "^7.18.0",
+    "@types/babel__helper-plugin-utils": "^7.10.0",
+    "assert": "^2.0.0",
+    "buffer": "^6.0.3",
+    "path": "^0.12.7"
+  }
+}

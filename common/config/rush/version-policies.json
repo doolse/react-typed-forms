@@ -112,6 +112,12 @@
     "version": "1.0.0-dev.15",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/schemas"
+  },
+  {
+    "policyName": "schemasRelease",
+    "definitionName": "lockStepVersion",
+    "version": "0.1.0",
+    "nextBump": "prerelease",
+    "mainProject": "@react-typed-forms/transform"
   }
-
 ]
