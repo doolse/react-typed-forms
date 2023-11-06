@@ -47,10 +47,10 @@ importers:
       '@mdx-js/loader': ^2.3.0
       '@mui/material': ^5.14.13
       '@next/mdx': ^13.5.5
-      '@react-typed-forms/core': workspace:^*
-      '@react-typed-forms/mui': workspace:^*
-      '@react-typed-forms/schemas': workspace:^1.0.0-dev.15
-      '@react-typed-forms/schemas-mui': workspace:^1.0.0-dev.15
+      '@react-typed-forms/core': workspace:^3.0.0-dev.111
+      '@react-typed-forms/mui': workspace:^3.0.0-dev.111
+      '@react-typed-forms/schemas': workspace:^1.0.0-dev.16
+      '@react-typed-forms/schemas-mui': workspace:^1.0.0-dev.16
       '@react-typed-forms/transform': workspace:^0.1.0
       '@types/mdx': ^2.0.8
       '@types/node': ^20.8.6
@@ -88,7 +88,7 @@ importers:
   ../../packages/mui:
     specifiers:
       '@mui/material': ^5.14.13
-      '@react-typed-forms/core': workspace:^3.0.0-dev.109
+      '@react-typed-forms/core': workspace:^3.0.0-dev.111
       '@react-typed-forms/transform': workspace:^0.1.0
       '@types/react': ^18.2.28
       microbundle: ^0.15.1
@@ -135,39 +135,36 @@ importers:
 
   ../../packages/schemas:
     specifiers:
-      '@react-typed-forms/core': workspace:^*
+      '@react-typed-forms/core': workspace:^3.0.0-dev.111
       '@react-typed-forms/transform': workspace:^0.1.0
       '@types/react': ^18.2.28
       microbundle: ^0.15.1
       nswag: ^13.18.2
       react: ^18.2.0
-      react-dom: ^18.2.0
       rimraf: ^3.0.2
     dependencies:
       '@react-typed-forms/core': link:../core
+      react: 18.2.0
     devDependencies:
       '@react-typed-forms/transform': link:../transform
       '@types/react': 18.2.28
       microbundle: 0.15.1
       nswag: 13.18.2
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
       rimraf: 3.0.2
 
   ../../packages/schemas-mui:
     specifiers:
       '@mui/icons-material': ^5
       '@mui/material': ^5.14.13
-      '@react-typed-forms/core': workspace:^*
-      '@react-typed-forms/mui': workspace:^*
-      '@react-typed-forms/schemas': workspace:^1.0.0-dev.15
+      '@react-typed-forms/core': workspace:^3.0.0-dev.111
+      '@react-typed-forms/mui': workspace:^3.0.0-dev.111
+      '@react-typed-forms/schemas': workspace:^1.0.0-dev.16
       '@react-typed-forms/transform': workspace:^0.1.0
       '@types/react': ^18.2.28
       date-fns: ^2.29.3
       microbundle: ^0.15.1
       nswag: ^13.18.2
       react: ^18.2.0
-      react-dom: ^18.2.0
       rimraf: ^3.0.2
       typescript: 5.2.2
     dependencies:
@@ -176,14 +173,13 @@ importers:
       '@react-typed-forms/schemas': link:../schemas
       '@react-typed-forms/transform': link:../transform
       date-fns: 2.29.3
+      react: 18.2.0
     devDependencies:
       '@mui/icons-material': 5.11.0_aa57255f805c35c3ddc49086b2cfa3aa
-      '@mui/material': 5.14.13_f6490dcbf089b3fb9003f619cc5ebe24
+      '@mui/material': 5.14.13_e47c7336445c066cbb65d987bf72b059
       '@types/react': 18.2.28
       microbundle: 0.15.1
       nswag: 13.18.2
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
       rimraf: 3.0.2
       typescript: 5.2.2
 
@@ -209,7 +205,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.2
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
       path: 0.12.7
 
 packages:
@@ -1654,6 +1650,17 @@ packages:
       '@floating-ui/dom': 1.5.3
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+    dev: false
+
+  /@floating-ui/react-dom/2.0.2_react@18.2.0:
+    resolution: {integrity: sha512-5qhlDvjaLmAst/rKb3VdlCinwTF4EYMiVxuuc/HVUjs46W0zgtbMmAZ1UTsDrRTxRmUEzl92mOtWbeeXL26lSQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@floating-ui/dom': 1.5.3
+      react: 18.2.0
+    dev: true
 
   /@floating-ui/utils/0.1.6:
     resolution: {integrity: sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==}
@@ -1730,6 +1737,28 @@ packages:
       - supports-color
     dev: false
 
+  /@mui/base/5.0.0-beta.19_e47c7336445c066cbb65d987bf72b059:
+    resolution: {integrity: sha512-maNBgAscddyPNzFZQUJDF/puxM27Li+NqSBsr/lAP8TLns2VvWS2SoL3OKFOIoRnAMKGY/Ic6Aot6gCYeQnssA==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      '@types/react': ^17.0.0 || ^18.0.0
+      react: ^17.0.0 || ^18.0.0
+      react-dom: ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.23.2
+      '@floating-ui/react-dom': 2.0.2_react@18.2.0
+      '@mui/types': 7.2.6_@types+react@18.2.28
+      '@mui/utils': 5.14.13_e47c7336445c066cbb65d987bf72b059
+      '@popperjs/core': 2.11.8
+      '@types/react': 18.2.28
+      clsx: 2.0.0
+      prop-types: 15.8.1
+      react: 18.2.0
+    dev: true
+
   /@mui/base/5.0.0-beta.19_f6490dcbf089b3fb9003f619cc5ebe24:
     resolution: {integrity: sha512-maNBgAscddyPNzFZQUJDF/puxM27Li+NqSBsr/lAP8TLns2VvWS2SoL3OKFOIoRnAMKGY/Ic6Aot6gCYeQnssA==}
     engines: {node: '>=12.0.0'}
@@ -1751,6 +1780,7 @@ packages:
       prop-types: 15.8.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+    dev: false
 
   /@mui/core-downloads-tracker/5.14.13:
     resolution: {integrity: sha512-3ZUbzcH4yloLKlV6Y+S0Edn2wef9t+EGHSfEkwVCn8E0ULdshifEFgfEroKRegQifDIwcKS/ofccxuZ8njTAYg==}
@@ -1767,7 +1797,7 @@ packages:
         optional: true
     dependencies:
       '@babel/runtime': 7.20.7
-      '@mui/material': 5.14.13_f6490dcbf089b3fb9003f619cc5ebe24
+      '@mui/material': 5.14.13_e47c7336445c066cbb65d987bf72b059
       '@types/react': 18.2.28
       react: 18.2.0
     dev: true
@@ -1808,6 +1838,39 @@ packages:
       react-transition-group: 4.4.5_react-dom@18.2.0+react@18.2.0
     dev: false
 
+  /@mui/material/5.14.13_e47c7336445c066cbb65d987bf72b059:
+    resolution: {integrity: sha512-iPEFwhoVG789UVsXX4gqd1eJUlcLW1oceqwJYQN8Z4MpcAKfL9Lv3fda65AwG7pQ5lf+d7IbHzm4m48SWZxI2g==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      '@emotion/react': ^11.5.0
+      '@emotion/styled': ^11.3.0
+      '@types/react': ^17.0.0 || ^18.0.0
+      react: ^17.0.0 || ^18.0.0
+      react-dom: ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@emotion/react':
+        optional: true
+      '@emotion/styled':
+        optional: true
+      '@types/react':
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.23.2
+      '@mui/base': 5.0.0-beta.19_e47c7336445c066cbb65d987bf72b059
+      '@mui/core-downloads-tracker': 5.14.13
+      '@mui/system': 5.14.13_e47c7336445c066cbb65d987bf72b059
+      '@mui/types': 7.2.6_@types+react@18.2.28
+      '@mui/utils': 5.14.13_e47c7336445c066cbb65d987bf72b059
+      '@types/react': 18.2.28
+      '@types/react-transition-group': 4.4.7
+      clsx: 2.0.0
+      csstype: 3.1.2
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-is: 18.2.0
+      react-transition-group: 4.4.5_react@18.2.0
+    dev: true
+
   /@mui/material/5.14.13_f6490dcbf089b3fb9003f619cc5ebe24:
     resolution: {integrity: sha512-iPEFwhoVG789UVsXX4gqd1eJUlcLW1oceqwJYQN8Z4MpcAKfL9Lv3fda65AwG7pQ5lf+d7IbHzm4m48SWZxI2g==}
     engines: {node: '>=12.0.0'}
@@ -1840,6 +1903,7 @@ packages:
       react-dom: 18.2.0_react@18.2.0
       react-is: 18.2.0
       react-transition-group: 4.4.5_react-dom@18.2.0+react@18.2.0
+    dev: false
 
   /@mui/private-theming/5.14.13_e47c7336445c066cbb65d987bf72b059:
     resolution: {integrity: sha512-5EFqk4tqiSwPguj4NW/6bUf4u1qoUWXy9lrKfNh9H6oAohM+Ijv/7qSxFjnxPGBctj469/Sc5aKAR35ILBKZLQ==}
@@ -5134,7 +5198,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:
@@ -6443,6 +6507,20 @@ packages:
       prop-types: 15.8.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+    dev: false
+
+  /react-transition-group/4.4.5_react@18.2.0:
+    resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
+    peerDependencies:
+      react: '>=16.6.0'
+      react-dom: '>=16.6.0'
+    dependencies:
+      '@babel/runtime': 7.23.2
+      dom-helpers: 5.2.1
+      loose-envify: 1.4.0
+      prop-types: 15.8.1
+      react: 18.2.0
+    dev: true
 
   /react/18.2.0:
     resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}

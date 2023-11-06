@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas-mui",
-  "version": "1.0.0-dev.16",
+  "version": "1.0.0-dev.17",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -26,9 +26,10 @@
   "dependencies": {
     "@react-typed-forms/core": "workspace:^3.0.0-dev.111",
     "@react-typed-forms/mui": "workspace:^3.0.0-dev.111",
-    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.16",
+    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.17",
     "@react-typed-forms/transform": "workspace:^0.1.0",
-    "date-fns": "^2.29.3"
+    "date-fns": "^2.29.3",
+    "react": "^18.2.0"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5",
@@ -40,14 +41,12 @@
     "@types/react": "^18.2.28",
     "microbundle": "^0.15.1",
     "nswag": "^13.18.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "rimraf": "^3.0.2",
     "typescript": "5.2.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {
-    "build": "rimraf ./lib/ && microbundle -f cjs --jsx React.createElement --jsxFragment React.Fragment",
+    "build": "rimraf ./lib/ && microbundle -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "watch": "tsc -w"
   }
 }

@@ -337,6 +337,7 @@ export function renderControl<S extends ControlDefinition>(
   }
 }
 
+/** @trackControls */
 function DataRenderer({
   hooks,
   formState,
@@ -368,6 +369,7 @@ function DataRenderer({
   );
 }
 
+/** @trackControls */
 function ActionRenderer({
   hooks,
   formState,
@@ -389,6 +391,7 @@ function ActionRenderer({
   );
 }
 
+/** @trackControls */
 function GroupRenderer({
   hooks,
   formState,
@@ -448,6 +451,7 @@ function GroupRenderer({
   );
 }
 
+/** @trackControls */
 function DisplayRenderer({
   hooks,
   wrapElem,
