@@ -88,6 +88,8 @@ export function getDefaultScalarControlProperties(
   readonly?: boolean
 ): DataControlProperties {
   return {
+    element: false,
+    field,
     defaultValue,
     options: getOptionsForScalarField(field),
     required: definition.required ?? false,

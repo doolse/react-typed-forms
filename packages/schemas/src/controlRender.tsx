@@ -53,6 +53,8 @@ export interface FormEditHooks {
 
 export interface DataControlProperties {
   control: Control<any>;
+  field: SchemaField;
+  element: boolean;
   visible: boolean;
   readonly: boolean;
   defaultValue: any;
@@ -86,12 +88,8 @@ export interface FormEditState {
 }
 
 export interface FormRendererComponents {
-  renderData: (
-    props: DataRendererProps,
-    control: Control<any>,
-    element: boolean,
-    renderers: FormRendererComponents
-  ) => ReactElement;
+  renderLabel: (props: LabelRendererProps) => ReactElement;
+  renderData: (props: DataRendererProps) => ReactElement;
   renderCompound: (
     props: CompoundGroupRendererProps,
     control: Control<any>,
@@ -134,6 +132,14 @@ export function useFormRendererComponents() {
   return c;
 }
 
+export interface LabelRendererProps {
+  title?: ReactNode;
+  visible: boolean;
+  required: boolean;
+  control: Control<any>;
+  children?: ReactNode;
+}
+
 export interface DisplayRendererProps {
   definition: DisplayControlDefinition;
   properties: DisplayControlProperties;
@@ -147,7 +153,6 @@ export interface ActionRendererProps {
 export interface DataRendererProps {
   definition: DataControlDefinition;
   properties: DataControlProperties;
-  field: SchemaField;
   formEditState?: FormEditState;
 }
 
@@ -355,18 +360,10 @@ function DataRenderer({
   const props = hooks.useDataProperties(formState, controlDef, fieldData);
   const scalarProps: DataRendererProps = {
     formEditState: formState,
-    field: fieldData,
     definition: controlDef,
     properties: props,
   };
-  return wrapElem(
-    (props.customRender ?? renderer.renderData)(
-      scalarProps,
-      props.control,
-      false,
-      renderer
-    )
-  );
+  return wrapElem((props.customRender ?? renderer.renderData)(scalarProps));
 }
 
 /** @trackControls */
