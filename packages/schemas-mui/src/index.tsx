@@ -18,6 +18,7 @@ import {
   UserSelectionRenderOptions,
   DateTimeRenderOptions,
   elementValueForField,
+  LabelRendererProps,
 } from "@react-typed-forms/schemas";
 import {
   addElement,
@@ -65,16 +66,18 @@ import {
 } from "@react-typed-forms/mui";
 import { format, parseISO } from "date-fns";
 
-function muiControlRenderer(
-  props: DataRendererProps,
-  control: Control<any>,
-  element: boolean,
-  renderer: FormRendererComponents
-): ReactElement {
+function muiControlRenderer(props: DataRendererProps): ReactElement {
   const {
     definition: { title: _title, renderOptions, adornments },
-    field,
-    properties: { options, readonly, visible, required },
+    properties: {
+      options,
+      readonly,
+      visible,
+      required,
+      field,
+      element,
+      control,
+    },
   } = props;
   if (!visible) return <></>;
   const title = controlTitle(_title, field);
@@ -101,7 +104,10 @@ function muiControlRenderer(
           <Repeater
             control={control}
             renderControl={(control) =>
-              renderer.renderData(props, control, true, renderer)
+              muiControlRenderer({
+                ...props,
+                properties: { ...props.properties, control, element: true },
+              })
             }
             onAdd={() => addElement(control, field.defaultValue)}
           />
@@ -394,12 +400,17 @@ function muiActionRenderer({
   return <Button onClick={onClick}>{definition.title}</Button>;
 }
 
+function muiRenderLabel(props: LabelRendererProps) {
+  return <label>d</label>;
+}
+
 export const MuiFormRenderer: FormRendererComponents = {
   renderDisplay: muiDisplayRenderer,
   renderGroup: muiGroupRenderer,
   renderCompound: muiCompoundRenderer,
   renderData: muiControlRenderer,
   renderAction: muiActionRenderer,
+  renderLabel: muiRenderLabel,
 };
 
 function renderAdornments(

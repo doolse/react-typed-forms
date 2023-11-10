@@ -28,6 +28,7 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
+    "typescript": "^5.2.2",
     "@react-typed-forms/transform": "workspace:^0.1.0",
     "@types/react": "^18.2.28",
     "microbundle": "^0.15.1",
@@ -37,7 +38,7 @@
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {
     "build": "rimraf ./lib/ && microbundle -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
-    "watch": "tsc -w",
+    "watch": "rimraf ./lib/ && microbundle -w -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "gencode": "nswag swagger2tsclient /input:http://localhost:5216/swagger/v1/swagger.json /runtime:Net60 /output:src/types.ts /GenerateClientClasses:false /MarkOptionalProperties:false /Template:Fetch /TypeStyle:Interface /DateTimeType:string"
   }
 }

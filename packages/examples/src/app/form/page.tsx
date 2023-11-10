@@ -19,7 +19,8 @@ import {
 } from "@react-typed-forms/schemas";
 import { useControl } from "@react-typed-forms/core";
 import { MuiFormRenderer } from "@react-typed-forms/schemas-mui";
-import { FieldType, makeScalarField } from "@react-typed-forms/schemas/lib";
+import { FieldType, makeScalarField } from "@react-typed-forms/schemas";
+import { createRenderer } from "@react-typed-forms/schemas";
 
 interface NameForm {
   first: string;
@@ -69,10 +70,15 @@ const withDefaults = applyDefaultValues(
 );
 
 const hooks = createFormEditHooks(defaultExpressionHook);
+
+const renderer = createRenderer(
+  { type: "data", render: () => <div>ok</div> },
+  { type: "label", render: () => <label></label> }
+);
 export default function RenderAForm() {
   const form = useControl(withDefaults);
   return (
-    <FormRendererProvider value={MuiFormRenderer}>
+    <FormRendererProvider value={renderer}>
       {renderControl(
         {
           type: ControlDefinitionType.Group,

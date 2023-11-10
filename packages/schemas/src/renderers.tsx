@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import React, { Fragment, ReactElement } from "react";
 import {
   DataRendererProps,
   FormRendererComponents,
@@ -23,7 +23,25 @@ export interface LabelRendererRegistration {
   render: (labelProps: LabelRendererProps) => ReactElement;
 }
 
-function createRenderer(
+export function createRenderer(
   data: DataRendererRegistration,
   label: LabelRendererRegistration
-): FormRendererComponents {}
+): FormRendererComponents {
+  return {
+    renderAction: (props) => <h1>Action</h1>,
+    renderData: (props) => <h2>{props.definition.field}</h2>,
+    renderGroup: (props) => {
+      const { childCount, renderChild } = props;
+      return (
+        <div>
+          {Array.from({ length: childCount }, (_, x) =>
+            renderChild(x, (key, c) => <Fragment key={key} children={c} />)
+          )}
+        </div>
+      );
+    },
+    renderLabel: (props) => <label>Label</label>,
+    renderCompound: (props) => <div>Compound</div>,
+    renderDisplay: (props) => <div>Display</div>,
+  };
+}
