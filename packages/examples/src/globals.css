@@ -1,0 +1,16 @@
+@import "https://fonts.googleapis.com/icon?family=Material+Icons";
+@import "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    h3 {
+        @apply text-2xl
+    }
+    
+    h2 {
+        @apply text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white;
+    }
+}

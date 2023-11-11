@@ -1,5 +1,3 @@
-import { DataControlProperties } from "./controlRender";
-
 export interface SchemaField {
   type: string;
   field: string;
@@ -271,25 +269,25 @@ export interface ActionControlDefinition extends ControlDefinition {
 }
 
 export function isDataControlDefinition(
-  x: ControlDefinition
+  x: ControlDefinition,
 ): x is DataControlDefinition {
   return x.type === ControlDefinitionType.Data;
 }
 
 export function isGroupControlsDefinition(
-  x: ControlDefinition
+  x: ControlDefinition,
 ): x is GroupedControlsDefinition {
   return x.type === ControlDefinitionType.Group;
 }
 
 export function isDisplayControlsDefinition(
-  x: ControlDefinition
+  x: ControlDefinition,
 ): x is DisplayControlDefinition {
   return x.type === ControlDefinitionType.Display;
 }
 
 export function isActionControlsDefinition(
-  x: ControlDefinition
+  x: ControlDefinition,
 ): x is ActionControlDefinition {
   return x.type === ControlDefinitionType.Action;
 }
@@ -304,7 +302,7 @@ export interface ControlVisitor<A> {
 export function visitControlDefinition<A>(
   x: ControlDefinition,
   visitor: ControlVisitor<A>,
-  defaultValue: (c: ControlDefinition) => A
+  defaultValue: (c: ControlDefinition) => A,
 ): A {
   switch (x.type) {
     case ControlDefinitionType.Action:
@@ -322,14 +320,14 @@ export function visitControlDefinition<A>(
 
 export function dataControl(
   field: string,
-  options?: Partial<DataControlDefinition>
+  options?: Partial<DataControlDefinition>,
 ): DataControlDefinition {
   return { type: ControlDefinitionType.Data, field, ...options };
 }
 
 export function fieldValueExpr(
   field: string,
-  value: any
+  value: any,
 ): FieldValueExpression {
   return { type: ExpressionType.FieldValue, field, value };
 }

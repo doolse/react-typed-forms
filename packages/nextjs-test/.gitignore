@@ -1,6 +1,0 @@
-lib/
-node_modules/
-.next/
-
-*.log
-*.tsbuildinfo

@@ -425,10 +425,6 @@
       "versionPolicyName": "schemasRelease"
     },
     {
-      "packageName": "nextjs-test",
-      "projectFolder": "packages/nextjs-test"
-    },
-    {
       "packageName": "@react-typed-forms/transform",
       "projectFolder": "packages/transform",
       "versionPolicyName": "transformRelease"

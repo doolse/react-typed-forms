@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "cypress": "next dev",
+    "watch": "next dev",
     "build-next": "next build",
     "export": "next export",
     "build": "tsc --build --verbose"
@@ -42,6 +43,13 @@
     "@types/react-dom": "^18.2.13",
     "@types/node": "^20.8.6",
     "@types/mdx": "^2.0.8",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "prettier": "^3.0.3",
+    "autoprefixer": "10.4.16",
+    "postcss": "8.4.31",
+    "tailwindcss": "3.3.3",
+    "tailwindcss-animate": "^1.0.6",
+    "@tailwindcss/forms": "^0.5.6",
+    "tailwind-datepicker-react": "1.4.3"
   }
 }

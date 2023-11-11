@@ -21,7 +21,7 @@
       "name": "cypress",
       "summary": "Run cypress test",
       safeForSimultaneousRushProcesses: true,
-      shellCommand: "(cd packages/core && rushx watch) & (cd packages/mui && rushx watch) & (cd packages/examples && rushx cypress) & (cd cypress-tests && rushx cypress)"
+      shellCommand: "(cd packages/examples ; rush build -T . && rushx dev) & (cd cypress-tests && rushx cypress)"
     },
     {
       "commandKind": "global",
@@ -40,13 +40,8 @@
       "commandKind": "global",
       "name": "start",
       "summary": "Start the docs/test site",
-      "shellCommand": "cd packages/examples && rushx dev"
-    },
-    {
-      "commandKind": "global",
-      "name": "watch",
-      "summary": "build in watch mode",
-      "shellCommand": "(cd packages/core && rushx watch) & (cd packages/mui && rushx watch) & (cd packages/schemas && rushx watch) & (cd packages/schemas-mui && rushx watch)"
+      "shellCommand": "cd packages/examples ; rush build -T . && rushx dev",
+      safeForSimultaneousRushProcesses: true
     },
     {
       "commandKind": "global",

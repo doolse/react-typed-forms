@@ -26,55 +26,56 @@ import { fieldDisplayName } from "./util";
 
 export type ExpressionHook = (
   expr: EntityExpression,
-  formState: FormEditState
+  formState: FormEditState,
 ) => any;
 
 export interface FormEditHooks {
   useDataProperties(
     formState: FormEditState,
     definition: DataControlDefinition,
-    field: SchemaField
-  ): DataControlProperties;
+    field: SchemaField,
+    renderers: FormRendererComponents,
+  ): DataRendererProps;
   useGroupProperties(
     formState: FormEditState,
     definition: GroupedControlsDefinition,
-    currentHooks: FormEditHooks
-  ): GroupControlProperties;
+    currentHooks: FormEditHooks,
+    renderers: FormRendererComponents,
+  ): GroupRendererProps;
   useDisplayProperties(
     formState: FormEditState,
-    definition: DisplayControlDefinition
-  ): DisplayControlProperties;
+    definition: DisplayControlDefinition,
+  ): DisplayRendererProps;
   useActionProperties(
     formState: FormEditState,
-    definition: ActionControlDefinition
-  ): ActionControlProperties;
+    definition: ActionControlDefinition,
+  ): ActionRendererProps;
   useExpression: ExpressionHook;
 }
 
-export interface DataControlProperties {
+export interface DataRendererProps {
+  definition: DataControlDefinition;
   control: Control<any>;
   field: SchemaField;
-  element: boolean;
+  array?: ArrayRendererProps;
   visible: boolean;
   readonly: boolean;
   defaultValue: any;
   required: boolean;
   options: FieldOption[] | undefined | null;
   customRender?: (props: DataRendererProps) => ReactElement;
+  formState: FormEditState;
 }
 
-export interface GroupControlProperties {
+export interface GroupRendererProps {
+  definition: Omit<GroupedControlsDefinition, "children">;
+  field?: CompoundField;
+  array?: ArrayRendererProps;
+  hideTitle: boolean;
   visible: boolean;
   hooks: FormEditHooks;
-}
-
-export interface DisplayControlProperties {
-  visible: boolean;
-}
-
-export interface ActionControlProperties {
-  visible: boolean;
-  onClick: () => void;
+  childCount: number;
+  renderChild: (child: number) => ReactElement;
 }
 
 export interface ControlData {
@@ -87,17 +88,24 @@ export interface FormEditState {
   readonly?: boolean;
 }
 
+export interface ArrayRendererProps {
+  definition: DataControlDefinition | GroupedControlsDefinition;
+  control: Control<any[]>;
+  field: SchemaField;
+  addAction?: ActionRendererProps;
+  removeAction?: (childCount: number) => ActionRendererProps;
+  childCount: number;
+  renderChild: (childCount: number) => ReactElement;
+  childKey: (childCount: number) => Key;
+}
+
 export interface FormRendererComponents {
   renderLabel: (props: LabelRendererProps) => ReactElement;
   renderData: (props: DataRendererProps) => ReactElement;
-  renderCompound: (
-    props: CompoundGroupRendererProps,
-    control: Control<any>,
-    renderers: FormRendererComponents
-  ) => ReactElement;
   renderGroup: (props: GroupRendererProps) => ReactElement;
   renderDisplay: (props: DisplayRendererProps) => ReactElement;
   renderAction: (props: ActionRendererProps) => ReactElement;
+  renderArray: (props: ArrayRendererProps) => ReactElement;
 }
 
 let _FormRendererComponentsContext: Context<
@@ -134,50 +142,22 @@ export function useFormRendererComponents() {
 
 export interface LabelRendererProps {
   title?: ReactNode;
+  forId?: string;
   visible: boolean;
   required: boolean;
-  control: Control<any>;
+  control?: Control<any>;
   children?: ReactNode;
 }
 
 export interface DisplayRendererProps {
   definition: DisplayControlDefinition;
-  properties: DisplayControlProperties;
+  visible: boolean;
 }
 
 export interface ActionRendererProps {
   definition: ActionControlDefinition;
-  properties: ActionControlProperties;
-}
-
-export interface DataRendererProps {
-  definition: DataControlDefinition;
-  properties: DataControlProperties;
-  formEditState?: FormEditState;
-}
-
-export interface GroupRendererProps {
-  definition: Omit<GroupedControlsDefinition, "children">;
-  properties: GroupControlProperties;
-  childCount: number;
-  renderChild: (
-    child: number,
-    wrapChild: (key: Key, childElem: ReactElement) => ReactElement
-  ) => ReactElement;
-}
-
-export interface CompoundGroupRendererProps {
-  definition: GroupedControlsDefinition;
-  field: CompoundField;
-  properties: GroupControlProperties;
-  renderChild: (
-    key: Key,
-    control: ControlDefinition,
-    data: Control<{
-      [field: string]: any;
-    }>,
-    wrapChild: (key: Key, childElem: ReactElement) => ReactElement
-  ) => ReactElement;
+  visible: boolean;
+  onClick: () => void;
 }
 
 export function isScalarField(sf: SchemaField): sf is SchemaField {
@@ -194,11 +174,11 @@ export type AnySchemaFields =
 
 export function applyDefaultValues(
   v: { [k: string]: any } | undefined,
-  fields: SchemaField[]
+  fields: SchemaField[],
 ): any {
   if (!v) return defaultValueForFields(fields);
   const applyValue = fields.filter(
-    (x) => isCompoundField(x) || !(x.field in v)
+    (x) => isCompoundField(x) || !(x.field in v),
   );
   if (!applyValue.length) return v;
   const out = { ...v };
@@ -215,11 +195,11 @@ export function applyDefaultForField(
   v: any,
   field: SchemaField,
   parent: SchemaField[],
-  notElement?: boolean
+  notElement?: boolean,
 ): any {
   if (field.collection && !notElement) {
     return ((v as any[]) ?? []).map((x) =>
-      applyDefaultForField(x, field, parent, true)
+      applyDefaultForField(x, field, parent, true),
     );
   }
   if (isCompoundField(field)) {
@@ -231,7 +211,7 @@ export function applyDefaultForField(
 
 export function defaultValueForFields(fields: SchemaField[]): any {
   return Object.fromEntries(
-    fields.map((x) => [x.field, defaultValueForField(x)])
+    fields.map((x) => [x.field, defaultValueForField(x)]),
   );
 }
 
@@ -256,27 +236,27 @@ export function elementValueForField(sf: SchemaField): any {
 
 export function findScalarField(
   fields: SchemaField[],
-  field: string
+  field: string,
 ): SchemaField | undefined {
   return findField(fields, field);
 }
 
 export function findCompoundField(
   fields: SchemaField[],
-  field: string
+  field: string,
 ): CompoundField | undefined {
   return findField(fields, field) as CompoundField | undefined;
 }
 
 export function findField(
   fields: SchemaField[],
-  field: string
+  field: string,
 ): SchemaField | undefined {
   return fields.find((x) => x.field === field);
 }
 export function controlTitle(
   title: string | undefined | null,
-  field: SchemaField
+  field: SchemaField,
 ) {
   return title ? title : fieldDisplayName(field);
 }
@@ -286,7 +266,6 @@ export function renderControl<S extends ControlDefinition>(
   formState: FormEditState,
   hooks: FormEditHooks,
   key: Key,
-  wrapChild?: (key: Key, db: ReactElement) => ReactElement
 ): ReactElement {
   const { fields } = formState;
   return visitControlDefinition(
@@ -298,7 +277,6 @@ export function renderControl<S extends ControlDefinition>(
         return (
           <DataRenderer
             key={key}
-            wrapElem={wrapElem}
             formState={formState}
             hooks={hooks}
             controlDef={def}
@@ -312,7 +290,6 @@ export function renderControl<S extends ControlDefinition>(
           hooks={hooks}
           groupDef={d}
           formState={formState}
-          wrapElem={wrapElem}
         />
       ),
       action: (d: ActionControlDefinition) => (
@@ -320,7 +297,6 @@ export function renderControl<S extends ControlDefinition>(
           key={key}
           hooks={hooks}
           formState={formState}
-          wrapElem={wrapElem}
           actionDef={d}
         />
       ),
@@ -329,17 +305,12 @@ export function renderControl<S extends ControlDefinition>(
           key={key}
           hooks={hooks}
           formState={formState}
-          wrapElem={wrapElem}
           displayDef={d}
         />
       ),
     },
-    () => <h1>Unknown control: {(definition as any).type}</h1>
+    () => <h1>Unknown control: {(definition as any).type}</h1>,
   );
-
-  function wrapElem(e: ReactElement): ReactElement {
-    return wrapChild?.(key, e) ?? e;
-  }
 }
 
 /** @trackControls */
@@ -347,45 +318,39 @@ function DataRenderer({
   hooks,
   formState,
   controlDef,
-  wrapElem,
   fieldData,
 }: {
   hooks: FormEditHooks;
   controlDef: DataControlDefinition;
   formState: FormEditState;
   fieldData: SchemaField;
-  wrapElem: (db: ReactElement) => ReactElement;
 }) {
   const renderer = useFormRendererComponents();
-  const props = hooks.useDataProperties(formState, controlDef, fieldData);
-  const scalarProps: DataRendererProps = {
-    formEditState: formState,
-    definition: controlDef,
-    properties: props,
-  };
-  return wrapElem((props.customRender ?? renderer.renderData)(scalarProps));
+  const props = hooks.useDataProperties(
+    formState,
+    controlDef,
+    fieldData,
+    renderer,
+  );
+  return (props.customRender ?? renderer.renderData)(props);
 }
 
 /** @trackControls */
 function ActionRenderer({
   hooks,
   formState,
-  wrapElem,
   actionDef,
 }: {
   hooks: FormEditHooks;
   actionDef: ActionControlDefinition;
   formState: FormEditState;
-  wrapElem: (db: ReactElement) => ReactElement;
 }) {
   const { renderAction } = useFormRendererComponents();
   const actionControlProperties = hooks.useActionProperties(
     formState,
-    actionDef
+    actionDef,
   );
-  return wrapElem(
-    renderAction({ definition: actionDef, properties: actionControlProperties })
-  );
+  return renderAction(actionControlProperties);
 }
 
 /** @trackControls */
@@ -393,84 +358,39 @@ function GroupRenderer({
   hooks,
   formState,
   groupDef,
-  wrapElem,
 }: {
   hooks: FormEditHooks;
   groupDef: GroupedControlsDefinition;
   formState: FormEditState;
-  wrapElem: (db: ReactElement) => ReactElement;
 }) {
   const renderers = useFormRendererComponents();
-
-  const groupProps = hooks.useGroupProperties(formState, groupDef, hooks);
-  const compoundField = groupDef.compoundField
-    ? findCompoundField(formState.fields, groupDef.compoundField)
-    : undefined;
-  if (compoundField) {
-    return wrapElem(
-      renderers.renderCompound(
-        {
-          definition: groupDef,
-          field: compoundField,
-          properties: groupProps,
-          renderChild: (k, c, data, wrapChild) =>
-            renderControl(
-              c as AnyControlDefinition,
-              {
-                ...formState,
-                fields: compoundField!.children,
-                data,
-              },
-              groupProps.hooks,
-              k,
-              wrapChild
-            ),
-        },
-        formState.data.fields[compoundField.field],
-        renderers
-      )
-    );
-  }
-  return wrapElem(
-    renderers.renderGroup({
-      definition: groupDef,
-      childCount: groupDef.children.length,
-      properties: groupProps,
-      renderChild: (c, wrapChild) =>
-        renderControl(
-          groupDef.children[c],
-          formState,
-          groupProps.hooks,
-          c,
-          wrapChild
-        ),
-    })
+  const groupProps = hooks.useGroupProperties(
+    formState,
+    groupDef,
+    hooks,
+    renderers,
   );
+  return renderers.renderGroup(groupProps);
 }
 
 /** @trackControls */
 function DisplayRenderer({
   hooks,
-  wrapElem,
   formState,
   displayDef,
 }: {
   hooks: FormEditHooks;
   displayDef: DisplayControlDefinition;
   formState: FormEditState;
-  wrapElem: (db: ReactElement) => ReactElement;
 }) {
   const { renderDisplay } = useFormRendererComponents();
-
   const displayProps = hooks.useDisplayProperties(formState, displayDef);
-  return wrapElem(
-    renderDisplay({ definition: displayDef, properties: displayProps })
-  );
+  return renderDisplay(displayProps);
 }
 
 export function controlForField(
   field: string,
-  formState: FormEditState
+  formState: FormEditState,
 ): Control<any> {
   const refField = findField(formState.fields, field);
   return (
@@ -487,13 +407,13 @@ export function fieldForControl(c: ControlDefinition) {
 }
 
 export function isDataControl(
-  c: ControlDefinition
+  c: ControlDefinition,
 ): c is DataControlDefinition {
   return c.type === ControlDefinitionType.Data;
 }
 
 export function isGroupControl(
-  c: ControlDefinition
+  c: ControlDefinition,
 ): c is GroupedControlsDefinition {
   return c.type === ControlDefinitionType.Group;
 }
