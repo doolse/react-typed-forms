@@ -335,3 +335,9 @@ export function fieldValueExpr(
 export function visibility(expr: EntityExpression): DynamicProperty {
   return { type: DynamicPropertyType.Visible, expr };
 }
+
+export function isGridRenderer(
+  options: GroupRenderOptions,
+): options is GridRenderer {
+  return options.type === GroupRenderType.Grid;
+}

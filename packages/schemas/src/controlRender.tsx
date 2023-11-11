@@ -147,6 +147,7 @@ export interface LabelRendererProps {
   required: boolean;
   control?: Control<any>;
   children?: ReactNode;
+  labelData?: any;
 }
 
 export interface DisplayRendererProps {

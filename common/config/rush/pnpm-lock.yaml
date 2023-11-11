@@ -161,6 +161,7 @@ importers:
       date-fns: ^2.29.3
       microbundle: ^0.15.1
       nswag: ^13.18.2
+      prettier: ^3.0.3
       react: ^18.2.0
       rimraf: ^3.0.2
       typescript: 5.2.2
@@ -177,6 +178,7 @@ importers:
       '@types/react': 18.2.28
       microbundle: 0.15.1
       nswag: 13.18.2
+      prettier: 3.0.3
       rimraf: 3.0.2
       typescript: 5.2.2
 
@@ -202,7 +204,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.2
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
       path: 0.12.7
 
 packages:
@@ -5206,7 +5208,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:

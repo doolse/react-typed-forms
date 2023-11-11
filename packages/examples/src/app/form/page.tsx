@@ -4,9 +4,7 @@ import {
   buildSchema,
   compoundField,
   ControlDefinitionType,
-  createDefaultActionRenderer,
-  createDefaultArrayRenderer,
-  createDefaultLabelRenderer,
+  createDefaultRenderers,
   createFormEditHooks,
   createRenderer,
   dataControl,
@@ -23,7 +21,12 @@ import {
   stringOptionsField,
   visibility,
 } from "@react-typed-forms/schemas";
-import { Finput, RenderControl, useControl } from "@react-typed-forms/core";
+import { RenderControl, useControl } from "@react-typed-forms/core";
+import {
+  muiActionRenderer,
+  muiDateRenderer,
+  muiTextfieldRenderer,
+} from "@react-typed-forms/schemas-mui";
 
 interface NameForm {
   first: string;
@@ -75,20 +78,25 @@ const withDefaults = applyDefaultValues(
 const hooks = createFormEditHooks(defaultExpressionHook);
 
 const renderer = createRenderer(
-  {
-    type: "data",
-    render: ({ control }, withLabel) => withLabel(<Finput control={control} />),
-  },
-  createDefaultLabelRenderer({
-    className: "flex flex-col my-2",
-    required: <span className="text-red-500"> *</span>,
-  }),
-  createDefaultActionRenderer("bg-primary rounded-lg p-4 text-white"),
-  createDefaultArrayRenderer({
-    removableClass: "grid grid-cols-[1fr_auto] items-center gap-x-2",
-    childClass: "grow",
+  [muiTextfieldRenderer("outlined"), muiActionRenderer(), muiDateRenderer()],
+  createDefaultRenderers({
+    label: {
+      className: "flex flex-col",
+      requiredElement: <span className="text-red-500"> *</span>,
+    },
+    array: {
+      removableClass: "grid grid-cols-[1fr_auto] items-center gap-x-2",
+      childClass: "grow",
+    },
+    group: {
+      gridClassName: "gap-x-2 gap-y-4",
+    },
+    action: {
+      className: "bg-primary rounded-lg p-4 text-white",
+    },
   }),
 );
+
 export default function RenderAForm() {
   const form = useControl<NameForm>(withDefaults);
 
@@ -98,7 +106,7 @@ export default function RenderAForm() {
         {renderControl(
           {
             type: ControlDefinitionType.Group,
-            groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
+            groupOptions: { type: GroupRenderType.Grid, hideTitle: true },
             children: [
               {
                 required: true,
@@ -139,7 +147,7 @@ export default function RenderAForm() {
                 compoundField: "compound",
                 groupOptions: {
                   type: GroupRenderType.Standard,
-                  hideTitle: false,
+                  hideTitle: true,
                 },
                 children: [
                   {

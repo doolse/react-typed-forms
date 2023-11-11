@@ -42,11 +42,12 @@
     "microbundle": "^0.15.1",
     "nswag": "^13.18.2",
     "rimraf": "^3.0.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "prettier": "^3.0.3"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {
     "build": "rimraf ./lib/ && microbundle -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
-    "watch": "tsc -w"
+    "watch": "rimraf ./lib/ && microbundle -w -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment"
   }
 }

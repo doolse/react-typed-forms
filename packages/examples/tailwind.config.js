@@ -3,11 +3,9 @@ const colors = require("tailwindcss/colors");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   corePlugins: {
-    preflight: true,
+    preflight: false,
   },
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}"
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     container: {
       center: true,
@@ -105,5 +103,5 @@ module.exports = {
   },
 
   darkMode: ["class"],
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/forms")],
+  plugins: [require("tailwindcss-animate")],
 };
