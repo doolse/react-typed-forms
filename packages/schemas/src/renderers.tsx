@@ -8,6 +8,7 @@ import {
   FormRendererComponents,
   GroupRendererProps,
   LabelRendererProps,
+  Visibility,
 } from "./controlRender";
 import clsx from "clsx";
 import {
@@ -27,6 +28,7 @@ export interface DefaultRenderers {
   array: ArrayRendererRegistration;
   group: GroupRendererRegistration;
   display: DisplayRendererRegistration;
+  visibility: VisibilityRendererRegistration;
 }
 export interface DataRendererRegistration {
   type: "data";
@@ -39,19 +41,25 @@ export interface DataRendererRegistration {
     defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
     renderers: Pick<
       FormRendererComponents,
-      "renderArray" | "renderData" | "renderLabel"
+      "renderArray" | "renderData" | "renderLabel" | "renderVisibility"
     >,
   ) => ReactElement;
 }
 
 export interface LabelRendererRegistration {
   type: "label";
-  render: (labelProps: LabelRendererProps) => ReactElement;
+  render: (
+    labelProps: LabelRendererProps,
+    renderers: Pick<FormRendererComponents, "renderVisibility">,
+  ) => ReactElement;
 }
 
 export interface ActionRendererRegistration {
   type: "action";
-  render: (props: ActionRendererProps) => ReactElement;
+  render: (
+    props: ActionRendererProps,
+    renderers: Pick<FormRendererComponents, "renderVisibility">,
+  ) => ReactElement;
 }
 
 export interface ArrayRendererRegistration {
@@ -75,7 +83,15 @@ export interface GroupRendererRegistration {
 
 export interface DisplayRendererRegistration {
   type: "display";
-  render: (props: DisplayRendererProps) => ReactElement;
+  render: (
+    props: DisplayRendererProps,
+    renderers: Pick<FormRendererComponents, "renderVisibility">,
+  ) => ReactElement;
+}
+
+export interface VisibilityRendererRegistration {
+  type: "visibility";
+  render: (visible: Visibility, elem: ReactElement) => ReactElement;
 }
 
 export type AnyRendererRegistration =
@@ -84,7 +100,8 @@ export type AnyRendererRegistration =
   | DisplayRendererRegistration
   | ActionRendererRegistration
   | LabelRendererRegistration
-  | ArrayRendererRegistration;
+  | ArrayRendererRegistration
+  | VisibilityRendererRegistration;
 
 export function createRenderer(
   customRenderers: AnyRendererRegistration[] = [],
@@ -93,6 +110,10 @@ export function createRenderer(
   const dataRegistrations = customRenderers.filter(isDataRegistration);
   const labelRenderer =
     customRenderers.find(isLabelRegistration) ?? defaultRenderers.label;
+  const renderVisibility = (
+    customRenderers.find(isVisibilityRegistration) ??
+    defaultRenderers.visibility
+  ).render;
   function renderData(props: DataRendererProps) {
     const { definition, visible, required, control, field } = props;
     const renderType =
@@ -116,11 +137,15 @@ export function createRenderer(
         ...labelProps,
         title: labelProps?.title ?? controlTitle(definition.title, field),
       }),
-      { renderData, renderLabel, renderArray },
+      { renderData, renderLabel, renderArray, renderVisibility },
     );
   }
 
-  const renderLabel = labelRenderer.render;
+  function renderLabel(props: LabelRendererProps) {
+    return labelRenderer.render(props, {
+      renderVisibility,
+    });
+  }
 
   function renderGroup(props: GroupRendererProps) {
     return defaultRenderers.group.render(props, {
@@ -137,20 +162,21 @@ export function createRenderer(
   function renderAction(props: ActionRendererProps) {
     const renderer =
       customRenderers.find(isActionRegistration) ?? defaultRenderers.action;
-    return renderer.render(props);
+    return renderer.render(props, { renderVisibility });
   }
 
   function renderDisplay(props: DisplayRendererProps) {
-    return defaultRenderers.display.render(props);
+    return defaultRenderers.display.render(props, { renderVisibility });
   }
 
   return {
     renderAction,
     renderData,
     renderGroup,
-    renderLabel,
     renderDisplay,
+    renderLabel,
     renderArray,
+    renderVisibility,
   };
 }
 
@@ -167,17 +193,15 @@ interface DefaultActionRendererOptions {
 export function createDefaultActionRenderer(
   options: DefaultActionRendererOptions = {},
 ): ActionRendererRegistration {
-  function render({
-    visible,
-    onClick,
-    definition: { title },
-  }: ActionRendererProps) {
-    return visible ? (
+  function render(
+    { visible, onClick, definition: { title } }: ActionRendererProps,
+    { renderVisibility }: Pick<FormRendererComponents, "renderVisibility">,
+  ) {
+    return renderVisibility(
+      visible,
       <button className={options.className} onClick={onClick}>
         {title}
-      </button>
-    ) : (
-      <></>
+      </button>,
     );
   }
   return { render, type: "action" };
@@ -186,13 +210,13 @@ export function createDefaultLabelRenderer(
   options: DefaultLabelRendererOptions = { requiredElement: <span> *</span> },
 ): LabelRendererRegistration {
   return {
-    render: (p) => <DefaultLabelRenderer {...p} {...options} />,
+    render: (p, { renderVisibility }) =>
+      renderVisibility(p.visible, <DefaultLabelRenderer {...p} {...options} />),
     type: "label",
   };
 }
 
 export function DefaultLabelRenderer({
-  visible,
   children,
   className,
   labelClass,
@@ -201,20 +225,16 @@ export function DefaultLabelRenderer({
   required,
   requiredElement,
 }: LabelRendererProps & DefaultLabelRendererOptions) {
-  return visible ? (
-    title ? (
-      <div className={className}>
-        <label htmlFor={forId} className={labelClass}>
-          {title}
-          {required && requiredElement}
-        </label>
-        {children}
-      </div>
-    ) : (
-      <>{children}</>
-    )
+  return title ? (
+    <div className={className}>
+      <label htmlFor={forId} className={labelClass}>
+        {title}
+        {required && requiredElement}
+      </label>
+      {children}
+    </div>
   ) : (
-    <></>
+    <>{children}</>
   );
 }
 
@@ -359,7 +379,7 @@ export interface DefaultDisplayRendererOptions {
 export function createDefaultDisplayRenderer(
   options: DefaultDisplayRendererOptions = {},
 ): DisplayRendererRegistration {
-  function render({ definition: { displayData } }: DisplayRendererProps) {
+  function doRender({ definition: { displayData } }: DisplayRendererProps) {
     switch (displayData.type) {
       case DisplayDataType.Text:
         return (
@@ -380,7 +400,11 @@ export function createDefaultDisplayRenderer(
         return <h1>Unknown display type: {displayData.type}</h1>;
     }
   }
-  return { render, type: "display" };
+  return {
+    render: (p, { renderVisibility }) =>
+      renderVisibility(p.visible, doRender(p)),
+    type: "display",
+  };
 }
 
 interface DefaultDataRendererOptions {}
@@ -404,6 +428,17 @@ export function createDefaultDataRenderer(
   return { render, type: "data" };
 }
 
+export interface DefaultVisibilityRendererOptions {}
+
+export function createDefaultVisibilityRenderer(
+  options: DefaultVisibilityRendererOptions = {},
+): VisibilityRendererRegistration {
+  return {
+    type: "visibility",
+    render: (visible, children) => (visible.value ? children : <></>),
+  };
+}
+
 interface DefaultRendererOptions {
   data?: DefaultDataRendererOptions;
   display?: DefaultDisplayRendererOptions;
@@ -411,6 +446,7 @@ interface DefaultRendererOptions {
   array?: DefaultArrayRendererOptions;
   group?: DefaultGroupRendererOptions;
   label?: DefaultLabelRendererOptions;
+  visibility?: DefaultVisibilityRendererOptions;
 }
 
 export function createDefaultRenderers(
@@ -423,6 +459,7 @@ export function createDefaultRenderers(
     array: createDefaultArrayRenderer(options.array),
     group: createDefaultGroupRenderer(options.group),
     label: createDefaultLabelRenderer(options.label),
+    visibility: createDefaultVisibilityRenderer(options.visibility),
   };
 }
 
@@ -453,6 +490,12 @@ function isActionRegistration(
   x: AnyRendererRegistration,
 ): x is ActionRendererRegistration {
   return x.type === "action";
+}
+
+function isVisibilityRegistration(
+  x: AnyRendererRegistration,
+): x is VisibilityRendererRegistration {
+  return x.type === "visibility";
 }
 
 function isOneOf(x: string | string[] | undefined, v: string) {

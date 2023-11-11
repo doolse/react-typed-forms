@@ -29,6 +29,7 @@ import {
   isGroupControl,
   isScalarField,
   renderControl,
+  Visibility,
 } from "./controlRender";
 import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
 import {
@@ -57,12 +58,15 @@ export function useIsControlVisible(
   definition: ControlDefinition,
   formState: FormEditState,
   useExpression: ExpressionHook,
-) {
+): Visibility {
   const visibleExpression = definition.dynamic?.find(
     (x) => x.type === DynamicPropertyType.Visible,
   );
   if (visibleExpression && visibleExpression.expr) {
-    return Boolean(useExpression(visibleExpression.expr, formState));
+    return {
+      value: Boolean(useExpression(visibleExpression.expr, formState)),
+      canChange: true,
+    };
   }
   const schemaFields = formState.fields;
 
@@ -85,19 +89,19 @@ export function useIsControlVisible(
   const onlyForTypes = (
     fieldName ? findField(schemaFields, fieldName) : undefined
   )?.onlyForTypes;
-
-  return (
+  const canChange = Boolean(compoundField || (onlyForTypes?.length ?? 0) > 0);
+  const value =
     (!compoundField || compoundField.value != null) &&
     (!onlyForTypes ||
       onlyForTypes.length === 0 ||
-      Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)))
-  );
+      Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)));
+  return { value, canChange };
 }
 
 export function getDefaultScalarControlProperties(
   definition: DataControlDefinition,
   field: SchemaField,
-  visible: boolean,
+  visible: Visibility,
   defaultValue: any,
   control: Control<any>,
   formState: FormEditState,
@@ -263,7 +267,7 @@ function defaultArrayRendererProps(
             type: ControlDefinitionType.Action,
             actionId: "addElement",
           },
-          visible: true,
+          visible: { value: true, canChange: false },
           onClick: () => addElement(control, elementValueForField(field)),
         }
       : undefined,
@@ -274,7 +278,7 @@ function defaultArrayRendererProps(
             type: ControlDefinitionType.Action,
             actionId: "removeElement",
           },
-          visible: true,
+          visible: { value: true, canChange: false },
           onClick: () => removeElement(control, control.elements[i]),
         })
       : undefined,

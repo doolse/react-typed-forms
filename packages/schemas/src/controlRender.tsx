@@ -55,10 +55,10 @@ export interface FormEditHooks {
 
 export interface DataRendererProps {
   definition: DataControlDefinition;
+  visible: Visibility;
   control: Control<any>;
   field: SchemaField;
   array?: ArrayRendererProps;
-  visible: boolean;
   readonly: boolean;
   defaultValue: any;
   required: boolean;
@@ -69,10 +69,10 @@ export interface DataRendererProps {
 
 export interface GroupRendererProps {
   definition: Omit<GroupedControlsDefinition, "children">;
+  visible: Visibility;
   field?: CompoundField;
   array?: ArrayRendererProps;
   hideTitle: boolean;
-  visible: boolean;
   hooks: FormEditHooks;
   childCount: number;
   renderChild: (child: number) => ReactElement;
@@ -106,6 +106,7 @@ export interface FormRendererComponents {
   renderDisplay: (props: DisplayRendererProps) => ReactElement;
   renderAction: (props: ActionRendererProps) => ReactElement;
   renderArray: (props: ArrayRendererProps) => ReactElement;
+  renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
 }
 
 let _FormRendererComponentsContext: Context<
@@ -140,10 +141,14 @@ export function useFormRendererComponents() {
   return c;
 }
 
+export interface Visibility {
+  value: boolean;
+  canChange: boolean;
+}
 export interface LabelRendererProps {
+  visible: Visibility;
   title?: ReactNode;
   forId?: string;
-  visible: boolean;
   required: boolean;
   control?: Control<any>;
   children?: ReactNode;
@@ -152,12 +157,12 @@ export interface LabelRendererProps {
 
 export interface DisplayRendererProps {
   definition: DisplayControlDefinition;
-  visible: boolean;
+  visible: Visibility;
 }
 
 export interface ActionRendererProps {
   definition: ActionControlDefinition;
-  visible: boolean;
+  visible: Visibility;
   onClick: () => void;
 }
 
