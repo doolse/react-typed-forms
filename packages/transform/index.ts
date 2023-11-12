@@ -26,6 +26,7 @@ const getHookIdentifier = "getHookIdentifier";
 const maybeUsesSignal = "maybeUsesSignal";
 const containsJSX = "containsJSX";
 const alreadyTransformed = "alreadyTransformed";
+const dontTransformId = "dontTransform";
 
 const get = (pass: PluginPass, name: any) =>
   pass.get(`${dataNamespace}/${name}`);
@@ -149,18 +150,13 @@ function isComponentFunction(path: NodePath<FunctionLike>): boolean {
     path.scope.parent === path.scope.getProgramParent() // Function is top-level
   );
 }
-
-function isCustomHook(path: NodePath<FunctionLike>): boolean {
-  return (
-    fnNameStartsWithUse(path) && // Function name indicates it's a hook
-    path.scope.parent === path.scope.getProgramParent()
-  ); // Function is top-level
-}
-
 function shouldTransform(
   path: NodePath<FunctionLike>,
-  options: PluginOptions
+  options: PluginOptions,
+  state: PluginPass
 ): boolean {
+  if (get(state, dontTransformId))
+    return false;
   if (getData(path, alreadyTransformed) === true) return false;
 
   // Opt-out takes first precedence
@@ -218,34 +214,15 @@ function wrapInTryFinally(
   return newFunction;
 }
 
-function prependUseSignals<T extends FunctionLike>(
-  t: typeof BabelTypes,
-  path: NodePath<T>,
-  state: PluginPass
-): T {
-  const newFunction = t.cloneNode(path.node);
-  newFunction.body = t.blockStatement([
-    t.expressionStatement(
-      t.callExpression(get(state, getHookIdentifier)(), [])
-    ),
-  ]);
-  if (t.isBlockStatement(path.node.body)) {
-    // TODO: Is it okay to elide the block statement here?
-    newFunction.body.body.push(...path.node.body.body);
-  } else {
-    newFunction.body.body.push(t.returnStatement(path.node.body));
-  }
-
-  return newFunction;
-}
-
 function transformFunction(
   t: typeof BabelTypes,
   options: PluginOptions,
   path: NodePath<FunctionLike>,
   state: PluginPass
 ) {
-  testFunctionName((n) => (console.error(n), true))(path);
+  if (options.debug) {
+    testFunctionName((n) => (console.info(`Transforming ${n}`), true))(path);
+  }
 
   let newFunction: FunctionLike = wrapInTryFinally(t, path, state);
 
@@ -268,7 +245,7 @@ function createImportLazily(
   return () => {
     if (!isModule(path)) {
       throw new Error(
-        `Cannot import ${importName} outside of an ESM module file`
+        `Cannot import ${importName} outside of an ESM module file.`
       );
     }
 
@@ -314,6 +291,7 @@ export interface PluginOptions {
    * - `all`: Makes all components reactive to signals.
    */
   mode?: "auto" | "manual" | "all";
+  debug?: boolean;
   /** Specify a custom package to import the `useSignals` hook from. */
   importSource?: string;
   experimental?: {
@@ -341,6 +319,7 @@ export default function signalsTransform(
           // lazily create the import statement for the useSignalTracking hook.
           // We create a function and store it in the PluginPass object, so that
           // on the first usage of the hook, we can create the import statement.
+          set(state, dontTransformId, !isModule(path));
           set(
             state,
             getHookIdentifier,
@@ -362,7 +341,7 @@ export default function signalsTransform(
         // seeing a function would probably be faster than running an entire
         // babel pass with plugins on components twice.
         exit(path, state) {
-          if (shouldTransform(path, options)) {
+          if (shouldTransform(path, options, state)) {
             transformFunction(t, options, path, state);
           }
         },
@@ -370,7 +349,7 @@ export default function signalsTransform(
 
       FunctionExpression: {
         exit(path, state) {
-          if (shouldTransform(path, options)) {
+          if (shouldTransform(path, options, state)) {
             transformFunction(t, options, path, state);
           }
         },
@@ -378,7 +357,7 @@ export default function signalsTransform(
 
       FunctionDeclaration: {
         exit(path, state) {
-          if (shouldTransform(path, options)) {
+          if (shouldTransform(path, options, state)) {
             transformFunction(t, options, path, state);
           }
         },

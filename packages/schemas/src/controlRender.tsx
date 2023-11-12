@@ -100,12 +100,12 @@ export interface ArrayRendererProps {
 }
 
 export interface FormRendererComponents {
-  renderLabel: (props: LabelRendererProps) => ReactElement;
   renderData: (props: DataRendererProps) => ReactElement;
   renderGroup: (props: GroupRendererProps) => ReactElement;
   renderDisplay: (props: DisplayRendererProps) => ReactElement;
   renderAction: (props: ActionRendererProps) => ReactElement;
   renderArray: (props: ArrayRendererProps) => ReactElement;
+  renderLabel: (props: LabelRendererProps, elem: ReactElement) => ReactElement;
   renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
 }
 
@@ -151,7 +151,7 @@ export interface LabelRendererProps {
   forId?: string;
   required: boolean;
   control?: Control<any>;
-  children?: ReactNode;
+  group?: boolean;
   labelData?: any;
 }
 
