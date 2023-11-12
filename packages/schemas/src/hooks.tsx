@@ -2,14 +2,14 @@ import {
   ActionControlDefinition,
   ControlDefinition,
   ControlDefinitionType,
-  DataControlDefinition,
+  DataControlDefinition, DataRenderType,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
   FieldOption,
   FieldValueExpression,
   GroupedControlsDefinition,
-  SchemaField,
+  SchemaField
 } from "./types";
 import {
   ActionRendererProps,
@@ -111,6 +111,7 @@ export function getDefaultScalarControlProperties(
     field,
     defaultValue,
     options: getOptionsForScalarField(field),
+    renderOptions: definition.renderOptions ?? {type: DataRenderType.Standard},
     required: definition.required ?? false,
     visible,
     readonly: formState.readonly ?? definition.readonly ?? false,

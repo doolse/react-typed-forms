@@ -9,9 +9,9 @@ import {
   EntityExpression,
   FieldOption,
   FieldType,
-  GroupedControlsDefinition,
+  GroupedControlsDefinition, RenderOptions,
   SchemaField,
-  visitControlDefinition,
+  visitControlDefinition
 } from "./types";
 import React, {
   Context,
@@ -55,6 +55,7 @@ export interface FormEditHooks {
 
 export interface DataRendererProps {
   definition: DataControlDefinition;
+  renderOptions: RenderOptions;
   visible: Visibility;
   control: Control<any>;
   field: SchemaField;

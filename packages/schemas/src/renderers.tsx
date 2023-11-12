@@ -35,6 +35,7 @@ export interface DataRendererRegistration {
   type: "data";
   schemaType?: string | string[];
   renderType?: string | string[];
+  options?: boolean;
   collection?: boolean;
   match?: (props: DataRendererProps) => boolean;
   render: (
@@ -117,14 +118,14 @@ export function createRenderer(
     defaultRenderers.visibility
   ).render;
   function renderData(props: DataRendererProps) {
-    const { definition, visible, required, control, field } = props;
-    const renderType =
-      definition.renderOptions?.type ?? DataRenderType.Standard;
+    const { definition, renderOptions:{type: renderType}, visible, required, control, field } = props;
 
+    const options = hasOptions(props);
     const renderer =
       dataRegistrations.find(
         (x) =>
           (x.collection ?? false) === (field.collection ?? false) &&
+          (x.options ?? false) === options &&
           isOneOf(x.schemaType, field.type) &&
           isOneOf(x.renderType, renderType) &&
           (!x.match || x.match(props)),
@@ -537,7 +538,7 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
     options={props.options!}
     convert={createSelectConversion(props.field.type)}
   />, {
-    match: hasOptions
+    options: true
   });
 }
 
