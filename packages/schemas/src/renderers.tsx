@@ -5,7 +5,7 @@ import {
   controlTitle,
   DataRendererProps,
   DisplayRendererProps,
-  FormRendererComponents,
+  FormRenderer,
   GroupRendererProps,
   LabelRendererProps,
   Visibility,
@@ -13,13 +13,14 @@ import {
 import clsx from "clsx";
 import {
   DataRenderType,
-  DisplayDataType, FieldType,
+  DisplayDataType,
+  FieldType,
   GridRenderer,
   HtmlDisplay,
   isGridRenderer,
-  TextDisplay
+  TextDisplay,
 } from "./types";
-import { Control, Finput } from "@react-typed-forms/core";
+import { Control, Fcheckbox, Finput } from "@react-typed-forms/core";
 import { hasOptions } from "./util";
 
 export interface DefaultRenderers {
@@ -42,7 +43,7 @@ export interface DataRendererRegistration {
     props: DataRendererProps,
     defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
     renderers: Pick<
-      FormRendererComponents,
+      FormRenderer,
       "renderArray" | "renderData" | "renderLabel" | "renderVisibility"
     >,
   ) => ReactElement;
@@ -53,7 +54,7 @@ export interface LabelRendererRegistration {
   render: (
     labelProps: LabelRendererProps,
     elem: ReactElement,
-    renderers: Pick<FormRendererComponents, "renderVisibility">,
+    renderers: Pick<FormRenderer, "renderVisibility">,
   ) => ReactElement;
 }
 
@@ -61,7 +62,7 @@ export interface ActionRendererRegistration {
   type: "action";
   render: (
     props: ActionRendererProps,
-    renderers: Pick<FormRendererComponents, "renderVisibility">,
+    renderers: Pick<FormRenderer, "renderVisibility">,
   ) => ReactElement;
 }
 
@@ -69,7 +70,7 @@ export interface ArrayRendererRegistration {
   type: "array";
   render: (
     props: ArrayRendererProps,
-    renderers: Pick<FormRendererComponents, "renderAction">,
+    renderers: Pick<FormRenderer, "renderAction">,
   ) => ReactElement;
 }
 
@@ -78,7 +79,7 @@ export interface GroupRendererRegistration {
   render: (
     props: GroupRendererProps,
     renderers: Pick<
-      FormRendererComponents,
+      FormRenderer,
       "renderLabel" | "renderArray" | "renderGroup"
     >,
   ) => ReactElement;
@@ -88,7 +89,7 @@ export interface DisplayRendererRegistration {
   type: "display";
   render: (
     props: DisplayRendererProps,
-    renderers: Pick<FormRendererComponents, "renderVisibility">,
+    renderers: Pick<FormRenderer, "renderVisibility">,
   ) => ReactElement;
 }
 
@@ -106,10 +107,10 @@ export type AnyRendererRegistration =
   | ArrayRendererRegistration
   | VisibilityRendererRegistration;
 
-export function createRenderer(
+export function createFormRenderer(
   customRenderers: AnyRendererRegistration[] = [],
   defaultRenderers: DefaultRenderers = createClassStyledRenderers(),
-): FormRendererComponents {
+): FormRenderer {
   const dataRegistrations = customRenderers.filter(isDataRegistration);
   const labelRenderer =
     customRenderers.find(isLabelRegistration) ?? defaultRenderers.label;
@@ -118,7 +119,14 @@ export function createRenderer(
     defaultRenderers.visibility
   ).render;
   function renderData(props: DataRendererProps) {
-    const { definition, renderOptions:{type: renderType}, visible, required, control, field } = props;
+    const {
+      definition,
+      renderOptions: { type: renderType },
+      visible,
+      required,
+      control,
+      field,
+    } = props;
 
     const options = hasOptions(props);
     const renderer =
@@ -137,7 +145,7 @@ export function createRenderer(
         visible,
         required,
         control,
-        forId: "c"+ control.uniqueId,
+        forId: "c" + control.uniqueId,
         ...labelProps,
         title: labelProps?.title ?? controlTitle(definition.title, field),
       }),
@@ -186,6 +194,7 @@ export function createRenderer(
 
 interface DefaultLabelRendererOptions {
   className?: string;
+  groupLabelClass?: string;
   requiredElement?: ReactNode;
   labelClass?: string;
 }
@@ -199,7 +208,7 @@ export function createDefaultActionRenderer(
 ): ActionRendererRegistration {
   function render(
     { visible, onClick, definition: { title } }: ActionRendererProps,
-    { renderVisibility }: Pick<FormRendererComponents, "renderVisibility">,
+    { renderVisibility }: Pick<FormRenderer, "renderVisibility">,
   ) {
     return renderVisibility(
       visible,
@@ -215,7 +224,10 @@ export function createDefaultLabelRenderer(
 ): LabelRendererRegistration {
   return {
     render: (p, elem, { renderVisibility }) =>
-      renderVisibility(p.visible, <DefaultLabelRenderer {...p} {...options} children={elem} />),
+      renderVisibility(
+        p.visible,
+        <DefaultLabelRenderer {...p} {...options} children={elem} />,
+      ),
     type: "label",
   };
 }
@@ -227,11 +239,17 @@ export function DefaultLabelRenderer({
   forId,
   required,
   children,
+  group,
+  groupLabelClass,
   requiredElement,
-}: LabelRendererProps & DefaultLabelRendererOptions & {children: ReactElement}) {
+}: LabelRendererProps &
+  DefaultLabelRendererOptions & { children: ReactElement }) {
   return title ? (
     <div className={className}>
-      <label htmlFor={forId} className={labelClass}>
+      <label
+        htmlFor={forId}
+        className={clsx(labelClass, group && groupLabelClass)}
+      >
         {title}
         {required && requiredElement}
       </label>
@@ -270,7 +288,7 @@ export function createDefaultArrayRenderer(
       removeAction,
       childKey,
     }: ArrayRendererProps,
-    { renderAction }: Pick<FormRendererComponents, "renderAction">,
+    { renderAction }: Pick<FormRenderer, "renderAction">,
   ) {
     return (
       <>
@@ -342,10 +360,7 @@ export function createDefaultGroupRenderer(
     {
       renderLabel,
       renderArray,
-    }: Pick<
-      FormRendererComponents,
-      "renderLabel" | "renderArray" | "renderGroup"
-    >,
+    }: Pick<FormRenderer, "renderLabel" | "renderArray" | "renderGroup">,
   ) {
     const { childCount, renderChild, definition, field, visible } = props;
     const title = props.hideTitle
@@ -354,12 +369,15 @@ export function createDefaultGroupRenderer(
       ? controlTitle(definition.title, field)
       : definition.title;
 
-    return renderLabel({
-      visible,
-      title,
-      required: field?.required ?? false,
-      group: true,
-    }, props.array ? renderArray(props.array) : renderChildren());
+    return renderLabel(
+      {
+        visible,
+        title,
+        required: field?.required ?? false,
+        group: true,
+      },
+      props.array ? renderArray(props.array) : renderChildren(),
+    );
 
     function renderChildren() {
       const { groupOptions } = definition;
@@ -419,16 +437,20 @@ interface DefaultDataRendererOptions {
 export function createDefaultDataRenderer(
   options: DefaultDataRendererOptions = {},
 ): DataRendererRegistration {
-  const {inputClass} = options;
+  const { inputClass } = options;
   const selectRenderer = createSelectRenderer(options.selectOptions ?? {});
-  return createDataRenderer((
-    props,
-    defaultLabel,
-    renderers) => {
+  return createDataRenderer((props, defaultLabel, renderers) => {
     if (hasOptions(props))
-      return selectRenderer.render(props, defaultLabel, renderers)
+      return selectRenderer.render(props, defaultLabel, renderers);
     const l = defaultLabel();
-    return renderers.renderLabel(l, <Finput className={inputClass} id={l.forId} control={props.control} />)
+    return renderers.renderLabel(
+      l,
+      props.field.type === FieldType.Bool ? (
+        <Fcheckbox control={props.control} />
+      ) : (
+        <Finput className={inputClass} id={l.forId} control={props.control} />
+      ),
+    );
   });
 }
 
@@ -443,7 +465,7 @@ export function createDefaultVisibilityRenderer(
   };
 }
 
-interface DefaultRendererOptions {
+export interface DefaultRendererOptions {
   data?: DefaultDataRendererOptions;
   display?: DefaultDisplayRendererOptions;
   action?: DefaultActionRendererOptions;
@@ -506,45 +528,55 @@ function isOneOf(x: string | string[] | undefined, v: string) {
   return x == null ? true : Array.isArray(x) ? x.includes(v) : v === x;
 }
 
-export function createDataRenderer(render: DataRendererRegistration["render"], options?: Partial<DataRendererRegistration>): DataRendererRegistration
-{
-  return {type:"data", render, ...options};
+export function createDataRenderer(
+  render: DataRendererRegistration["render"],
+  options?: Partial<DataRendererRegistration>,
+): DataRendererRegistration {
+  return { type: "data", render, ...options };
 }
 
-export function createDataRendererLabelled(render: (props: DataRendererProps, id: string) => ReactElement, options?: Partial<DataRendererRegistration>): DataRendererRegistration
-{
-  return {type:"data", render: (props, defaultLabel, {renderLabel}) => {
-    const dl = defaultLabel();
-    return renderLabel(dl, render(props, dl.forId!));
-    }, ...options}
+export function createDataRendererLabelled(
+  render: (props: DataRendererProps, id: string) => ReactElement,
+  options?: Partial<DataRendererRegistration>,
+): DataRendererRegistration {
+  return {
+    type: "data",
+    render: (props, defaultLabel, { renderLabel }) => {
+      const dl = defaultLabel();
+      return renderLabel(dl, render(props, dl.forId!));
+    },
+    ...options,
+  };
 }
 
-export function createLabelRenderer(options: Omit<LabelRendererRegistration, "type">): LabelRendererRegistration
-{
-  return {type:"label", ...options};
+export function createLabelRenderer(
+  options: Omit<LabelRendererRegistration, "type">,
+): LabelRendererRegistration {
+  return { type: "label", ...options };
 }
 
-
-export interface SelectRendererOptions
-{
+export interface SelectRendererOptions {
   className?: string;
 }
 
 export function createSelectRenderer(options: SelectRendererOptions = {}) {
-  return createDataRendererLabelled((props, id) => <SelectDataRenderer
-    className={options.className}
-    state={props.control}
-    id={id}
-    options={props.options!}
-    convert={createSelectConversion(props.field.type)}
-  />, {
-    options: true
-  });
+  return createDataRendererLabelled(
+    (props, id) => (
+      <SelectDataRenderer
+        className={options.className}
+        state={props.control}
+        id={id}
+        options={props.options!}
+        convert={createSelectConversion(props.field.type)}
+      />
+    ),
+    {
+      options: true,
+    },
+  );
 }
 
-
-
-type SelectConversion = [(s: string) => any, (a: any) => string | number]
+type SelectConversion = [(s: string) => any, (a: any) => string | number];
 
 interface SelectDataRendererProps {
   id?: string;
@@ -559,12 +591,13 @@ interface SelectDataRendererProps {
 }
 
 export function SelectDataRenderer({
-                          state,
-                          options,className,
-                          convert: [fromString,asString],
-                          
-                          ...props
-                        }: SelectDataRendererProps ) {
+  state,
+  options,
+  className,
+  convert: [fromString, asString],
+
+  ...props
+}: SelectDataRendererProps) {
   const { value, disabled } = state;
   return (
     <select
@@ -584,17 +617,16 @@ export function SelectDataRenderer({
 }
 
 export function createSelectConversion(ft: string): SelectConversion {
-  switch (ft)
-  {
+  switch (ft) {
     case FieldType.String:
-      return [a => a,  a => a];
+      return [(a) => a, (a) => a];
     case FieldType.Bool:
-      return [a => a === "true", a => a.toString()]
+      return [(a) => a === "true", (a) => a.toString()];
     case FieldType.Int:
-      return [a => parseInt(a), a => a];
+      return [(a) => parseInt(a), (a) => a];
     case FieldType.Double:
-      return [a => parseFloat(a), a => a];
+      return [(a) => parseFloat(a), (a) => a];
     default:
-      throw "No conversion for "+ft;
+      throw "No conversion for " + ft;
   }
-} 
+}

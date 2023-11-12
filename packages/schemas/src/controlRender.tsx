@@ -9,9 +9,10 @@ import {
   EntityExpression,
   FieldOption,
   FieldType,
-  GroupedControlsDefinition, RenderOptions,
+  GroupedControlsDefinition,
+  RenderOptions,
   SchemaField,
-  visitControlDefinition
+  visitControlDefinition,
 } from "./types";
 import React, {
   Context,
@@ -34,13 +35,13 @@ export interface FormEditHooks {
     formState: FormEditState,
     definition: DataControlDefinition,
     field: SchemaField,
-    renderers: FormRendererComponents,
+    renderers: FormRenderer,
   ): DataRendererProps;
   useGroupProperties(
     formState: FormEditState,
     definition: GroupedControlsDefinition,
     currentHooks: FormEditHooks,
-    renderers: FormRendererComponents,
+    renderers: FormRenderer,
   ): GroupRendererProps;
   useDisplayProperties(
     formState: FormEditState,
@@ -100,7 +101,7 @@ export interface ArrayRendererProps {
   childKey: (childCount: number) => Key;
 }
 
-export interface FormRendererComponents {
+export interface FormRenderer {
   renderData: (props: DataRendererProps) => ReactElement;
   renderGroup: (props: GroupRendererProps) => ReactElement;
   renderDisplay: (props: DisplayRendererProps) => ReactElement;
@@ -110,15 +111,14 @@ export interface FormRendererComponents {
   renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
 }
 
-let _FormRendererComponentsContext: Context<
-  FormRendererComponents | undefined
-> | null = null;
+let _FormRendererComponentsContext: Context<FormRenderer | undefined> | null =
+  null;
 
 function FormRendererComponentsContext() {
   if (!_FormRendererComponentsContext) {
-    _FormRendererComponentsContext = createContext<
-      FormRendererComponents | undefined
-    >(undefined);
+    _FormRendererComponentsContext = createContext<FormRenderer | undefined>(
+      undefined,
+    );
   }
   return _FormRendererComponentsContext;
 }
@@ -127,7 +127,7 @@ export function FormRendererProvider({
   value,
   children,
 }: {
-  value: FormRendererComponents;
+  value: FormRenderer;
   children: ReactNode;
 }) {
   const { Provider } = FormRendererComponentsContext();
@@ -424,3 +424,5 @@ export function isGroupControl(
 ): c is GroupedControlsDefinition {
   return c.type === ControlDefinitionType.Group;
 }
+
+export const AlwaysVisible: Visibility = { value: true, canChange: false };

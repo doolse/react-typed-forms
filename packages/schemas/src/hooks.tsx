@@ -2,14 +2,15 @@ import {
   ActionControlDefinition,
   ControlDefinition,
   ControlDefinitionType,
-  DataControlDefinition, DataRenderType,
+  DataControlDefinition,
+  DataRenderType,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
   FieldOption,
   FieldValueExpression,
   GroupedControlsDefinition,
-  SchemaField
+  SchemaField,
 } from "./types";
 import {
   ActionRendererProps,
@@ -24,7 +25,7 @@ import {
   findField,
   FormEditHooks,
   FormEditState,
-  FormRendererComponents,
+  FormRenderer,
   GroupRendererProps,
   isGroupControl,
   isScalarField,
@@ -111,7 +112,9 @@ export function getDefaultScalarControlProperties(
     field,
     defaultValue,
     options: getOptionsForScalarField(field),
-    renderOptions: definition.renderOptions ?? {type: DataRenderType.Standard},
+    renderOptions: definition.renderOptions ?? {
+      type: DataRenderType.Standard,
+    },
     required: definition.required ?? false,
     visible,
     readonly: formState.readonly ?? definition.readonly ?? false,
@@ -149,10 +152,10 @@ export function createFormEditHooks(
   return {
     useExpression,
     useDataProperties(
-      formState: FormEditState,
-      definition: DataControlDefinition,
-      field: SchemaField,
-      renderer: FormRendererComponents,
+      formState,
+      definition,
+      field,
+      renderer,
     ): DataRendererProps {
       const visible = useIsControlVisible(definition, formState, useExpression);
       const defaultValue = useDefaultValue(
