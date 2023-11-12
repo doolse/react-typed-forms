@@ -42,10 +42,7 @@ export interface DataRendererRegistration {
   render: (
     props: DataRendererProps,
     defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
-    renderers: Pick<
-      FormRenderer,
-      "renderArray" | "renderData" | "renderLabel" | "renderVisibility"
-    >,
+    renderers: FormRenderer,
   ) => ReactElement;
 }
 
@@ -54,42 +51,30 @@ export interface LabelRendererRegistration {
   render: (
     labelProps: LabelRendererProps,
     elem: ReactElement,
-    renderers: Pick<FormRenderer, "renderVisibility">,
+    renderers: FormRenderer,
   ) => ReactElement;
 }
 
 export interface ActionRendererRegistration {
   type: "action";
-  render: (
-    props: ActionRendererProps,
-    renderers: Pick<FormRenderer, "renderVisibility">,
-  ) => ReactElement;
+  render: (props: ActionRendererProps, renderers: FormRenderer) => ReactElement;
 }
 
 export interface ArrayRendererRegistration {
   type: "array";
-  render: (
-    props: ArrayRendererProps,
-    renderers: Pick<FormRenderer, "renderAction">,
-  ) => ReactElement;
+  render: (props: ArrayRendererProps, renderers: FormRenderer) => ReactElement;
 }
 
 export interface GroupRendererRegistration {
   type: "group";
-  render: (
-    props: GroupRendererProps,
-    renderers: Pick<
-      FormRenderer,
-      "renderLabel" | "renderArray" | "renderGroup"
-    >,
-  ) => ReactElement;
+  render: (props: GroupRendererProps, renderers: FormRenderer) => ReactElement;
 }
 
 export interface DisplayRendererRegistration {
   type: "display";
   render: (
     props: DisplayRendererProps,
-    renderers: Pick<FormRenderer, "renderVisibility">,
+    renderers: FormRenderer,
   ) => ReactElement;
 }
 
@@ -118,6 +103,17 @@ export function createFormRenderer(
     customRenderers.find(isVisibilityRegistration) ??
     defaultRenderers.visibility
   ).render;
+
+  const formRenderers = {
+    renderAction,
+    renderData,
+    renderGroup,
+    renderDisplay,
+    renderLabel,
+    renderArray,
+    renderVisibility,
+  };
+
   function renderData(props: DataRendererProps) {
     const {
       definition,
@@ -149,47 +145,33 @@ export function createFormRenderer(
         ...labelProps,
         title: labelProps?.title ?? controlTitle(definition.title, field),
       }),
-      { renderData, renderLabel, renderArray, renderVisibility },
+      formRenderers,
     );
   }
 
   function renderLabel(props: LabelRendererProps, elem: ReactElement) {
-    return labelRenderer.render(props, elem, {
-      renderVisibility,
-    });
+    return labelRenderer.render(props, elem, formRenderers);
   }
 
   function renderGroup(props: GroupRendererProps) {
-    return defaultRenderers.group.render(props, {
-      renderLabel,
-      renderArray,
-      renderGroup,
-    });
+    return defaultRenderers.group.render(props, formRenderers);
   }
 
   function renderArray(props: ArrayRendererProps) {
-    return defaultRenderers.array.render(props, { renderAction });
+    return defaultRenderers.array.render(props, formRenderers);
   }
 
   function renderAction(props: ActionRendererProps) {
     const renderer =
       customRenderers.find(isActionRegistration) ?? defaultRenderers.action;
-    return renderer.render(props, { renderVisibility });
+    return renderer.render(props, formRenderers);
   }
 
   function renderDisplay(props: DisplayRendererProps) {
-    return defaultRenderers.display.render(props, { renderVisibility });
+    return defaultRenderers.display.render(props, formRenderers);
   }
 
-  return {
-    renderAction,
-    renderData,
-    renderGroup,
-    renderDisplay,
-    renderLabel,
-    renderArray,
-    renderVisibility,
-  };
+  return formRenderers;
 }
 
 interface DefaultLabelRendererOptions {
@@ -536,14 +518,18 @@ export function createDataRenderer(
 }
 
 export function createDataRendererLabelled(
-  render: (props: DataRendererProps, id: string) => ReactElement,
+  render: (
+    props: DataRendererProps,
+    id: string,
+    renderers: FormRenderer,
+  ) => ReactElement,
   options?: Partial<DataRendererRegistration>,
 ): DataRendererRegistration {
   return {
     type: "data",
-    render: (props, defaultLabel, { renderLabel }) => {
+    render: (props, defaultLabel, renderers) => {
       const dl = defaultLabel();
-      return renderLabel(dl, render(props, dl.forId!));
+      return renderers.renderLabel(dl, render(props, dl.forId!, renderers));
     },
     ...options,
   };

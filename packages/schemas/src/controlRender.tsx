@@ -1,6 +1,5 @@
 import {
   ActionControlDefinition,
-  AnyControlDefinition,
   CompoundField,
   ControlDefinition,
   ControlDefinitionType,
@@ -426,3 +425,19 @@ export function isGroupControl(
 }
 
 export const AlwaysVisible: Visibility = { value: true, canChange: false };
+
+export function createAction(
+  label: string,
+  onClick: () => void,
+  actionId?: string,
+): ActionRendererProps {
+  return {
+    definition: {
+      type: ControlDefinitionType.Action,
+      actionId: actionId ?? label,
+      title: label,
+    },
+    visible: AlwaysVisible,
+    onClick,
+  };
+}
