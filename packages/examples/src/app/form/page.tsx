@@ -6,7 +6,7 @@ import {
   ControlDefinitionType,
   createDefaultRenderers,
   createFormEditHooks,
-  createRenderer,
+  createFormRenderer,
   dataControl,
   DataRenderType,
   DateTimeRenderOptions,
@@ -21,7 +21,12 @@ import {
   stringOptionsField,
   visibility,
 } from "@react-typed-forms/schemas";
-import { RenderControl, useControl } from "@react-typed-forms/core";
+import {
+  Control,
+  Finput,
+  RenderControl,
+  useControl,
+} from "@react-typed-forms/core";
 import {
   muiActionRenderer,
   muiDateRenderer,
@@ -77,7 +82,7 @@ const withDefaults = applyDefaultValues(
 
 const hooks = createFormEditHooks(defaultExpressionHook);
 
-const renderer = createRenderer(
+const renderer = createFormRenderer(
   [muiTextfieldRenderer("outlined"), muiActionRenderer(), muiDateRenderer()],
   createDefaultRenderers({
     label: {

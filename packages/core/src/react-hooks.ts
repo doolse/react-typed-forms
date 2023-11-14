@@ -232,12 +232,17 @@ export function useControl(
   configure?: ControlSetup<any, any>,
   afterInit?: (c: Control<any>) => void
 ): Control<any> {
-  return useState(() => {
+  const controlRef = useRefState(() => {
     const rv = typeof v === "function" ? v() : v;
     const c = newControl(rv, configure);
     afterInit?.(c);
     return c;
   })[0];
+  if (configure?.use)
+  {
+    controlRef.current = configure.use;
+  }
+  return controlRef.current;
 }
 
 export interface SelectionGroup<V> {

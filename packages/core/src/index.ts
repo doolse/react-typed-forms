@@ -1,4 +1,3 @@
-export { installAutoComponentTracking } from "./auto";
 export * from "./controlImpl";
 export * from "./react-hooks";
 export * from "./html";

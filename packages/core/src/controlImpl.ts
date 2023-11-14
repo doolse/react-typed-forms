@@ -687,6 +687,7 @@ export function newControl<V>(
   initialValue?: V
 ): Control<V> {
   const realSetup = getSetup(setup);
+  if (realSetup.use) return realSetup.use;
   const initial = arguments.length > 2 ? initialValue! : value;
   const builder = realSetup.create;
   if (builder) {
