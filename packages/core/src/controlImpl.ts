@@ -1013,7 +1013,7 @@ class ControlStateImpl<V> implements ControlProperties<V> {
           const v = c.current.value[p as string];
           const iv = thisInitial?.[p as string];
           const newChild = newControl(v, c.setup.fields?.[p as string], iv);
-          newChild.touched = c.current.touched;
+          newChild.touched = false;
           newChild.disabled = c.current.disabled;
           c.attachParentListener(newChild, p as string);
           target[p] = newChild;

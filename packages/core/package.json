@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "3.0.0-dev.113",
+  "version": "3.0.0-dev.114",
   "description": "",
   "source": "src/index.ts",
   "main": "lib/index.js",

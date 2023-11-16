@@ -32,8 +32,8 @@
     "@mui/material": "^5.14.13",
     "@emotion/styled": "^11.11.0",
     "@emotion/react": "^11.11.1",
-    "@react-typed-forms/core": "workspace:^3.0.0-dev.113",
-    "@react-typed-forms/mui": "workspace:^3.0.0-dev.113",
+    "@react-typed-forms/core": "workspace:^3.0.0-dev.114",
+    "@react-typed-forms/mui": "workspace:^3.0.0-dev.114",
     "@react-typed-forms/schemas": "workspace:^1.0.0-dev.17",
     "@react-typed-forms/schemas-mui": "workspace:^1.0.0-dev.17"
   },
