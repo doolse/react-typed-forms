@@ -56,7 +56,7 @@ export interface Control<V> extends ControlProperties<V> {
 
   subscribe(
     listener: ChangeListenerFunc<V>,
-    mask?: ControlChange
+    mask?: ControlChange,
   ): Subscription;
 
   unsubscribe(listener: ChangeListenerFunc<V> | Subscription): void;
@@ -71,7 +71,7 @@ export interface Control<V> extends ControlProperties<V> {
 
   isValueEqual(v: V): boolean;
 
-  validate(): Control<V>;
+  validate(): boolean;
 
   markAsClean(): void;
 
@@ -99,7 +99,7 @@ export interface ControlSetup<V, M = object> {
 
 export type ChangeListenerFunc<V> = (
   control: Control<V>,
-  cb: ControlChange
+  cb: ControlChange,
 ) => void;
 
 export type Subscription = [ControlChange, ChangeListenerFunc<any>];
