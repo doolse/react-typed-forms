@@ -25,7 +25,6 @@ import {
   findField,
   FormEditHooks,
   FormEditState,
-  FormRenderer,
   GroupRendererProps,
   isGroupControl,
   isScalarField,
@@ -36,8 +35,11 @@ import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
 import {
   addElement,
   Control,
+  ControlChange,
   newControl,
   removeElement,
+  trackControlChange,
+  useControlEffect,
 } from "@react-typed-forms/core";
 
 export function useDefaultValue(
@@ -172,6 +174,7 @@ export function createFormEditHooks(
           scalarControl.value = defaultValue;
         }
       }, [visible, defaultValue]);
+
       const dataProps = getDefaultScalarControlProperties(
         definition,
         field,
@@ -180,6 +183,31 @@ export function createFormEditHooks(
         scalarControl,
         formState,
       );
+
+      useControlEffect(
+        () => {
+          trackControlChange(scalarControl, ControlChange.Validate);
+          return [visible, scalarControl.value, dataProps.required];
+        },
+        ([visible, controlValue, required]) => {
+          if (
+            (required && visible && controlValue == null) ||
+            controlValue === ""
+          ) {
+            scalarControl.error = "Please enter a value";
+          }
+        },
+        true,
+      );
+
+      useEffect(() => {
+        const subscription = scalarControl.subscribe(
+          (c) => (c.touched = true),
+          ControlChange.Validate,
+        );
+        return () => scalarControl.unsubscribe(subscription);
+      }, []);
+
       if (!field.collection) return dataProps;
       return {
         ...dataProps,

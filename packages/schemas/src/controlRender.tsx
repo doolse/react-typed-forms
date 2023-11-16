@@ -279,7 +279,8 @@ export function renderControl<S extends ControlDefinition>(
     {
       data: (def) => {
         const fieldData = findScalarField(fields, def.field);
-        if (!fieldData) return <h1>No schema field for: {def.field}</h1>;
+        if (!fieldData)
+          return <h1 key={key}>No schema field for: {def.field}</h1>;
         return (
           <DataRenderer
             key={key}
@@ -440,4 +441,45 @@ export function createAction(
     visible: AlwaysVisible,
     onClick,
   };
+}
+
+export function visitControlData<S extends ControlDefinition, A>(
+  definition: S,
+  { fields, data }: FormEditState,
+  cb: (
+    definition: DataControlDefinition,
+    control: Control<any>,
+  ) => A | undefined,
+): A | undefined {
+  return visitControlDefinition<A | undefined>(
+    definition,
+    {
+      data(def: DataControlDefinition) {
+        const fieldData = findScalarField(fields, def.field);
+        if (!fieldData) return undefined;
+        return cb(def, data.fields[fieldData.field]);
+      },
+      group(d: GroupedControlsDefinition) {
+        if (d.compoundField) {
+          const compound = findCompoundField(fields, d.compoundField);
+          if (!compound) return;
+          fields = compound.children;
+          data = data.fields[compound.field];
+        }
+        const childState = { fields, data };
+        for (let c of d.children) {
+          const res = visitControlData(c, childState, cb);
+          if (res !== undefined) return res;
+        }
+        return undefined;
+      },
+      action(d: ActionControlDefinition) {
+        return undefined;
+      },
+      display(d: DisplayControlDefinition) {
+        return undefined;
+      },
+    },
+    () => undefined,
+  );
 }

@@ -1,4 +1,12 @@
-import React, { CSSProperties, Fragment, ReactElement, ReactNode } from "react";
+import React, {
+  CSSProperties,
+  DetailedHTMLProps,
+  Fragment,
+  HTMLAttributes,
+  InputHTMLAttributes,
+  ReactElement,
+  ReactNode,
+} from "react";
 import {
   ActionRendererProps,
   ArrayRendererProps,
@@ -20,7 +28,12 @@ import {
   isGridRenderer,
   TextDisplay,
 } from "./types";
-import { Control, Fcheckbox, Finput } from "@react-typed-forms/core";
+import {
+  Control,
+  Fcheckbox,
+  Finput,
+  formControlProps,
+} from "@react-typed-forms/core";
 import { hasOptions } from "./util";
 
 export interface DefaultRenderers {
@@ -430,10 +443,39 @@ export function createDefaultDataRenderer(
       props.field.type === FieldType.Bool ? (
         <Fcheckbox control={props.control} />
       ) : (
-        <Finput className={inputClass} id={l.forId} control={props.control} />
+        <ControlInput
+          className={inputClass}
+          id={l.forId}
+          readOnly={props.readonly}
+          control={props.control}
+          convert={createInputConversion(props.field.type)}
+        />
       ),
     );
   });
+}
+
+export function ControlInput({
+  control,
+  convert,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  control: Control<any>;
+  convert: InputConversion;
+}) {
+  const { errorText, value, onChange, ...inputProps } =
+    formControlProps(control);
+  return (
+    <input
+      {...inputProps}
+      type={convert[0]}
+      value={value == null ? "" : convert[2](value)}
+      onChange={(e) => {
+        control.value = convert[1](e.target.value);
+      }}
+      {...props}
+    />
+  );
 }
 
 export interface DefaultVisibilityRendererOptions {}
@@ -562,7 +604,7 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
   );
 }
 
-type SelectConversion = [(s: string) => any, (a: any) => string | number];
+type SelectConversion = [(s: any) => any, (a: any) => string | number];
 
 interface SelectDataRendererProps {
   id?: string;
@@ -593,8 +635,8 @@ export function SelectDataRenderer({
       value={value}
       disabled={disabled}
     >
-      {options.map((x) => (
-        <option key={x.value} value={asString(x.value)} disabled={x.disabled}>
+      {options.map((x, i) => (
+        <option key={i} value={asString(x.value)} disabled={x.disabled}>
           {x.name}
         </option>
       ))}
@@ -607,12 +649,29 @@ export function createSelectConversion(ft: string): SelectConversion {
     case FieldType.String:
       return [(a) => a, (a) => a];
     case FieldType.Bool:
-      return [(a) => a === "true", (a) => a.toString()];
+      return [(a) => a === "true", (a) => a?.toString() ?? ""];
     case FieldType.Int:
       return [(a) => parseInt(a), (a) => a];
     case FieldType.Double:
       return [(a) => parseFloat(a), (a) => a];
     default:
       throw "No conversion for " + ft;
+  }
+}
+
+type InputConversion = [string, (s: any) => any, (a: any) => string | number];
+
+export function createInputConversion(ft: string): InputConversion {
+  switch (ft) {
+    case FieldType.String:
+      return ["text", (a) => a, (a) => a];
+    case FieldType.Bool:
+      return ["text", (a) => a === "true", (a) => a?.toString() ?? ""];
+    case FieldType.Int:
+      return ["number", (a) => parseInt(a), (a) => a];
+    case FieldType.Double:
+      return ["number", (a) => parseFloat(a), (a) => a];
+    default:
+      return ["text", (a) => a, (a) => a];
   }
 }
