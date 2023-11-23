@@ -6,6 +6,7 @@ import React, {
   InputHTMLAttributes,
   ReactElement,
   ReactNode,
+  useMemo,
 } from "react";
 import {
   ActionRendererProps,
@@ -604,7 +605,7 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
   );
 }
 
-type SelectConversion = [(s: any) => any, (a: any) => string | number];
+type SelectConversion = (a: any) => string | number;
 
 interface SelectDataRendererProps {
   id?: string;
@@ -622,21 +623,25 @@ export function SelectDataRenderer({
   state,
   options,
   className,
-  convert: [fromString, asString],
+  convert,
 
   ...props
 }: SelectDataRendererProps) {
   const { value, disabled } = state;
+  const optionStringMap = useMemo(
+    () => Object.fromEntries(options.map((x) => [convert(x.value), x.value])),
+    [options],
+  );
   return (
     <select
       {...props}
       className={className}
-      onChange={(v) => (state.value = fromString(v.target.value))}
+      onChange={(v) => (state.value = optionStringMap[v.target.value])}
       value={value}
       disabled={disabled}
     >
       {options.map((x, i) => (
-        <option key={i} value={asString(x.value)} disabled={x.disabled}>
+        <option key={i} value={convert(x.value)} disabled={x.disabled}>
           {x.name}
         </option>
       ))}
@@ -647,15 +652,11 @@ export function SelectDataRenderer({
 export function createSelectConversion(ft: string): SelectConversion {
   switch (ft) {
     case FieldType.String:
-      return [(a) => a, (a) => a];
-    case FieldType.Bool:
-      return [(a) => a === "true", (a) => a?.toString() ?? ""];
     case FieldType.Int:
-      return [(a) => parseInt(a), (a) => a];
     case FieldType.Double:
-      return [(a) => parseFloat(a), (a) => a];
+      return (a) => a;
     default:
-      throw "No conversion for " + ft;
+      return (a) => a?.toString() ?? "";
   }
 }
 
