@@ -187,7 +187,7 @@ export function createFormEditHooks(
       useControlEffect(
         () => {
           trackControlChange(scalarControl, ControlChange.Validate);
-          return [visible, scalarControl.value, dataProps.required];
+          return [visible.value, scalarControl.value, dataProps.required];
         },
         ([visible, controlValue, required]) => {
           if (

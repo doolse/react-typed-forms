@@ -7,6 +7,7 @@ import React, {
   ReactElement,
   ReactNode,
   useMemo,
+  useState,
 } from "react";
 import {
   ActionRendererProps,
@@ -439,6 +440,18 @@ export function createDefaultDataRenderer(
     if (hasOptions(props))
       return selectRenderer.render(props, defaultLabel, renderers);
     const l = defaultLabel();
+    if (props.field.type === FieldType.Bool && props.defaultValue == null)
+      return selectRenderer.render(
+        {
+          ...props,
+          options: [
+            { name: "True", value: true },
+            { name: "False", value: false },
+          ],
+        },
+        defaultLabel,
+        renderers,
+      );
     return renderers.renderLabel(
       l,
       props.field.type === FieldType.Bool ? (
@@ -596,6 +609,7 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
         state={props.control}
         id={id}
         options={props.options!}
+        required={props.required}
         convert={createSelectConversion(props.field.type)}
       />
     ),
@@ -615,6 +629,8 @@ interface SelectDataRendererProps {
     value: any;
     disabled?: boolean;
   }[];
+  emptyText?: string;
+  required: boolean;
   state: Control<any>;
   convert: SelectConversion;
 }
@@ -624,10 +640,12 @@ export function SelectDataRenderer({
   options,
   className,
   convert,
-
+  required,
+  emptyText = "<please select>",
   ...props
 }: SelectDataRendererProps) {
   const { value, disabled } = state;
+  const [showEmpty] = useState(!required || value == null);
   const optionStringMap = useMemo(
     () => Object.fromEntries(options.map((x) => [convert(x.value), x.value])),
     [options],
@@ -640,6 +658,7 @@ export function SelectDataRenderer({
       value={value}
       disabled={disabled}
     >
+      {showEmpty && <option value="">{emptyText}</option>}
       {options.map((x, i) => (
         <option key={i} value={convert(x.value)} disabled={x.disabled}>
           {x.name}
