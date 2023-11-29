@@ -151,6 +151,8 @@ export enum DataRenderType {
   Synchronised = "Synchronised",
   IconSelector = "IconSelector",
   DateTime = "DateTime",
+  Checkbox = "Checkbox",
+  Dropdown = "Dropdown",
 }
 
 export interface RadioButtonRenderOptions extends RenderOptions {

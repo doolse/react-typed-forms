@@ -24,6 +24,7 @@ import clsx from "clsx";
 import {
   DataRenderType,
   DisplayDataType,
+  FieldOption,
   FieldType,
   GridRenderer,
   HtmlDisplay,
@@ -426,35 +427,44 @@ export function createDefaultDisplayRenderer(
   };
 }
 
+export const DefaultBoolOptions: FieldOption[] = [
+  { name: "Yes", value: true },
+  { name: "No", value: false },
+];
 interface DefaultDataRendererOptions {
   inputClass?: string;
   selectOptions?: SelectRendererOptions;
+  booleanOptions?: FieldOption[];
+  optionRenderer?: DataRendererRegistration;
 }
 
 export function createDefaultDataRenderer(
   options: DefaultDataRendererOptions = {},
 ): DataRendererRegistration {
-  const { inputClass } = options;
   const selectRenderer = createSelectRenderer(options.selectOptions ?? {});
+  const { inputClass, booleanOptions, optionRenderer } = {
+    optionRenderer: selectRenderer,
+    booleanOptions: DefaultBoolOptions,
+    ...options,
+  };
   return createDataRenderer((props, defaultLabel, renderers) => {
-    if (hasOptions(props))
-      return selectRenderer.render(props, defaultLabel, renderers);
+    let renderType = props.renderOptions.type;
+    const fieldType = props.field.type;
+    const isBool = fieldType === FieldType.Bool;
+    if (booleanOptions != null && isBool && props.options == null) {
+      return renderers.renderData({ ...props, options: booleanOptions });
+    }
+    if (renderType === DataRenderType.Standard && hasOptions(props)) {
+      return optionRenderer.render(props, defaultLabel, renderers);
+    }
+    switch (renderType) {
+      case DataRenderType.Dropdown:
+        return selectRenderer.render(props, defaultLabel, renderers);
+    }
     const l = defaultLabel();
-    if (props.field.type === FieldType.Bool && props.defaultValue == null)
-      return selectRenderer.render(
-        {
-          ...props,
-          options: [
-            { name: "True", value: true },
-            { name: "False", value: false },
-          ],
-        },
-        defaultLabel,
-        renderers,
-      );
     return renderers.renderLabel(
       l,
-      props.field.type === FieldType.Bool ? (
+      renderType === DataRenderType.Checkbox ? (
         <Fcheckbox control={props.control} />
       ) : (
         <ControlInput
@@ -599,6 +609,8 @@ export function createLabelRenderer(
 
 export interface SelectRendererOptions {
   className?: string;
+  emptyText?: string;
+  requiredText?: string;
 }
 
 export function createSelectRenderer(options: SelectRendererOptions = {}) {
@@ -610,6 +622,8 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
         id={id}
         options={props.options!}
         required={props.required}
+        emptyText={options.emptyText}
+        requiredText={options.requiredText}
         convert={createSelectConversion(props.field.type)}
       />
     ),
@@ -630,6 +644,7 @@ interface SelectDataRendererProps {
     disabled?: boolean;
   }[];
   emptyText?: string;
+  requiredText?: string;
   required: boolean;
   state: Control<any>;
   convert: SelectConversion;
@@ -641,7 +656,8 @@ export function SelectDataRenderer({
   className,
   convert,
   required,
-  emptyText = "<please select>",
+  emptyText = "N/A",
+  requiredText = "<please select>",
   ...props
 }: SelectDataRendererProps) {
   const { value, disabled } = state;
@@ -658,7 +674,9 @@ export function SelectDataRenderer({
       value={value}
       disabled={disabled}
     >
-      {showEmpty && <option value="">{emptyText}</option>}
+      {showEmpty && (
+        <option value="">{required ? requiredText : emptyText}</option>
+      )}
       {options.map((x, i) => (
         <option key={i} value={convert(x.value)} disabled={x.disabled}>
           {x.name}
