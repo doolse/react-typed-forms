@@ -31,7 +31,13 @@ import {
   renderControl,
   Visibility,
 } from "./controlRender";
-import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
+import React, {
+  Fragment,
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   addElement,
   Control,
@@ -160,6 +166,7 @@ export function createFormEditHooks(
       renderer,
     ): DataRendererProps {
       const visible = useIsControlVisible(definition, formState, useExpression);
+      const isVisible = visible.value && !formState.invisible;
       const defaultValue = useDefaultValue(
         definition,
         field,
@@ -169,11 +176,11 @@ export function createFormEditHooks(
       const scalarControl = formState.data.fields[field.field];
 
       useEffect(() => {
-        if (!visible) scalarControl.value = null;
+        if (!isVisible) scalarControl.value = null;
         else if (scalarControl.current.value == null) {
           scalarControl.value = defaultValue;
         }
-      }, [visible, defaultValue]);
+      }, [isVisible, defaultValue]);
 
       const dataProps = getDefaultScalarControlProperties(
         definition,
@@ -187,7 +194,7 @@ export function createFormEditHooks(
       useControlEffect(
         () => {
           trackControlChange(scalarControl, ControlChange.Validate);
-          return [visible.value, scalarControl.value, dataProps.required];
+          return [isVisible, scalarControl.value, dataProps.required];
         },
         ([visible, controlValue, required]) => {
           if (
@@ -195,7 +202,7 @@ export function createFormEditHooks(
             controlValue === ""
           ) {
             scalarControl.error = "Please enter a value";
-          }
+          } else scalarControl.error = null;
         },
         true,
       );
@@ -229,9 +236,12 @@ export function createFormEditHooks(
       const field = definition.compoundField
         ? findCompoundField(fs.fields, definition.compoundField)
         : undefined;
-      const newFs = field
-        ? { ...fs, fields: field.children, data: fs.data.fields[field.field] }
-        : fs;
+      const newFs: Omit<FormEditState, "data"> & { data: Control<any> } = {
+        ...fs,
+        fields: field ? field.children : fs.fields,
+        data: field ? fs.data.fields[field.field] : fs.data,
+        invisible: !visible.value || fs.invisible,
+      };
       const groupProps = {
         visible,
         hooks,

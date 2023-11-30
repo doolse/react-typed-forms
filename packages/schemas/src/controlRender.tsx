@@ -87,6 +87,7 @@ export interface FormEditState {
   fields: SchemaField[];
   data: Control<ControlData>;
   readonly?: boolean;
+  invisible?: boolean;
 }
 
 export interface ArrayRendererProps {
