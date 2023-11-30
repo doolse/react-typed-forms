@@ -671,7 +671,7 @@ export function SelectDataRenderer({
       {...props}
       className={className}
       onChange={(v) => (state.value = optionStringMap[v.target.value])}
-      value={value}
+      value={convert(value)}
       disabled={disabled}
     >
       {showEmpty && (
