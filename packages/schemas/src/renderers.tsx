@@ -448,6 +448,9 @@ export function createDefaultDataRenderer(
     ...options,
   };
   return createDataRenderer((props, defaultLabel, renderers) => {
+    if (props.array) {
+      return renderers.renderArray(props.array);
+    }
     let renderType = props.renderOptions.type;
     const fieldType = props.field.type;
     const isBool = fieldType === FieldType.Bool;
