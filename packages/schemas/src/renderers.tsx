@@ -1,9 +1,6 @@
 import React, {
   CSSProperties,
-  DetailedHTMLProps,
   Fragment,
-  HTMLAttributes,
-  InputHTMLAttributes,
   ReactElement,
   ReactNode,
   useMemo,
@@ -11,6 +8,8 @@ import React, {
 } from "react";
 import {
   ActionRendererProps,
+  AdornmentProps,
+  AdornmentRenderer,
   ArrayRendererProps,
   controlTitle,
   DataRendererProps,
@@ -22,6 +21,8 @@ import {
 } from "./controlRender";
 import clsx from "clsx";
 import {
+  AdornmentPlacement,
+  ControlDefinition,
   DataRenderType,
   DisplayDataType,
   FieldOption,
@@ -31,12 +32,7 @@ import {
   isGridRenderer,
   TextDisplay,
 } from "./types";
-import {
-  Control,
-  Fcheckbox,
-  Finput,
-  formControlProps,
-} from "@react-typed-forms/core";
+import { Control, Fcheckbox, formControlProps } from "@react-typed-forms/core";
 import { hasOptions } from "./util";
 
 export interface DefaultRenderers {
@@ -47,6 +43,7 @@ export interface DefaultRenderers {
   group: GroupRendererRegistration;
   display: DisplayRendererRegistration;
   visibility: VisibilityRendererRegistration;
+  adornment: AdornmentRendererRegistration;
 }
 export interface DataRendererRegistration {
   type: "data";
@@ -83,7 +80,11 @@ export interface ArrayRendererRegistration {
 
 export interface GroupRendererRegistration {
   type: "group";
-  render: (props: GroupRendererProps, renderers: FormRenderer) => ReactElement;
+  render: (
+    props: GroupRendererProps,
+    defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
+    renderers: FormRenderer,
+  ) => ReactElement;
 }
 
 export interface DisplayRendererRegistration {
@@ -99,6 +100,12 @@ export interface VisibilityRendererRegistration {
   render: (visible: Visibility, elem: ReactElement) => ReactElement;
 }
 
+export interface AdornmentRendererRegistration {
+  type: "adornment";
+  adornmentType?: string | string[];
+  render: (props: AdornmentProps) => AdornmentRenderer;
+}
+
 export type AnyRendererRegistration =
   | DataRendererRegistration
   | GroupRendererRegistration
@@ -106,6 +113,7 @@ export type AnyRendererRegistration =
   | ActionRendererRegistration
   | LabelRendererRegistration
   | ArrayRendererRegistration
+  | AdornmentRendererRegistration
   | VisibilityRendererRegistration;
 
 export function createFormRenderer(
@@ -113,6 +121,9 @@ export function createFormRenderer(
   defaultRenderers: DefaultRenderers = createClassStyledRenderers(),
 ): FormRenderer {
   const dataRegistrations = customRenderers.filter(isDataRegistration);
+  const adornmentRegistrations = customRenderers.filter(
+    isAdornmentRegistration,
+  );
   const labelRenderer =
     customRenderers.find(isLabelRegistration) ?? defaultRenderers.label;
   const renderVisibility = (
@@ -128,9 +139,61 @@ export function createFormRenderer(
     renderLabel,
     renderArray,
     renderVisibility,
+    renderAdornment,
   };
 
-  function renderData(props: DataRendererProps) {
+  function renderAdornment(props: AdornmentProps): AdornmentRenderer {
+    const renderer =
+      adornmentRegistrations.find((x) =>
+        isOneOf(x.adornmentType, props.definition.type),
+      ) ?? defaultRenderers.adornment;
+    return renderer.render(props);
+  }
+
+  function renderArray(props: ArrayRendererProps) {
+    return defaultRenderers.array.render(props, formRenderers);
+  }
+
+  function renderLabel(props: LabelRendererProps, elem: ReactElement) {
+    return labelRenderer.render(props, elem, formRenderers);
+  }
+
+  function withAdornments(
+    definition: ControlDefinition,
+    adornments?: AdornmentRenderer[],
+  ): [
+    AdornmentRenderer[],
+    (placement: AdornmentPlacement) => ReactElement,
+    (elem: ReactElement) => ReactElement,
+  ] {
+    const rAdornments = adornments
+      ? adornments
+      : definition.adornments?.map((x, i) =>
+          renderAdornment({ definition: x, key: i }),
+        ) ?? [];
+    function combineAdornments(placement: AdornmentPlacement) {
+      return (
+        <>
+          {rAdornments
+            .filter((x) => x.child && x.child[0] === placement)
+            .map((x) => x.child![1])}
+        </>
+      );
+    }
+    return [
+      rAdornments,
+      combineAdornments,
+      (mainElem) =>
+        !adornments
+          ? mainElem
+          : rAdornments.reduce((e, n) => n.wrap?.(e) ?? e, mainElem),
+    ];
+  }
+
+  function renderData(
+    props: DataRendererProps,
+    adornments?: AdornmentRenderer[],
+  ): ReactElement {
     const {
       definition,
       renderOptions: { type: renderType },
@@ -151,40 +214,90 @@ export function createFormRenderer(
           (!x.match || x.match(props)),
       ) ?? defaultRenderers.data;
 
-    return renderer.render(
-      props,
-      (labelProps) => ({
+    const [rAdornments, renderAdornment, wrapElem] = withAdornments(
+      definition,
+      adornments,
+    );
+    return wrapElem(
+      renderer.render(props, createLabel, {
+        ...formRenderers,
+        renderData: (p) => renderData(p, rAdornments),
+      }),
+    );
+
+    function createLabel(labelProps?: Partial<LabelRendererProps>) {
+      return {
         visible,
         required,
         control,
         forId: "c" + control.uniqueId,
+        renderAdornment,
         ...labelProps,
         title: labelProps?.title ?? controlTitle(definition.title, field),
-      }),
-      formRenderers,
+      };
+    }
+  }
+
+  function renderGroup(
+    props: GroupRendererProps,
+    adornments?: AdornmentRenderer[],
+  ): ReactElement {
+    const { definition, visible, field } = props;
+
+    const [rAdornments, renderAdornment, wrapElem] = withAdornments(
+      props.definition,
+      adornments,
     );
+
+    const title = props.hideTitle
+      ? undefined
+      : field
+      ? controlTitle(definition.title, field)
+      : definition.title;
+
+    return wrapElem(
+      defaultRenderers.group.render(props, createLabel, {
+        ...formRenderers,
+        renderGroup: (p) => renderGroup(p, rAdornments),
+      }),
+    );
+
+    function createLabel(
+      labelProps?: Partial<LabelRendererProps>,
+    ): LabelRendererProps {
+      return {
+        required: false,
+        visible,
+        group: true,
+        renderAdornment,
+        title,
+        ...labelProps,
+      };
+    }
   }
 
-  function renderLabel(props: LabelRendererProps, elem: ReactElement) {
-    return labelRenderer.render(props, elem, formRenderers);
-  }
-
-  function renderGroup(props: GroupRendererProps) {
-    return defaultRenderers.group.render(props, formRenderers);
-  }
-
-  function renderArray(props: ArrayRendererProps) {
-    return defaultRenderers.array.render(props, formRenderers);
-  }
-
-  function renderAction(props: ActionRendererProps) {
+  function renderAction(
+    props: ActionRendererProps,
+    adornments?: AdornmentRenderer[],
+  ) {
     const renderer =
       customRenderers.find(isActionRegistration) ?? defaultRenderers.action;
-    return renderer.render(props, formRenderers);
+    const [rAdornments, renderAdornment, wrapElem] = withAdornments(
+      props.definition,
+      adornments,
+    );
+    return wrapElem(renderer.render(props, formRenderers));
   }
 
-  function renderDisplay(props: DisplayRendererProps) {
-    return defaultRenderers.display.render(props, formRenderers);
+  function renderDisplay(
+    props: DisplayRendererProps,
+    adornments?: AdornmentRenderer[],
+  ) {
+    const [rAdornments, renderAdornment, wrapElem] = withAdornments(
+      props.definition,
+      adornments,
+    );
+    return wrapElem(defaultRenderers.display.render(props, formRenderers));
   }
 
   return formRenderers;
@@ -239,11 +352,13 @@ export function DefaultLabelRenderer({
   children,
   group,
   groupLabelClass,
+  renderAdornment,
   requiredElement,
 }: LabelRendererProps &
   DefaultLabelRendererOptions & { children: ReactElement }) {
   return title ? (
     <div className={className}>
+      {renderAdornment(AdornmentPlacement.LabelStart)}
       <label
         htmlFor={forId}
         className={clsx(labelClass, group && groupLabelClass)}
@@ -251,7 +366,10 @@ export function DefaultLabelRenderer({
         {title}
         {required && requiredElement}
       </label>
+      {renderAdornment(AdornmentPlacement.LabelEnd)}
+      {renderAdornment(AdornmentPlacement.ControlStart)}
       {children}
+      {renderAdornment(AdornmentPlacement.ControlEnd)}
     </div>
   ) : (
     <>{children}</>
@@ -355,25 +473,16 @@ export function createDefaultGroupRenderer(
 
   function render(
     props: GroupRendererProps,
+    defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
     {
       renderLabel,
       renderArray,
     }: Pick<FormRenderer, "renderLabel" | "renderArray" | "renderGroup">,
   ) {
-    const { childCount, renderChild, definition, field, visible } = props;
-    const title = props.hideTitle
-      ? undefined
-      : field
-      ? controlTitle(definition.title, field)
-      : definition.title;
+    const { childCount, renderChild, definition } = props;
 
     return renderLabel(
-      {
-        visible,
-        title,
-        required: field?.required ?? false,
-        group: true,
-      },
+      defaultLabel(),
       props.array ? renderArray(props.array) : renderChildren(),
     );
 
@@ -507,6 +616,13 @@ export function ControlInput({
 
 export interface DefaultVisibilityRendererOptions {}
 
+export interface DefaultAdornmentRendererOptions {}
+
+export function createDefaultAdornmentRenderer(
+  options: DefaultAdornmentRendererOptions = {},
+): AdornmentRendererRegistration {
+  return { type: "adornment", render: () => ({}) };
+}
 export function createDefaultVisibilityRenderer(
   options: DefaultVisibilityRendererOptions = {},
 ): VisibilityRendererRegistration {
@@ -524,6 +640,7 @@ export interface DefaultRendererOptions {
   group?: DefaultGroupRendererOptions;
   label?: DefaultLabelRendererOptions;
   visibility?: DefaultVisibilityRendererOptions;
+  adornment?: DefaultAdornmentRendererOptions;
 }
 
 export function createDefaultRenderers(
@@ -537,6 +654,7 @@ export function createDefaultRenderers(
     group: createDefaultGroupRenderer(options.group),
     label: createDefaultLabelRenderer(options.label),
     visibility: createDefaultVisibilityRenderer(options.visibility),
+    adornment: createDefaultAdornmentRenderer(options.adornment),
   };
 }
 
@@ -549,6 +667,12 @@ function createClassStyledRenderers() {
     data: { inputClass: "data" },
     display: { htmlClassName: "html", textClassName: "text" },
   });
+}
+
+function isAdornmentRegistration(
+  x: AnyRendererRegistration,
+): x is AdornmentRendererRegistration {
+  return x.type === "adornment";
 }
 
 function isDataRegistration(
@@ -608,6 +732,13 @@ export function createLabelRenderer(
   options: Omit<LabelRendererRegistration, "type">,
 ): LabelRendererRegistration {
   return { type: "label", ...options };
+}
+
+export function createAdornmentRenderer(
+  render: (props: AdornmentProps) => AdornmentRenderer,
+  options?: Omit<AdornmentRendererRegistration, "type">,
+): AdornmentRendererRegistration {
+  return { type: "adornment", ...options, render };
 }
 
 export interface SelectRendererOptions {

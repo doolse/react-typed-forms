@@ -1,6 +1,8 @@
 import {
   ActionControlDefinition,
+  AdornmentPlacement,
   CompoundField,
+  ControlAdornment,
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
@@ -101,6 +103,16 @@ export interface ArrayRendererProps {
   childKey: (childCount: number) => Key;
 }
 
+export interface AdornmentProps {
+  key: Key;
+  definition: ControlAdornment;
+}
+
+export interface AdornmentRenderer {
+  wrap?: (children: ReactElement) => ReactElement;
+  child?: [AdornmentPlacement, ReactNode];
+}
+
 export interface FormRenderer {
   renderData: (props: DataRendererProps) => ReactElement;
   renderGroup: (props: GroupRendererProps) => ReactElement;
@@ -109,6 +121,7 @@ export interface FormRenderer {
   renderArray: (props: ArrayRendererProps) => ReactElement;
   renderLabel: (props: LabelRendererProps, elem: ReactElement) => ReactElement;
   renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
+  renderAdornment: (props: AdornmentProps) => AdornmentRenderer;
 }
 
 let _FormRendererComponentsContext: Context<FormRenderer | undefined> | null =
@@ -153,7 +166,7 @@ export interface LabelRendererProps {
   required: boolean;
   control?: Control<any>;
   group?: boolean;
-  labelData?: any;
+  renderAdornment: (placement: AdornmentPlacement) => ReactElement;
 }
 
 export interface DisplayRendererProps {

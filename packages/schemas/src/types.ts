@@ -112,9 +112,17 @@ export interface ControlAdornment {
   type: string;
 }
 
+export enum AdornmentPlacement {
+  ControlStart = "ControlStart",
+  ControlEnd = "ControlEnd",
+  LabelStart = "LabelStart",
+  LabelEnd = "LabelEnd",
+}
+
 export enum ControlAdornmentType {
   Tooltip = "Tooltip",
   Accordion = "Accordion",
+  HelpText = "HelpText",
 }
 
 export interface TooltipAdornment extends ControlAdornment {
@@ -126,6 +134,12 @@ export interface AccordionAdornment extends ControlAdornment {
   type: ControlAdornmentType.Accordion;
   title: string;
   defaultExpanded: boolean;
+}
+
+export interface HelpTextAdornment extends ControlAdornment {
+  type: ControlAdornmentType.HelpText;
+  helpText: string;
+  placement: AdornmentPlacement;
 }
 
 export interface DataControlDefinition extends ControlDefinition {
