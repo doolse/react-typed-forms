@@ -157,7 +157,10 @@ export const defaultExpressionHook: ExpressionHook = (
       return compiledExpr.evaluate(formState.data.value);
     case ExpressionType.FieldValue:
       const fvExpr = expr as FieldValueExpression;
-      return controlForField(fvExpr.field, formState).value === fvExpr.value;
+      const fv = controlForField(fvExpr.field, formState).value;
+      return Array.isArray(fv)
+        ? fv.includes(fvExpr.value)
+        : fv === fvExpr.value;
     default:
       return undefined;
   }
