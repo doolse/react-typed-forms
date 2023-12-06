@@ -10,6 +10,7 @@ import {
   FieldOption,
   FieldValueExpression,
   GroupedControlsDefinition,
+  JsonataExpression,
   SchemaField,
 } from "./types";
 import {
@@ -47,6 +48,7 @@ import {
   trackControlChange,
   useControlEffect,
 } from "@react-typed-forms/core";
+import jsonata from "jsonata";
 
 export function useDefaultValue(
   definition: DataControlDefinition,
@@ -146,6 +148,13 @@ export const defaultExpressionHook: ExpressionHook = (
   formState: FormEditState,
 ) => {
   switch (expr.type) {
+    case ExpressionType.Jsonata:
+      const jExpr = expr as JsonataExpression;
+      const compiledExpr = useMemo(
+        () => jsonata(jExpr.expression),
+        [jExpr.expression],
+      );
+      return compiledExpr.evaluate(formState.data.value);
     case ExpressionType.FieldValue:
       const fvExpr = expr as FieldValueExpression;
       return controlForField(fvExpr.field, formState).value === fvExpr.value;
