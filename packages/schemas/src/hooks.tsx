@@ -210,8 +210,9 @@ export function createFormEditHooks(
         },
         ([visible, controlValue, required]) => {
           if (
-            (required && visible && controlValue == null) ||
-            controlValue === ""
+            required &&
+            visible &&
+            (controlValue == null || controlValue === "")
           ) {
             scalarControl.error = "Please enter a value";
           } else scalarControl.error = null;
