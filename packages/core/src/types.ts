@@ -20,14 +20,15 @@ export enum ControlChange {
   Validate = 256,
 }
 
-export type ControlValidator<V> = ((v: V) => string | undefined) | null;
+export type ControlValidator<V> = ((v: V) => string | undefined | null) | null;
 export type ControlValue<C> = C extends Control<infer V> ? V : never;
 export type ElemType<V> = NonNullable<V> extends (infer E)[] ? E : never;
 
 export interface ControlProperties<V> {
   value: V;
   initialValue: V;
-  error?: string | null;
+  error: string | null | undefined;
+  readonly errors: { [k: string]: string };
   readonly valid: boolean;
   readonly dirty: boolean;
   disabled: boolean;
@@ -74,6 +75,8 @@ export interface Control<V> extends ControlProperties<V> {
   validate(): boolean;
 
   markAsClean(): void;
+
+  setError(key: string, error: string | null | undefined): void;
 
   clearErrors(): void;
 

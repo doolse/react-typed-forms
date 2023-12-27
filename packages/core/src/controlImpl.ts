@@ -86,7 +86,7 @@ class ControlImpl<V> implements Control<V> {
   constructor(
     public _value: V,
     public _initialValue: V,
-    public _error: string | undefined,
+    public _errors: { [k: string]: string } | null,
     public flags: ControlFlags,
     public setup: ControlSetup<V, any>,
     public _fields?: { [k: string]: Control<any> },
@@ -144,17 +144,37 @@ class ControlImpl<V> implements Control<V> {
     return this.isEqual(this.current.value, v);
   }
 
-  get error() {
+  get error(): string | null | undefined {
     collectChange(this, ControlChange.Error);
-    return this._error;
+    if (!this._errors) return null;
+    return Object.values(this._errors)[0];
+  }
+
+  setError(key: string, error?: string | null) {
+    this.runChange(this.updateError(key, error));
+  }
+
+  get errors() {
+    collectChange(this, ControlChange.Error);
+    return this._errors ?? {};
   }
 
   /**
    * @internal
    */
-  updateError(error?: string | null): ControlChange {
-    if (this._error !== error) {
-      this._error = error ? error : undefined;
+  updateError(key: string, error?: string | null): ControlChange {
+    const exE = this._errors;
+    if (!error) error = null;
+    if (exE?.[key] != error) {
+      if (error) {
+        if (exE) exE[key] = error;
+        else this._errors = { [key]: error };
+      } else {
+        if (exE) {
+          if (Object.values(exE).length === 1) this._errors = null;
+          else delete exE[key];
+        }
+      }
       this._childSync |= ChildSyncFlags.Valid;
       return ControlChange.Error;
     }
@@ -162,7 +182,14 @@ class ControlImpl<V> implements Control<V> {
   }
 
   clearErrors(): this {
-    this.updateAll((c) => c.updateError(undefined));
+    this.updateAll((c) => {
+      if (c._errors) {
+        c._errors = null;
+        c._childSync |= ChildSyncFlags.Valid;
+        return ControlChange.Error;
+      }
+      return 0;
+    });
     return this;
   }
 
@@ -418,7 +445,7 @@ class ControlImpl<V> implements Control<V> {
   }
 
   set error(error: string | null | undefined) {
-    this.runChange(this.updateError(error));
+    this.runChange(this.updateError("default", error));
   }
 
   /**
@@ -489,7 +516,7 @@ class ControlImpl<V> implements Control<V> {
       ControlChange.Value |
       structureChange |
       (this.setup?.validator !== null
-        ? this.updateError(this.setup.validator?.(v))
+        ? this.updateError("default", this.setup.validator?.(v))
         : 0);
     if (!this.hasChildren || v == null) {
       this._childSync &= ~ChildSyncFlags.Value;
@@ -652,21 +679,21 @@ class ControlImpl<V> implements Control<V> {
 function initialValidation<V, M>(
   v: V,
   _setup?: ControlSetup<V, M> | (() => ControlSetup<V, M>),
-): [string | undefined, boolean] {
+): [{ [k: string]: string } | null, boolean] {
   if (!_setup) {
-    return [undefined, true];
+    return [null, true];
   }
   const setup = getSetup(_setup);
   const error = setup.validator?.(v);
   if (error) {
-    return [error, false];
+    return [{ default: error }, false];
   }
   if (Array.isArray(v) && setup.elems) {
-    return [undefined, v.every((x) => initialValidation(x, setup.elems)[1])];
+    return [null, v.every((x) => initialValidation(x, setup.elems)[1])];
   }
   if (typeof v === "object" && v && setup.fields) {
     return [
-      undefined,
+      null,
       Object.entries(setup.fields).every(
         (x) =>
           initialValidation(
@@ -676,7 +703,7 @@ function initialValidation<V, M>(
       ),
     ];
   }
-  return [undefined, true];
+  return [null, true];
 }
 
 function getSetup<V, M>(
@@ -756,7 +783,7 @@ export function controlGroup<C extends { [k: string]: Control<any> }>(
   return new ControlImpl<{ [K in keyof C]: ControlValue<C[K]> }>(
     {} as any,
     {} as any,
-    undefined,
+    null,
     ControlFlags.Valid,
     {},
     fields,
@@ -1069,7 +1096,12 @@ class ControlStateImpl<V> implements ControlProperties<V> {
   }
 
   get error() {
-    return this.control._error;
+    if (!this.control._errors) return null;
+    return Object.values(this.control._errors)[0];
+  }
+
+  get errors() {
+    return this.control._errors ?? {};
   }
 
   get valid() {

@@ -1,6 +1,6 @@
 {
 	"name": "@react-typed-forms/mui",
-	"version": "3.0.0-dev.114",
+	"version": "3.0.0-dev.115",
 	"description": "",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
@@ -25,7 +25,7 @@
 	],
 	"dependencies": {
 		"@mui/material": "^5.14.13",
-		"@react-typed-forms/core": "workspace:^3.0.0-dev.114"
+		"@react-typed-forms/core": "workspace:^3.0.0-dev.115"
 	},
 	"peerDependencies": {
 		"react": "18.x",

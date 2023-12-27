@@ -11,6 +11,7 @@ export interface SchemaField {
   isTypeField?: boolean | null;
   searchable?: boolean | null;
   options?: FieldOption[] | null;
+  validations?: SchemaValidator[] | null;
   /**
    * @deprecated Use options directly
    */
@@ -149,6 +150,7 @@ export interface DataControlDefinition extends ControlDefinition {
   renderOptions?: RenderOptions | null;
   defaultValue?: any;
   readonly?: boolean | null;
+  validations?: SchemaValidator[] | null;
 }
 
 export interface RenderOptions {
@@ -282,6 +284,18 @@ export interface HtmlDisplay extends DisplayData {
 export interface ActionControlDefinition extends ControlDefinition {
   type: ControlDefinitionType.Action;
   actionId: string;
+}
+
+export enum ValidatorType {
+  Jsonata = "Jsonata",
+}
+export interface SchemaValidator {
+  type: string;
+}
+
+export interface JsonataValidator extends SchemaValidator {
+  type: ValidatorType.Jsonata;
+  expression: string;
 }
 
 export function isDataControlDefinition(

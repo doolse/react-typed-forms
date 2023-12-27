@@ -38,7 +38,7 @@ class EffectSubscription<V> extends SubscriptionTracker {
   constructor(
     public compute: () => V,
     public onChange: (value: V) => void,
-    initial?: ((value: V) => void) | boolean
+    initial?: ((value: V) => void) | boolean,
   ) {
     super();
     this.currentValue = this.run(compute);
@@ -75,10 +75,10 @@ export function useRefState<A>(init: () => A): [MutableRefObject<A>, boolean] {
 export function useControlEffect<V>(
   compute: () => V,
   onChange: (value: V) => void,
-  initial?: ((value: V) => void) | boolean
+  initial?: ((value: V) => void) | boolean,
 ) {
   const [stateRef, isInitial] = useRefState<EffectSubscription<V>>(
-    () => new EffectSubscription<V>(compute, onChange, initial)
+    () => new EffectSubscription<V>(compute, onChange, initial),
   );
   let effectState = stateRef.current;
   if (!isInitial) {
@@ -111,7 +111,7 @@ export function useValueChangeEffect<V>(
   control: Control<V>,
   changeEffect: (control: V) => void,
   debounce?: number,
-  runInitial?: boolean
+  runInitial?: boolean,
 ) {
   const effectRef = useRef<[(control: V) => void, any, number?]>([
     changeEffect,
@@ -138,14 +138,32 @@ export function useValueChangeEffect<V>(
   }, [control]);
 }
 
+export function useValidator<V>(
+  control: Control<V>,
+  validator: (value: V) => string | null | undefined,
+  key: string = "default",
+  noInitial?: boolean,
+) {
+  useControlEffect(
+    () => {
+      trackControlChange(control, ControlChange.Validate);
+      return control.value;
+    },
+    (v) => {
+      control.setError(key, validator(v));
+    },
+    !noInitial,
+  );
+}
+
 export function useAsyncValidator<V>(
   control: Control<V>,
   validator: (
     control: Control<V>,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
   ) => Promise<string | null | undefined>,
   delay: number,
-  validCheckValue: (control: Control<V>) => any = (c) => c.value
+  validCheckValue: (control: Control<V>) => any = (c) => c.value,
 ) {
   const handler = useRef<number>();
   const abortController = useRef<AbortController>();
@@ -180,7 +198,7 @@ export function useAsyncValidator<V>(
             }
           });
       }, delay);
-    }
+    },
   );
 }
 
@@ -194,7 +212,7 @@ export interface FormControlProps<V, E extends HTMLElement> {
 }
 
 export function formControlProps<V, E extends HTMLElement>(
-  state: Control<V>
+  state: Control<V>,
 ): FormControlProps<V, E> {
   const error = state.error;
   const valid = state.valid;
@@ -219,7 +237,7 @@ export function formControlProps<V, E extends HTMLElement>(
 export function useControl<V, M = any>(
   initialState: V | (() => V),
   configure?: ControlSetup<V, M>,
-  afterInit?: (c: Control<V>) => void
+  afterInit?: (c: Control<V>) => void,
 ): Control<V>;
 
 /**
@@ -230,7 +248,7 @@ export function useControl<V = undefined>(): Control<V | undefined>;
 export function useControl(
   v?: any,
   configure?: ControlSetup<any, any>,
-  afterInit?: (c: Control<any>) => void
+  afterInit?: (c: Control<any>) => void,
 ): Control<any> {
   const controlRef = useRefState(() => {
     const rv = typeof v === "function" ? v() : v;
@@ -238,8 +256,7 @@ export function useControl(
     afterInit?.(c);
     return c;
   })[0];
-  if (configure?.use)
-  {
+  if (configure?.use) {
     controlRef.current = configure.use;
   }
   return controlRef.current;
@@ -255,12 +272,12 @@ interface SelectionGroupCreator<V> {
   makeGroup: (
     selected: boolean,
     wasSelected: boolean,
-    value: Control<V>
+    value: Control<V>,
   ) => Control<SelectionGroup<V>>;
 }
 
 type SelectionGroupSync<V> = (
-  original: Control<V[]>
+  original: Control<V[]>,
 ) => [boolean, Control<V>, boolean?][];
 
 const defaultSelectionCreator: SelectionGroupSync<any> = (original) => {
@@ -269,13 +286,13 @@ const defaultSelectionCreator: SelectionGroupSync<any> = (original) => {
 
 export function ensureSelectableValues<V>(
   values: V[],
-  key: (v: V) => any
+  key: (v: V) => any,
 ): SelectionGroupSync<V> {
   return (original) => {
     const otherSelected = [...original.elements];
     const fromValues: [boolean, Control<V>][] = values.map((x) => {
       const origIndex = otherSelected.findIndex(
-        (e) => key(e.current.value) === key(x)
+        (e) => key(e.current.value) === key(x),
       );
       const origElem = origIndex >= 0 ? otherSelected[origIndex] : undefined;
       if (origIndex >= 0) {
@@ -291,7 +308,7 @@ export function useSelectableArray<V>(
   control: Control<V[]>,
   groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator,
   setup?: ControlSetup<SelectionGroup<V>[]>,
-  reset?: any
+  reset?: any,
 ): Control<SelectionGroup<V>[]> {
   const selectable = useMemo(() => {
     const selectable = newControl<SelectionGroup<V>[]>([], setup);
@@ -299,7 +316,7 @@ export function useSelectableArray<V>(
       updateElements(control, () =>
         selectable.current.elements
           .filter((x) => x.fields.selected.current.value)
-          .map((x) => x.fields.value)
+          .map((x) => x.fields.value),
       );
     };
 
@@ -320,7 +337,7 @@ export function useSelectableArray<V>(
     updateElements(control, () =>
       selectable.current.elements
         .filter((x) => x.fields.selected.current.value)
-        .map((x) => x.fields.value)
+        .map((x) => x.fields.value),
     );
   }, [selectable, control]);
   return selectable;
@@ -367,14 +384,14 @@ export function useControlValue<V>(control: Control<V>): V;
 export function useControlValue<V>(stateValue: (previous?: V) => V): V;
 
 export function useControlValue<V>(
-  controlOrValue: Control<V> | ((previous?: V) => V)
+  controlOrValue: Control<V> | ((previous?: V) => V),
 ) {
   const compute =
     typeof controlOrValue === "function"
       ? controlOrValue
       : () => controlOrValue.value;
   const [stateRef, initial] = useRefState<ControlValueState<V>>(
-    () => new ControlValueState<V>(compute)
+    () => new ControlValueState<V>(compute),
   );
   let computeState = stateRef.current;
   if (!initial) {
@@ -386,7 +403,7 @@ export function useControlValue<V>(
   useSyncExternalStore(
     computeState.subscribe,
     computeState.getSnapshot,
-    computeState.getServerSnapshot
+    computeState.getServerSnapshot,
   );
   return newValue;
 }
@@ -409,7 +426,7 @@ class ComputeTracker<V> extends SubscriptionTracker {
 
 export function useComputed<V>(compute: () => V): Control<V> {
   const [trackerRef, initial] = useRefState<ComputeTracker<V>>(
-    () => new ComputeTracker<V>(compute)
+    () => new ComputeTracker<V>(compute),
   );
   let tracker = trackerRef.current;
   tracker.compute = compute;
@@ -418,17 +435,20 @@ export function useComputed<V>(compute: () => V): Control<V> {
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(
   fields: C,
-  deps?: DependencyList
+  deps?: DependencyList,
 ): Control<{ [K in keyof C]: ControlValue<C[K]> }> {
   const newControl = useState(() => controlGroup(fields))[0];
-  useEffect(() => {
-    setFields(newControl, fields);
-  }, deps ?? Object.values(fields));
+  useEffect(
+    () => {
+      setFields(newControl, fields);
+    },
+    deps ?? Object.values(fields),
+  );
   return newControl;
 }
 
 export function usePreviousValue<V>(
-  control: Control<V>
+  control: Control<V>,
 ): Control<{ previous?: V; current: V }> {
   const withPrev = useControl<{ previous?: V; current: V }>(() => ({
     current: control.current.value,
@@ -439,7 +459,7 @@ export function usePreviousValue<V>(
       withPrev.setValue(({ current }) => ({
         previous: current,
         current: nextValue,
-      }))
+      })),
   );
   return withPrev;
 }
@@ -448,23 +468,23 @@ export function controlValues<A, B>(a: Control<A>, b: Control<B>): () => [A, B];
 export function controlValues<A, B, C>(
   a: Control<A>,
   b: Control<B>,
-  c: Control<C>
+  c: Control<C>,
 ): () => [A, B, C];
 export function controlValues<A, B, C, D>(
   a: Control<A>,
   b: Control<B>,
   c: Control<C>,
-  d: Control<D>
+  d: Control<D>,
 ): () => [A, B, C, D];
 export function controlValues<A, B, C, D, E>(
   a: Control<A>,
   b: Control<B>,
   c: Control<C>,
   d: Control<D>,
-  e: Control<E>
+  e: Control<E>,
 ): () => [A, B, C, D, E];
 export function controlValues<A extends Record<string, Control<any>>>(
-  controls: A
+  controls: A,
 ): () => { [K in keyof A]: ControlValue<A[K]> };
 export function controlValues(
   ...args: (Control<any> | Record<string, Control<any>>)[]
@@ -472,7 +492,7 @@ export function controlValues(
   return () => {
     if (args.length === 1) {
       return Object.fromEntries(
-        Object.entries(args[0]).map((x) => [x[0], x[1].value])
+        Object.entries(args[0]).map((x) => [x[0], x[1].value]),
       );
     }
     return args.map((x) => x.value);
@@ -486,7 +506,7 @@ export function useComponentTracking(): () => void {
   useSyncExternalStore(
     tracker.subscribe,
     tracker.getSnapshot,
-    tracker.getServerSnapshot
+    tracker.getServerSnapshot,
   );
   return () => {
     tracker.stop();

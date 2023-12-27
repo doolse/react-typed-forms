@@ -24,8 +24,8 @@
     "material-ui"
   ],
   "dependencies": {
-    "@react-typed-forms/core": "workspace:^3.0.0-dev.114",
-    "@react-typed-forms/mui": "workspace:^3.0.0-dev.114",
+    "@react-typed-forms/core": "workspace:^3.0.0-dev.115",
+    "@react-typed-forms/mui": "workspace:^3.0.0-dev.115",
     "@react-typed-forms/schemas": "workspace:^1.0.0-dev.17",
     "@react-typed-forms/transform": "workspace:^0.1.0",
     "date-fns": "^2.29.3",
