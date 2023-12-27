@@ -11,7 +11,10 @@ import {
   FieldValueExpression,
   GroupedControlsDefinition,
   JsonataExpression,
+  JsonataValidator,
   SchemaField,
+  SchemaValidator,
+  ValidatorType,
 } from "./types";
 import {
   ActionRendererProps,
@@ -20,7 +23,6 @@ import {
   controlTitle,
   DataRendererProps,
   elementValueForField,
-  ExpressionHook,
   fieldForControl,
   findCompoundField,
   findField,
@@ -30,6 +32,7 @@ import {
   isGroupControl,
   isScalarField,
   renderControl,
+  SchemaHooks,
   Visibility,
 } from "./controlRender";
 import React, {
@@ -54,13 +57,13 @@ export function useDefaultValue(
   definition: DataControlDefinition,
   field: SchemaField,
   formState: FormEditState,
-  useExpression: ExpressionHook,
+  hooks: SchemaHooks,
 ) {
   const valueExpression = definition.dynamic?.find(
     (x) => x.type === DynamicPropertyType.DefaultValue,
   );
   if (valueExpression) {
-    return useExpression(valueExpression.expr, formState);
+    return hooks.useExpression(valueExpression.expr, formState);
   }
   return field.defaultValue;
 }
@@ -68,14 +71,14 @@ export function useDefaultValue(
 export function useIsControlVisible(
   definition: ControlDefinition,
   formState: FormEditState,
-  useExpression: ExpressionHook,
+  hooks: SchemaHooks,
 ): Visibility {
   const visibleExpression = definition.dynamic?.find(
     (x) => x.type === DynamicPropertyType.Visible,
   );
   if (visibleExpression && visibleExpression.expr) {
     return {
-      value: Boolean(useExpression(visibleExpression.expr, formState)),
+      value: Boolean(hooks.useExpression(visibleExpression.expr, formState)),
       canChange: true,
     };
   }
@@ -143,47 +146,77 @@ export function getOptionsForScalarField(
   return undefined;
 }
 
-export const defaultExpressionHook: ExpressionHook = (
-  expr: EntityExpression,
-  formState: FormEditState,
-) => {
-  switch (expr.type) {
-    case ExpressionType.Jsonata:
-      const jExpr = expr as JsonataExpression;
-      const compiledExpr = useMemo(
-        () => jsonata(jExpr.expression),
-        [jExpr.expression],
-      );
-      return compiledExpr.evaluate(formState.data.value);
-    case ExpressionType.FieldValue:
-      const fvExpr = expr as FieldValueExpression;
-      const fv = controlForField(fvExpr.field, formState).value;
-      return Array.isArray(fv)
-        ? fv.includes(fvExpr.value)
-        : fv === fvExpr.value;
-    default:
-      return undefined;
+export function createDefaultSchemaHooks(): SchemaHooks {
+  function useExpression(expr: EntityExpression, formState: FormEditState) {
+    switch (expr.type) {
+      case ExpressionType.Jsonata:
+        const jExpr = expr as JsonataExpression;
+        const compiledExpr = useMemo(
+          () => jsonata(jExpr.expression),
+          [jExpr.expression],
+        );
+        return compiledExpr.evaluate(formState.data.value);
+      case ExpressionType.FieldValue:
+        const fvExpr = expr as FieldValueExpression;
+        const fv = controlForField(fvExpr.field, formState).value;
+        return Array.isArray(fv)
+          ? fv.includes(fvExpr.value)
+          : fv === fvExpr.value;
+      default:
+        return undefined;
+    }
   }
-};
 
-export function createFormEditHooks(
-  useExpression: ExpressionHook,
-): FormEditHooks {
+  function useValidators(
+    formState: FormEditState,
+    required: boolean,
+    validators?: SchemaValidator[] | null,
+  ) {
+    return (v: any) => {
+      console.log({ v, validators });
+      return required && (v == null || v == "")
+        ? "Please enter a value"
+        : validators
+        ? firstError(validators)
+        : null;
+    };
+
+    function firstError(validators: SchemaValidator[]): string | null {
+      console.log(validators);
+      for (const v of validators) {
+        if (v.type == ValidatorType.Jsonata) {
+          const msg = jsonata((v as JsonataValidator).expression).evaluate(
+            formState.data.value,
+          );
+          if (typeof msg === "string" && msg) return msg;
+        }
+      }
+      return null;
+    }
+  }
+  return { useExpression, useValidators };
+}
+
+export const defaultFormEditHooks = createFormEditHooks(
+  createDefaultSchemaHooks(),
+);
+
+export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
   return {
-    useExpression,
+    schemaHooks,
     useDataProperties(
       formState,
       definition,
       field,
       renderer,
     ): DataRendererProps {
-      const visible = useIsControlVisible(definition, formState, useExpression);
+      const visible = useIsControlVisible(definition, formState, schemaHooks);
       const isVisible = visible.value && !formState.invisible;
       const defaultValue = useDefaultValue(
         definition,
         field,
         formState,
-        useExpression,
+        schemaHooks,
       );
       const scalarControl = formState.data.fields[field.field];
 
@@ -203,19 +236,19 @@ export function createFormEditHooks(
         formState,
       );
 
+      const validator = schemaHooks.useValidators(
+        formState,
+        dataProps.required,
+        definition.validators,
+      );
+
       useControlEffect(
         () => {
           trackControlChange(scalarControl, ControlChange.Validate);
-          return [isVisible, scalarControl.value, dataProps.required];
+          return [isVisible, scalarControl.value];
         },
-        ([visible, controlValue, required]) => {
-          if (
-            required &&
-            visible &&
-            (controlValue == null || controlValue === "")
-          ) {
-            scalarControl.error = "Please enter a value";
-          } else scalarControl.error = null;
+        ([visible, controlValue]) => {
+          scalarControl.error = visible ? validator(controlValue) : null;
         },
         true,
       );
@@ -241,11 +274,11 @@ export function createFormEditHooks(
       };
     },
     useDisplayProperties: (fs, definition) => {
-      const visible = useIsControlVisible(definition, fs, useExpression);
+      const visible = useIsControlVisible(definition, fs, schemaHooks);
       return { visible, definition };
     },
     useGroupProperties: (fs, definition, hooks, renderers) => {
-      const visible = useIsControlVisible(definition, fs, useExpression);
+      const visible = useIsControlVisible(definition, fs, schemaHooks);
       const field = definition.compoundField
         ? findCompoundField(fs.fields, definition.compoundField)
         : undefined;
@@ -293,7 +326,7 @@ export function createFormEditHooks(
       formState: FormEditState,
       definition: ActionControlDefinition,
     ): ActionRendererProps {
-      const visible = useIsControlVisible(definition, formState, useExpression);
+      const visible = useIsControlVisible(definition, formState, schemaHooks);
       return {
         visible,
         onClick: () => {},

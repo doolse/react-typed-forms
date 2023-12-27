@@ -13,6 +13,7 @@ import {
   GroupedControlsDefinition,
   RenderOptions,
   SchemaField,
+  SchemaValidator,
   visitControlDefinition,
 } from "./types";
 import React, {
@@ -26,10 +27,14 @@ import React, {
 import { Control, newControl } from "@react-typed-forms/core";
 import { fieldDisplayName } from "./util";
 
-export type ExpressionHook = (
-  expr: EntityExpression,
-  formState: FormEditState,
-) => any;
+export interface SchemaHooks {
+  useExpression(expr: EntityExpression, formState: FormEditState): any;
+  useValidators(
+    formState: FormEditState,
+    required: boolean,
+    validations?: SchemaValidator[] | null,
+  ): (value: any) => string | null;
+}
 
 export interface FormEditHooks {
   useDataProperties(
@@ -52,7 +57,7 @@ export interface FormEditHooks {
     formState: FormEditState,
     definition: ActionControlDefinition,
   ): ActionRendererProps;
-  useExpression: ExpressionHook;
+  schemaHooks: SchemaHooks;
 }
 
 export interface DataRendererProps {

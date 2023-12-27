@@ -11,7 +11,7 @@ export interface SchemaField {
   isTypeField?: boolean | null;
   searchable?: boolean | null;
   options?: FieldOption[] | null;
-  validations?: SchemaValidator[] | null;
+  validators?: SchemaValidator[] | null;
   /**
    * @deprecated Use options directly
    */
@@ -150,7 +150,7 @@ export interface DataControlDefinition extends ControlDefinition {
   renderOptions?: RenderOptions | null;
   defaultValue?: any;
   readonly?: boolean | null;
-  validations?: SchemaValidator[] | null;
+  validators?: SchemaValidator[] | null;
 }
 
 export interface RenderOptions {
