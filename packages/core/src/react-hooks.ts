@@ -147,10 +147,10 @@ export function useValidator<V>(
   useControlEffect(
     () => {
       trackControlChange(control, ControlChange.Validate);
-      return control.value;
+      return validator(control.value);
     },
-    (v) => {
-      control.setError(key, validator(v));
+    (msg) => {
+      control.setError(key, msg);
     },
     !noInitial,
   );
