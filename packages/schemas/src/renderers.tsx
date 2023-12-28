@@ -840,7 +840,13 @@ export function createInputConversion(ft: string): InputConversion {
     case FieldType.Bool:
       return ["text", (a) => a === "true", (a) => a?.toString() ?? ""];
     case FieldType.Int:
-      return ["number", (a) => parseInt(a), (a) => a];
+      return [
+        "number",
+        (a) => (a !== "" ? parseInt(a) : null),
+        (a) => (a == null ? "" : a),
+      ];
+    case FieldType.Date:
+      return ["date", (a) => a, (a) => a];
     case FieldType.Double:
       return ["number", (a) => parseFloat(a), (a) => a];
     default:

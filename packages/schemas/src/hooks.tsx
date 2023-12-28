@@ -4,6 +4,8 @@ import {
   ControlDefinitionType,
   DataControlDefinition,
   DataRenderType,
+  DateComparison,
+  DateValidator,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
@@ -11,7 +13,6 @@ import {
   FieldValueExpression,
   GroupedControlsDefinition,
   JsonataExpression,
-  JsonataValidator,
   SchemaField,
   SchemaValidator,
   ValidatorType,
@@ -35,21 +36,17 @@ import {
   SchemaHooks,
   Visibility,
 } from "./controlRender";
-import React, {
-  Fragment,
-  ReactElement,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
+import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
 import {
   addElement,
   Control,
   ControlChange,
   newControl,
   removeElement,
-  trackControlChange,
+  useComputed,
+  useControl,
   useControlEffect,
+  useValidator,
 } from "@react-typed-forms/core";
 import jsonata from "jsonata";
 
@@ -63,7 +60,7 @@ export function useDefaultValue(
     (x) => x.type === DynamicPropertyType.DefaultValue,
   );
   if (valueExpression) {
-    return hooks.useExpression(valueExpression.expr, formState);
+    return hooks.useExpression(valueExpression.expr, formState).value;
   }
   return field.defaultValue;
 }
@@ -77,8 +74,12 @@ export function useIsControlVisible(
     (x) => x.type === DynamicPropertyType.Visible,
   );
   if (visibleExpression && visibleExpression.expr) {
+    const exprValue = hooks.useExpression(
+      visibleExpression.expr,
+      formState,
+    ).value;
     return {
-      value: Boolean(hooks.useExpression(visibleExpression.expr, formState)),
+      value: Boolean(exprValue),
       canChange: true,
     };
   }
@@ -147,7 +148,10 @@ export function getOptionsForScalarField(
 }
 
 export function createDefaultSchemaHooks(): SchemaHooks {
-  function useExpression(expr: EntityExpression, formState: FormEditState) {
+  function useExpression(
+    expr: EntityExpression,
+    formState: FormEditState,
+  ): Control<any | undefined> {
     switch (expr.type) {
       case ExpressionType.Jsonata:
         const jExpr = expr as JsonataExpression;
@@ -155,44 +159,95 @@ export function createDefaultSchemaHooks(): SchemaHooks {
           () => jsonata(jExpr.expression),
           [jExpr.expression],
         );
-        return compiledExpr.evaluate(formState.data.value);
+        const control = useControl();
+        useControlEffect(
+          () => formState.data.value,
+          async (v) => {
+            control.value = await compiledExpr.evaluate(v);
+          },
+        );
+        return control;
       case ExpressionType.FieldValue:
         const fvExpr = expr as FieldValueExpression;
-        const fv = controlForField(fvExpr.field, formState).value;
-        return Array.isArray(fv)
-          ? fv.includes(fvExpr.value)
-          : fv === fvExpr.value;
+        return useComputed(() => {
+          const fv = controlForField(fvExpr.field, formState).value;
+          return Array.isArray(fv)
+            ? fv.includes(fvExpr.value)
+            : fv === fvExpr.value;
+        });
       default:
-        return undefined;
+        return useControl(undefined);
     }
   }
 
   function useValidators(
     formState: FormEditState,
+    isVisible: boolean,
+    control: Control<any>,
     required: boolean,
     validators?: SchemaValidator[] | null,
   ) {
-    return (v: any) => {
-      console.log({ v, validators });
-      return required && (v == null || v == "")
-        ? "Please enter a value"
-        : validators
-        ? firstError(validators)
-        : null;
-    };
-
-    function firstError(validators: SchemaValidator[]): string | null {
-      console.log(validators);
-      for (const v of validators) {
-        if (v.type == ValidatorType.Jsonata) {
-          const msg = jsonata((v as JsonataValidator).expression).evaluate(
-            formState.data.value,
+    if (required)
+      useValidator(
+        control,
+        (v) =>
+          isVisible && (v == null || v == "") ? "Please enter a value" : null,
+        "required",
+      );
+    validators?.forEach((v, i) => {
+      switch (v.type) {
+        case ValidatorType.Date:
+          processDateValidator(v as DateValidator);
+          break;
+        case ValidatorType.Jsonata:
+          const errorMsg = useExpression(
+            v satisfies EntityExpression,
+            formState,
           );
-          if (typeof msg === "string" && msg) return msg;
-        }
+          useControlEffect(
+            () => [isVisible, errorMsg.value],
+            ([isVisible, msg]) =>
+              control.setError(v.type + i, isVisible ? msg : null),
+            true,
+          );
+          break;
       }
-      return null;
-    }
+
+      function processDateValidator(dv: DateValidator) {
+        let comparisonDate: number;
+        if (dv.fixedDate) {
+          comparisonDate = Date.parse(dv.fixedDate);
+        } else {
+          const nowDate = new Date();
+          comparisonDate = Date.UTC(
+            nowDate.getFullYear(),
+            nowDate.getMonth(),
+            nowDate.getDate(),
+          );
+          if (dv.daysFromCurrent) {
+            comparisonDate += dv.daysFromCurrent * 86400000;
+          }
+        }
+        useValidator(
+          control,
+          (v) => {
+            if (v) {
+              const selDate = Date.parse(v);
+              const notAfter = dv.comparison === DateComparison.NotAfter;
+              if (
+                notAfter ? selDate > comparisonDate : selDate < comparisonDate
+              ) {
+                return `Date must not be ${
+                  notAfter ? "after" : "before"
+                } ${new Date(comparisonDate).toDateString()}`;
+              }
+            }
+            return null;
+          },
+          "date" + i,
+        );
+      }
+    });
   }
   return { useExpression, useValidators };
 }
@@ -236,21 +291,12 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
         formState,
       );
 
-      const validator = schemaHooks.useValidators(
+      schemaHooks.useValidators(
         formState,
+        isVisible,
+        scalarControl,
         dataProps.required,
         definition.validators,
-      );
-
-      useControlEffect(
-        () => {
-          trackControlChange(scalarControl, ControlChange.Validate);
-          return [isVisible, scalarControl.value];
-        },
-        ([visible, controlValue]) => {
-          scalarControl.error = visible ? validator(controlValue) : null;
-        },
-        true,
       );
 
       useEffect(() => {

@@ -28,12 +28,17 @@ import { Control, newControl } from "@react-typed-forms/core";
 import { fieldDisplayName } from "./util";
 
 export interface SchemaHooks {
-  useExpression(expr: EntityExpression, formState: FormEditState): any;
+  useExpression(
+    expr: EntityExpression,
+    formState: FormEditState,
+  ): Control<any | undefined>;
   useValidators(
     formState: FormEditState,
+    isVisible: boolean,
+    control: Control<any>,
     required: boolean,
     validations?: SchemaValidator[] | null,
-  ): (value: any) => string | null;
+  ): void;
 }
 
 export interface FormEditHooks {

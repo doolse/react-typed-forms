@@ -288,6 +288,7 @@ export interface ActionControlDefinition extends ControlDefinition {
 
 export enum ValidatorType {
   Jsonata = "Jsonata",
+  Date = "Date",
 }
 export interface SchemaValidator {
   type: string;
@@ -296,6 +297,18 @@ export interface SchemaValidator {
 export interface JsonataValidator extends SchemaValidator {
   type: ValidatorType.Jsonata;
   expression: string;
+}
+
+export enum DateComparison {
+  NotBefore = "NotBefore",
+  NotAfter = "NotAfter",
+}
+
+export interface DateValidator extends SchemaValidator {
+  type: ValidatorType.Date;
+  comparison: DateComparison;
+  fixedDate?: string | null;
+  daysFromCurrent?: number | null;
 }
 
 export function isDataControlDefinition(
