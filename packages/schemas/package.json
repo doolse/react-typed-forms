@@ -25,18 +25,18 @@
   ],
   "dependencies": {
     "@react-typed-forms/core": "workspace:^3.0.0-dev.116",
-    "react": "^18.2.0",
+    "clsx": "^1 || ^2",
     "jsonata": "^2.0.3",
-    "clsx": "^1 || ^2" 
+    "react": "^18.2.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
     "@react-typed-forms/transform": "workspace:^0.1.0",
     "@types/react": "^18.2.28",
     "microbundle": "^0.15.1",
     "nswag": "^13.18.2",
+    "prettier": "^3.0.3",
     "rimraf": "^3.0.2",
-    "prettier": "^3.0.3"
+    "typescript": "^5.2.2"
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {
