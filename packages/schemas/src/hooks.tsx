@@ -23,20 +23,15 @@ import {
   controlForField,
   controlTitle,
   DataRendererProps,
-  elementValueForField,
   fieldForControl,
-  findCompoundField,
-  findField,
   FormEditHooks,
   FormEditState,
   GroupRendererProps,
-  isGroupControl,
-  isScalarField,
   renderControl,
   SchemaHooks,
   Visibility,
 } from "./controlRender";
-import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
+import React, {Fragment, ReactElement, useEffect, useMemo} from "react";
 import {
   addElement,
   Control,
@@ -49,6 +44,14 @@ import {
   useValidator,
 } from "@react-typed-forms/core";
 import jsonata from "jsonata";
+import {
+  addMissingControls,
+  elementValueForField,
+  findCompoundField,
+  findField,
+  isGroupControl,
+  isScalarField
+} from "./util";
 
 export function useDefaultValue(
   definition: DataControlDefinition,
@@ -422,4 +425,12 @@ function defaultArrayRendererProps(
       return <Fragment key={c.uniqueId}>{renderElem(c)}</Fragment>;
     },
   };
+}
+
+export function useControlsWithDefaults(definition: GroupedControlsDefinition, sf: SchemaField[]) { return useMemo(
+    () =>
+        definition.children.length
+            ? definition
+            : { ...definition, children: addMissingControls(sf, []) },
+    [sf, definition]);
 }

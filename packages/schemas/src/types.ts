@@ -12,10 +12,6 @@ export interface SchemaField {
   searchable?: boolean | null;
   options?: FieldOption[] | null;
   validators?: SchemaValidator[] | null;
-  /**
-   * @deprecated Use options directly
-   */
-  restrictions?: SchemaRestrictions | undefined | null;
 }
 
 export enum FieldType {
@@ -36,10 +32,6 @@ export interface EntityRefField extends SchemaField {
   type: FieldType.EntityRef;
   entityRefType: string;
   parentField: string;
-}
-
-export interface SchemaRestrictions {
-  options?: FieldOption[] | null;
 }
 
 export interface FieldOption {

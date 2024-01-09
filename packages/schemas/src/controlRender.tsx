@@ -9,23 +9,15 @@ import {
   DisplayControlDefinition,
   EntityExpression,
   FieldOption,
-  FieldType,
   GroupedControlsDefinition,
   RenderOptions,
   SchemaField,
   SchemaValidator,
   visitControlDefinition,
 } from "./types";
-import React, {
-  Context,
-  createContext,
-  Key,
-  ReactElement,
-  ReactNode,
-  useContext,
-} from "react";
-import { Control, newControl } from "@react-typed-forms/core";
-import { fieldDisplayName } from "./util";
+import React, {Context, createContext, Key, ReactElement, ReactNode, useContext,} from "react";
+import {Control, newControl} from "@react-typed-forms/core";
+import {fieldDisplayName, findCompoundField, findField, findScalarField, isDataControl, isGroupControl} from "./util";
 
 export interface SchemaHooks {
   useExpression(
@@ -190,100 +182,10 @@ export interface ActionRendererProps {
   onClick: () => void;
 }
 
-export function isScalarField(sf: SchemaField): sf is SchemaField {
-  return !isCompoundField(sf);
-}
-
-export function isCompoundField(sf: SchemaField): sf is CompoundField {
-  return sf.type === FieldType.Compound;
-}
-
 export type AnySchemaFields =
   | SchemaField
   | (Omit<CompoundField, "children"> & { children: AnySchemaFields[] });
 
-export function applyDefaultValues(
-  v: { [k: string]: any } | undefined,
-  fields: SchemaField[],
-): any {
-  if (!v) return defaultValueForFields(fields);
-  const applyValue = fields.filter(
-    (x) => isCompoundField(x) || !(x.field in v),
-  );
-  if (!applyValue.length) return v;
-  const out = { ...v };
-  applyValue.forEach((x) => {
-    out[x.field] =
-      x.field in v
-        ? applyDefaultForField(v[x.field], x, fields)
-        : defaultValueForField(x);
-  });
-  return out;
-}
-
-export function applyDefaultForField(
-  v: any,
-  field: SchemaField,
-  parent: SchemaField[],
-  notElement?: boolean,
-): any {
-  if (field.collection && !notElement) {
-    return ((v as any[]) ?? []).map((x) =>
-      applyDefaultForField(x, field, parent, true),
-    );
-  }
-  if (isCompoundField(field)) {
-    if (!v && !field.required) return v;
-    return applyDefaultValues(v, field.treeChildren ? parent : field.children);
-  }
-  return defaultValueForField(field);
-}
-
-export function defaultValueForFields(fields: SchemaField[]): any {
-  return Object.fromEntries(
-    fields.map((x) => [x.field, defaultValueForField(x)]),
-  );
-}
-
-export function defaultValueForField(sf: SchemaField): any {
-  if (isCompoundField(sf)) {
-    return sf.required
-      ? sf.collection
-        ? []
-        : defaultValueForFields(sf.children)
-      : undefined;
-  }
-  if (sf.collection) return [];
-  return sf.defaultValue;
-}
-
-export function elementValueForField(sf: SchemaField): any {
-  if (isCompoundField(sf)) {
-    return defaultValueForFields(sf.children);
-  }
-  return sf.defaultValue;
-}
-
-export function findScalarField(
-  fields: SchemaField[],
-  field: string,
-): SchemaField | undefined {
-  return findField(fields, field);
-}
-
-export function findCompoundField(
-  fields: SchemaField[],
-  field: string,
-): CompoundField | undefined {
-  return findField(fields, field) as CompoundField | undefined;
-}
-
-export function findField(
-  fields: SchemaField[],
-  field: string,
-): SchemaField | undefined {
-  return fields.find((x) => x.field === field);
-}
 export function controlTitle(
   title: string | undefined | null,
   field: SchemaField,
@@ -435,18 +337,6 @@ export function fieldForControl(c: ControlDefinition) {
     : isGroupControl(c)
     ? c.compoundField
     : undefined;
-}
-
-export function isDataControl(
-  c: ControlDefinition,
-): c is DataControlDefinition {
-  return c.type === ControlDefinitionType.Data;
-}
-
-export function isGroupControl(
-  c: ControlDefinition,
-): c is GroupedControlsDefinition {
-  return c.type === ControlDefinitionType.Group;
 }
 
 export const AlwaysVisible: Visibility = { value: true, canChange: false };
