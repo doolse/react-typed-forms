@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas-mui",
-  "version": "1.0.0-dev.17",
+  "version": "1.0.0-dev.18",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -26,7 +26,7 @@
   "dependencies": {
     "@react-typed-forms/core": "workspace:^3.0.0-dev.116",
     "@react-typed-forms/mui": "workspace:^3.0.0-dev.116",
-    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.17",
+    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.18",
     "@react-typed-forms/transform": "workspace:^0.1.0",
     "date-fns": "^2.29.3",
     "react": "^18.2.0"

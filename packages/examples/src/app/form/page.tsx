@@ -10,7 +10,6 @@ import {
   dataControl,
   DataRenderType,
   DateTimeRenderOptions,
-  defaultExpressionHook,
   FieldType,
   fieldValueExpr,
   FormRendererProvider,
@@ -32,6 +31,7 @@ import {
   muiDateRenderer,
   muiTextfieldRenderer,
 } from "@react-typed-forms/schemas-mui";
+import { defaultFormEditHooks } from "@react-typed-forms/schemas/lib";
 
 interface NameForm {
   first: string;
@@ -80,7 +80,7 @@ const withDefaults = applyDefaultValues(
   nameFormSchema,
 );
 
-const hooks = createFormEditHooks(defaultExpressionHook);
+const hooks = defaultFormEditHooks;
 
 const renderer = createFormRenderer(
   [muiTextfieldRenderer("outlined"), muiActionRenderer(), muiDateRenderer()],
