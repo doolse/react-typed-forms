@@ -31,7 +31,7 @@ import {
   SchemaHooks,
   Visibility,
 } from "./controlRender";
-import React, {Fragment, ReactElement, useEffect, useMemo} from "react";
+import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
 import {
   addElement,
   Control,
@@ -50,7 +50,7 @@ import {
   findCompoundField,
   findField,
   isGroupControl,
-  isScalarField
+  isScalarField,
 } from "./util";
 
 export function useDefaultValue(
@@ -143,7 +143,7 @@ export function getDefaultScalarControlProperties(
 export function getOptionsForScalarField(
   field: SchemaField,
 ): FieldOption[] | undefined | null {
-  const opts = field.options ?? field.restrictions?.options;
+  const opts = field.options;
   if (opts?.length ?? 0 > 0) {
     return opts;
   }
@@ -427,10 +427,15 @@ function defaultArrayRendererProps(
   };
 }
 
-export function useControlsWithDefaults(definition: GroupedControlsDefinition, sf: SchemaField[]) { return useMemo(
+export function useControlsWithDefaults(
+  definition: GroupedControlsDefinition,
+  sf: SchemaField[],
+) {
+  return useMemo(
     () =>
-        definition.children.length
-            ? definition
-            : { ...definition, children: addMissingControls(sf, []) },
-    [sf, definition]);
+      definition.children.length
+        ? definition
+        : { ...definition, children: addMissingControls(sf, []) },
+    [sf, definition],
+  );
 }

@@ -1,40 +1,45 @@
 import {
   CompoundField,
-  ControlDefinition, ControlDefinitionType,
-  DataControlDefinition, DataRenderType,
-  FieldOption, FieldType, GridRenderer,
-  GroupedControlsDefinition, GroupRenderType,
-  SchemaField
+  ControlDefinition,
+  ControlDefinitionType,
+  DataControlDefinition,
+  DataRenderType,
+  FieldOption,
+  FieldType,
+  GridRenderer,
+  GroupedControlsDefinition,
+  GroupRenderType,
+  SchemaField,
 } from "./types";
 
 export function applyDefaultValues(
-    v: { [k: string]: any } | undefined,
-    fields: SchemaField[],
+  v: { [k: string]: any } | undefined,
+  fields: SchemaField[],
 ): any {
   if (!v) return defaultValueForFields(fields);
   const applyValue = fields.filter(
-      (x) => isCompoundField(x) || !(x.field in v),
+    (x) => isCompoundField(x) || !(x.field in v),
   );
   if (!applyValue.length) return v;
   const out = { ...v };
   applyValue.forEach((x) => {
     out[x.field] =
-        x.field in v
-            ? applyDefaultForField(v[x.field], x, fields)
-            : defaultValueForField(x);
+      x.field in v
+        ? applyDefaultForField(v[x.field], x, fields)
+        : defaultValueForField(x);
   });
   return out;
 }
 
 export function applyDefaultForField(
-    v: any,
-    field: SchemaField,
-    parent: SchemaField[],
-    notElement?: boolean,
+  v: any,
+  field: SchemaField,
+  parent: SchemaField[],
+  notElement?: boolean,
 ): any {
   if (field.collection && !notElement) {
     return ((v as any[]) ?? []).map((x) =>
-        applyDefaultForField(x, field, parent, true),
+      applyDefaultForField(x, field, parent, true),
     );
   }
   if (isCompoundField(field)) {
@@ -46,17 +51,17 @@ export function applyDefaultForField(
 
 export function defaultValueForFields(fields: SchemaField[]): any {
   return Object.fromEntries(
-      fields.map((x) => [x.field, defaultValueForField(x)]),
+    fields.map((x) => [x.field, defaultValueForField(x)]),
   );
 }
 
 export function defaultValueForField(sf: SchemaField): any {
   if (isCompoundField(sf)) {
     return sf.required
-        ? sf.collection
-            ? []
-            : defaultValueForFields(sf.children)
-        : undefined;
+      ? sf.collection
+        ? []
+        : defaultValueForFields(sf.children)
+      : undefined;
   }
   if (sf.collection) return [];
   return sf.defaultValue;
@@ -70,22 +75,22 @@ export function elementValueForField(sf: SchemaField): any {
 }
 
 export function findScalarField(
-    fields: SchemaField[],
-    field: string,
+  fields: SchemaField[],
+  field: string,
 ): SchemaField | undefined {
   return findField(fields, field);
 }
 
 export function findCompoundField(
-    fields: SchemaField[],
-    field: string,
+  fields: SchemaField[],
+  field: string,
 ): CompoundField | undefined {
   return findField(fields, field) as CompoundField | undefined;
 }
 
 export function findField(
-    fields: SchemaField[],
-    field: string,
+  fields: SchemaField[],
+  field: string,
 ): SchemaField | undefined {
   return fields.find((x) => x.field === field);
 }
@@ -99,13 +104,13 @@ export function isCompoundField(sf: SchemaField): sf is CompoundField {
 }
 
 export function isDataControl(
-    c: ControlDefinition,
+  c: ControlDefinition,
 ): c is DataControlDefinition {
   return c.type === ControlDefinitionType.Data;
 }
 
 export function isGroupControl(
-    c: ControlDefinition,
+  c: ControlDefinition,
 ): c is GroupedControlsDefinition {
   return c.type === ControlDefinitionType.Group;
 }
@@ -123,7 +128,7 @@ export function hasOptions(o: { options: FieldOption[] | undefined | null }) {
 }
 
 export function defaultControlForField(
-    sf: SchemaField,
+  sf: SchemaField,
 ): DataControlDefinition | GroupedControlsDefinition {
   if (isCompoundField(sf)) {
     return {
@@ -145,14 +150,14 @@ export function defaultControlForField(
       required: sf.required,
       renderOptions: {
         type: htmlEditor ? DataRenderType.HtmlEditor : DataRenderType.Standard,
-      } 
+      },
     } satisfies DataControlDefinition;
   }
   throw "Unknown schema field";
 }
 function findReferencedControl(
-    field: string,
-    control: ControlDefinition,
+  field: string,
+  control: ControlDefinition,
 ): ControlDefinition | undefined {
   if (isDataControl(control) && field === control.field) return control;
   if (isGroupControl(control)) {
@@ -164,8 +169,8 @@ function findReferencedControl(
 }
 
 function findReferencedControlInArray(
-    field: string,
-    controls: ControlDefinition[],
+  field: string,
+  controls: ControlDefinition[],
 ): ControlDefinition | undefined {
   for (const c of controls) {
     const ref = findReferencedControl(field, c);
@@ -175,8 +180,8 @@ function findReferencedControlInArray(
 }
 
 export function addMissingControls(
-    fields: SchemaField[],
-    controls: ControlDefinition[],
+  fields: SchemaField[],
+  controls: ControlDefinition[],
 ): ControlDefinition[] {
   const changes: {
     field: SchemaField;
@@ -194,14 +199,14 @@ export function addMissingControls(
     return {
       ...cf,
       children: addMissingControls(
-          (ex.field as CompoundField).children,
-          cf.children,
+        (ex.field as CompoundField).children,
+        cf.children,
       ),
     };
   });
   return changedCompounds.concat(
-      changes
-          .filter((x) => !x.existing)
-          .map((x) => defaultControlForField(x.field)),
+    changes
+      .filter((x) => !x.existing)
+      .map((x) => defaultControlForField(x.field)),
   );
 }
