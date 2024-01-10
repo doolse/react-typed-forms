@@ -126,6 +126,8 @@ export function createFormRenderer(
   );
   const labelRenderer =
     customRenderers.find(isLabelRegistration) ?? defaultRenderers.label;
+  const arrayRenderer =
+    customRenderers.find(isArrayRegistration) ?? defaultRenderers.array;
   const renderVisibility = (
     customRenderers.find(isVisibilityRegistration) ??
     defaultRenderers.visibility
@@ -151,7 +153,7 @@ export function createFormRenderer(
   }
 
   function renderArray(props: ArrayRendererProps) {
-    return defaultRenderers.array.render(props, formRenderers);
+    return arrayRenderer.render(props, formRenderers);
   }
 
   function renderLabel(props: LabelRendererProps, elem: ReactElement) {
@@ -693,6 +695,12 @@ function isActionRegistration(
   return x.type === "action";
 }
 
+function isArrayRegistration(
+  x: AnyRendererRegistration,
+): x is ArrayRendererRegistration {
+  return x.type === "array";
+}
+
 function isVisibilityRegistration(
   x: AnyRendererRegistration,
 ): x is VisibilityRendererRegistration {
@@ -701,6 +709,13 @@ function isVisibilityRegistration(
 
 function isOneOf(x: string | string[] | undefined, v: string) {
   return x == null ? true : Array.isArray(x) ? x.includes(v) : v === x;
+}
+
+export function createArrayRenderer(
+  render: ArrayRendererRegistration["render"],
+  options?: Partial<ArrayRendererRegistration>,
+): ArrayRendererRegistration {
+  return { type: "array", render, ...options };
 }
 
 export function createDataRenderer(
