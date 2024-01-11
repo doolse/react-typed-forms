@@ -13,7 +13,6 @@ import {
   stringField,
   useControlDefinitionForSchema,
 } from "@react-typed-forms/schemas";
-import { muiTextfieldRenderer } from "@react-typed-forms/schemas-mui";
 
 /** Define your form */
 interface SimpleForm {
@@ -31,7 +30,7 @@ const simpleSchema = buildSchema<SimpleForm>({
 
 /* Create a form renderer based on a simple tailwind css based theme */
 const renderer: FormRenderer = createFormRenderer(
-  [muiTextfieldRenderer()],
+  [],
   createDefaultRenderers(defaultTailwindTheme),
 );
 

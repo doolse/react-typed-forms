@@ -95,9 +95,78 @@ A `SchemaField` is a JSON object which describes the definition of a field insid
 
 Each `SchemaField` can also be marked as a `collection` which means that it will be mapped to a JSON array of the defined `FieldType`.
 
-TODO - buildSchema, FieldOptions, extending FieldType
+### Defining fields
+
+While you can define a `SchemaField` as plain JSON, e.g. 
+```json
+[
+  {
+    "type": "String",
+    "field": "firstName",
+    "displayName": "First Name"
+  },
+  {
+    "type": "String",
+    "field": "lastName",
+    "displayName": "Last Name",
+    "required": true
+  },
+  {
+    "type": "Int",
+    "field": "yearOfBirth",
+    "displayName": "Year of birth",
+    "defaultValue": 1980
+  }
+]
+```
+
+However if you have existing types which you would like to define `SchemaField`s for the library contains a function called `buildSchema` a type safe way of generating fields for a type:
+
+```tsx
+interface SimpleForm {
+  firstName: string;
+  lastName: string;
+  yearOfBirth: number;
+}
+
+const simpleSchema = buildSchema<SimpleForm>({
+  firstName: stringField("First Name"),
+  lastName: stringField("Last Name", { required: true }),
+  yearOfBirth: intField("Year of birth", { defaultValue: 1980 }),
+});
+```
+
+### Field options
+
+Often a field only has a set of allowed values, e.g. a enum. `SchemaField` allows this to be modeled by 
+providing an array of `FieldOption`: 
+
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./src/types.ts&lines=37-41) -->
+<!-- The below code snippet is automatically added from ./src/types.ts -->
+```ts
+export interface FieldOption {
+  name: string;
+  value: any;
+}
+```
+<!-- AUTO-GENERATED-CONTENT:END -->
+
+For example you could only allow certain last names:
+
+```ts
+stringField('Last Name', { 
+    required: true,
+    options:[ 
+        { name: "Smith", value: "smith" }, 
+        { name: "Jones", value: "jones" }
+    ]
+});
+```
+
+<img src="../../images/schemas-option.png">
 
 ### `ControlDefinition`
+
 A `ControlDefinition` is a JSON object which describes what should be rendered in a UI. Each `ControlDefinition` can be one of 4 distinct types:
 
 * `DataControlDefinition` - Points to a `SchemaField` in order to render a control for editing of data.
