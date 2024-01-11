@@ -69,7 +69,7 @@
       "name": "publish-transform",
       "summary": "Build and publish to npm",
       "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "rush build && rush publish --apply --target-branch main --include-all --version-policy transformRelease --publish"
+      "shellCommand": "rush build -t @react-typed-forms/transform && rush publish --apply --target-branch main --include-all --version-policy transformRelease --publish"
     },
     {
       "commandKind": "global",
