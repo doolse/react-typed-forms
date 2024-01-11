@@ -73,6 +73,20 @@
     },
     {
       "commandKind": "global",
+      "name": "publish-mui",
+      "summary": "Build and publish to npm",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush build -t @react-typed-forms/schemas-mui && rush publish --apply --target-branch main --include-all --version-policy muiRelease --publish"
+    },
+    {
+      "commandKind": "global",
+      "name": "bump-mui",
+      "summary": "Bump the mui version",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "rush version --bump --version-policy muiRelease"
+    },
+    {
+      "commandKind": "global",
       "name": "bump-schemas",
       "summary": "Bump the schemas version",
       "safeForSimultaneousRushProcesses": true,
