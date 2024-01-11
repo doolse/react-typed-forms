@@ -7,3 +7,4 @@ import "./optionals.cy";
 import "./simple.cy";
 import "./validation.cy";
 import "./multiValidation.cy";
+import "./schemas.cy";

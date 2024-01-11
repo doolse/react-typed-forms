@@ -8,7 +8,6 @@
     "cypress": "next dev",
     "watch": "next dev",
     "build-next": "next build",
-    "export": "next export",
     "build": "tsc --build --verbose"
   },
   "repository": {
@@ -34,8 +33,8 @@
     "@emotion/react": "^11.11.1",
     "@react-typed-forms/core": "workspace:^3.0.0-dev.116",
     "@react-typed-forms/mui": "workspace:^3.0.0-dev.116",
-    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.20",
-    "@react-typed-forms/schemas-mui": "workspace:^1.0.0-dev.20"
+    "@react-typed-forms/schemas": "workspace:^1.0.0-dev.21",
+    "@react-typed-forms/schemas-mui": "workspace:^1.0.0-dev.21"
   },
   "devDependencies": {
     "@react-typed-forms/transform": "workspace:^0.1.0",

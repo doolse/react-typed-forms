@@ -11,7 +11,8 @@ const withMDX = mdx({
 const config = {
   pageExtensions: ["tsx", "mdx", "ts"],
   basePath: "/react-typed-forms",
-  reactStrictMode: false
+  reactStrictMode: false,
+  output: "export"
 };
 
 export default withMDX(config);

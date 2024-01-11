@@ -106,7 +106,7 @@ export interface AdornmentRendererRegistration {
   render: (props: AdornmentProps) => AdornmentRenderer;
 }
 
-export type AnyRendererRegistration =
+export type RendererRegistration =
   | DataRendererRegistration
   | GroupRendererRegistration
   | DisplayRendererRegistration
@@ -117,7 +117,7 @@ export type AnyRendererRegistration =
   | VisibilityRendererRegistration;
 
 export function createFormRenderer(
-  customRenderers: AnyRendererRegistration[] = [],
+  customRenderers: RendererRegistration[] = [],
   defaultRenderers: DefaultRenderers = createClassStyledRenderers(),
 ): FormRenderer {
   const dataRegistrations = customRenderers.filter(isDataRegistration);
@@ -672,37 +672,37 @@ function createClassStyledRenderers() {
 }
 
 function isAdornmentRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is AdornmentRendererRegistration {
   return x.type === "adornment";
 }
 
 function isDataRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is DataRendererRegistration {
   return x.type === "data";
 }
 
 function isLabelRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is LabelRendererRegistration {
   return x.type === "label";
 }
 
 function isActionRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is ActionRendererRegistration {
   return x.type === "action";
 }
 
 function isArrayRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is ArrayRendererRegistration {
   return x.type === "array";
 }
 
 function isVisibilityRegistration(
-  x: AnyRendererRegistration,
+  x: RendererRegistration,
 ): x is VisibilityRendererRegistration {
   return x.type === "visibility";
 }

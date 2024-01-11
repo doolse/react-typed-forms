@@ -15,9 +15,16 @@ import {
   SchemaValidator,
   visitControlDefinition,
 } from "./types";
-import React, {Context, createContext, Key, ReactElement, ReactNode, useContext,} from "react";
-import {Control, newControl} from "@react-typed-forms/core";
-import {fieldDisplayName, findCompoundField, findField, findScalarField, isDataControl, isGroupControl} from "./util";
+import React, { Key, ReactElement, ReactNode } from "react";
+import { Control, newControl } from "@react-typed-forms/core";
+import {
+  fieldDisplayName,
+  findCompoundField,
+  findField,
+  findScalarField,
+  isDataControl,
+  isGroupControl,
+} from "./util";
 
 export interface SchemaHooks {
   useExpression(
@@ -38,13 +45,10 @@ export interface FormEditHooks {
     formState: FormEditState,
     definition: DataControlDefinition,
     field: SchemaField,
-    renderers: FormRenderer,
   ): DataRendererProps;
   useGroupProperties(
     formState: FormEditState,
     definition: GroupedControlsDefinition,
-    currentHooks: FormEditHooks,
-    renderers: FormRenderer,
   ): GroupRendererProps;
   useDisplayProperties(
     formState: FormEditState,
@@ -87,12 +91,18 @@ export interface ControlData {
   [field: string]: any;
 }
 
-export interface FormEditState {
+export interface FormDataContext {
   fields: SchemaField[];
   data: Control<ControlData>;
+}
+export interface FormEditState extends FormDataContext {
+  hooks: FormEditHooks;
+  renderer: FormRenderer;
   readonly?: boolean;
   invisible?: boolean;
 }
+
+export type RenderControlOptions = Omit<FormEditState, "data">;
 
 export interface ArrayRendererProps {
   definition: DataControlDefinition | GroupedControlsDefinition;
@@ -124,37 +134,6 @@ export interface FormRenderer {
   renderLabel: (props: LabelRendererProps, elem: ReactElement) => ReactElement;
   renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
   renderAdornment: (props: AdornmentProps) => AdornmentRenderer;
-}
-
-let _FormRendererComponentsContext: Context<FormRenderer | undefined> | null =
-  null;
-
-function FormRendererComponentsContext() {
-  if (!_FormRendererComponentsContext) {
-    _FormRendererComponentsContext = createContext<FormRenderer | undefined>(
-      undefined,
-    );
-  }
-  return _FormRendererComponentsContext;
-}
-
-export function FormRendererProvider({
-  value,
-  children,
-}: {
-  value: FormRenderer;
-  children: ReactNode;
-}) {
-  const { Provider } = FormRendererComponentsContext();
-  return <Provider value={value} children={children} />;
-}
-
-export function useFormRendererComponents() {
-  const c = useContext(FormRendererComponentsContext());
-  if (!c) {
-    throw "Need to use FormRendererComponentContext.Provider";
-  }
-  return c;
 }
 
 export interface Visibility {
@@ -195,11 +174,12 @@ export function controlTitle(
 
 export function renderControl<S extends ControlDefinition>(
   definition: S,
-  formState: FormEditState,
-  hooks: FormEditHooks,
-  key: Key,
+  data: Control<any>,
+  options: RenderControlOptions,
+  key?: Key,
 ): ReactElement {
-  const { fields } = formState;
+  const { fields } = options;
+  const formState = { ...options, data };
   return visitControlDefinition(
     definition,
     {
@@ -211,35 +191,19 @@ export function renderControl<S extends ControlDefinition>(
           <DataRenderer
             key={key}
             formState={formState}
-            hooks={hooks}
             controlDef={def}
             fieldData={fieldData}
           />
         );
       },
       group: (d: GroupedControlsDefinition) => (
-        <GroupRenderer
-          key={key}
-          hooks={hooks}
-          groupDef={d}
-          formState={formState}
-        />
+        <GroupRenderer key={key} groupDef={d} formState={formState} />
       ),
       action: (d: ActionControlDefinition) => (
-        <ActionRenderer
-          key={key}
-          hooks={hooks}
-          formState={formState}
-          actionDef={d}
-        />
+        <ActionRenderer key={key} formState={formState} actionDef={d} />
       ),
       display: (d: DisplayControlDefinition) => (
-        <DisplayRenderer
-          key={key}
-          hooks={hooks}
-          formState={formState}
-          displayDef={d}
-        />
+        <DisplayRenderer key={key} formState={formState} displayDef={d} />
       ),
     },
     () => <h1>Unknown control: {(definition as any).type}</h1>,
@@ -248,77 +212,62 @@ export function renderControl<S extends ControlDefinition>(
 
 /** @trackControls */
 function DataRenderer({
-  hooks,
   formState,
   controlDef,
   fieldData,
 }: {
-  hooks: FormEditHooks;
   controlDef: DataControlDefinition;
   formState: FormEditState;
   fieldData: SchemaField;
 }) {
-  const renderer = useFormRendererComponents();
-  const props = hooks.useDataProperties(
+  const props = formState.hooks.useDataProperties(
     formState,
     controlDef,
     fieldData,
-    renderer,
   );
-  return (props.customRender ?? renderer.renderData)(props);
+  return (props.customRender ?? formState.renderer.renderData)(props);
 }
 
 /** @trackControls */
 function ActionRenderer({
-  hooks,
   formState,
   actionDef,
 }: {
-  hooks: FormEditHooks;
   actionDef: ActionControlDefinition;
   formState: FormEditState;
 }) {
-  const { renderAction } = useFormRendererComponents();
-  const actionControlProperties = hooks.useActionProperties(
+  const actionControlProperties = formState.hooks.useActionProperties(
     formState,
     actionDef,
   );
-  return renderAction(actionControlProperties);
+  return formState.renderer.renderAction(actionControlProperties);
 }
 
 /** @trackControls */
 function GroupRenderer({
-  hooks,
   formState,
   groupDef,
 }: {
-  hooks: FormEditHooks;
   groupDef: GroupedControlsDefinition;
   formState: FormEditState;
 }) {
-  const renderers = useFormRendererComponents();
-  const groupProps = hooks.useGroupProperties(
-    formState,
-    groupDef,
-    hooks,
-    renderers,
-  );
-  return renderers.renderGroup(groupProps);
+  const groupProps = formState.hooks.useGroupProperties(formState, groupDef);
+  return formState.renderer.renderGroup(groupProps);
 }
 
 /** @trackControls */
 function DisplayRenderer({
-  hooks,
   formState,
   displayDef,
 }: {
-  hooks: FormEditHooks;
   displayDef: DisplayControlDefinition;
   formState: FormEditState;
 }) {
-  const { renderDisplay } = useFormRendererComponents();
-  const displayProps = hooks.useDisplayProperties(formState, displayDef);
-  return renderDisplay(displayProps);
+  const displayProps = formState.hooks.useDisplayProperties(
+    formState,
+    displayDef,
+  );
+  return formState.renderer.renderDisplay(displayProps);
 }
 
 export function controlForField(
@@ -359,7 +308,7 @@ export function createAction(
 
 export function visitControlData<S extends ControlDefinition, A>(
   definition: S,
-  { fields, data }: FormEditState,
+  { fields, data }: FormDataContext,
   cb: (
     definition: DataControlDefinition,
     control: Control<any>,

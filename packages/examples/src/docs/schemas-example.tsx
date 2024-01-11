@@ -1,0 +1,58 @@
+import { useControl } from "@react-typed-forms/core";
+import React from "react";
+import {
+  buildSchema,
+  createDefaultRenderers,
+  createFormRenderer,
+  defaultFormEditHooks,
+  defaultTailwindTheme,
+  defaultValueForFields,
+  FormRenderer,
+  intField,
+  renderControl,
+  stringField,
+  useControlDefinitionForSchema,
+} from "@react-typed-forms/schemas";
+import { muiTextfieldRenderer } from "@react-typed-forms/schemas-mui";
+
+/** Define your form */
+interface SimpleForm {
+  firstName: string;
+  lastName: string;
+  yearOfBirth: number;
+}
+
+/* Build your schema fields. Importantly giving them Display Names for showing in a UI */
+const simpleSchema = buildSchema<SimpleForm>({
+  firstName: stringField("First Name"),
+  lastName: stringField("Last Name", { required: true }),
+  yearOfBirth: intField("Year of birth", { defaultValue: 1980 }),
+});
+
+/* Create a form renderer based on a simple tailwind css based theme */
+const renderer: FormRenderer = createFormRenderer(
+  [muiTextfieldRenderer()],
+  createDefaultRenderers(defaultTailwindTheme),
+);
+
+export default function SimpleSchemasExample() {
+  /* Create a `Control` for collecting the data, the schema fields can be used to get a default value */
+  const data = useControl<SimpleForm>(() =>
+    defaultValueForFields(simpleSchema),
+  );
+
+  /* Generate a ControlDefinition automatically from the schema */
+  const controlDefinition = useControlDefinitionForSchema(simpleSchema);
+
+  return (
+    <div className="container my-4 max-w-2xl">
+      {/* Render the ControlDefinition using `data` for the form state */}
+      {renderControl(controlDefinition, data, {
+        fields: simpleSchema,
+        renderer,
+        hooks: defaultFormEditHooks,
+      })}
+      <pre>{JSON.stringify(data.value, null, 2)}</pre>
+    </div>
+  );
+}

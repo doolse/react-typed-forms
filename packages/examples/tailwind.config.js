@@ -5,7 +5,10 @@ module.exports = {
   corePlugins: {
     preflight: false,
   },
-  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "node_modules/@react-typed-forms/schemas/**/*.js",
+  ],
   theme: {
     container: {
       center: true,

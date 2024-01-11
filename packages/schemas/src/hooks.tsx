@@ -12,6 +12,7 @@ import {
   FieldOption,
   FieldValueExpression,
   GroupedControlsDefinition,
+  GroupRenderType,
   JsonataExpression,
   SchemaField,
   SchemaValidator,
@@ -28,6 +29,7 @@ import {
   FormEditState,
   GroupRendererProps,
   renderControl,
+  RenderControlOptions,
   SchemaHooks,
   Visibility,
 } from "./controlRender";
@@ -262,12 +264,7 @@ export const defaultFormEditHooks = createFormEditHooks(
 export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
   return {
     schemaHooks,
-    useDataProperties(
-      formState,
-      definition,
-      field,
-      renderer,
-    ): DataRendererProps {
+    useDataProperties(formState, definition, field): DataRendererProps {
       const visible = useIsControlVisible(definition, formState, schemaHooks);
       const isVisible = visible.value && !formState.invisible;
       const defaultValue = useDefaultValue(
@@ -318,7 +315,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
           field,
           definition,
           dataProps.readonly,
-          (c) => renderer.renderData({ ...dataProps, control: c }),
+          (c) => formState.renderer.renderData({ ...dataProps, control: c }),
         ),
       };
     },
@@ -326,45 +323,40 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
       const visible = useIsControlVisible(definition, fs, schemaHooks);
       return { visible, definition };
     },
-    useGroupProperties: (fs, definition, hooks, renderers) => {
+    useGroupProperties: (fs, definition) => {
       const visible = useIsControlVisible(definition, fs, schemaHooks);
       const field = definition.compoundField
         ? findCompoundField(fs.fields, definition.compoundField)
         : undefined;
-      const newFs: Omit<FormEditState, "data"> & { data: Control<any> } = {
+      const newFs: RenderControlOptions = {
         ...fs,
         fields: field ? field.children : fs.fields,
-        data: field ? fs.data.fields[field.field] : fs.data,
         invisible: !visible.value || fs.invisible,
       };
+      const data = field ? fs.data.fields[field.field] : fs.data;
       const groupProps = {
         visible,
-        hooks,
+        hooks: fs.hooks,
         hideTitle: definition.groupOptions.hideTitle ?? false,
         childCount: definition.children.length,
         renderChild: (i) =>
-          renderControl(definition.children[i], newFs, hooks, i),
+          renderControl(definition.children[i], data, newFs, i),
         definition,
       } satisfies GroupRendererProps;
       if (field?.collection) {
         return {
           ...groupProps,
           array: defaultArrayRendererProps(
-            newFs.data,
+            data,
             field,
             definition,
             fs.readonly,
             (e) =>
-              renderers.renderGroup({
+              fs.renderer.renderGroup({
                 ...groupProps,
                 hideTitle: true,
                 renderChild: (i) =>
-                  renderControl(
-                    definition.children[i],
-                    { ...newFs, data: e },
-                    hooks,
-                    i,
-                  ),
+                  renderControl(definition.children[i], e, newFs, i),
               }),
           ),
         };
@@ -427,9 +419,15 @@ function defaultArrayRendererProps(
   };
 }
 
-export function useControlsWithDefaults(
-  definition: GroupedControlsDefinition,
+const emptyGroupDefinition: GroupedControlsDefinition = {
+  type: ControlDefinitionType.Group,
+  children: [],
+  groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
+};
+
+export function useControlDefinitionForSchema(
   sf: SchemaField[],
+  definition: GroupedControlsDefinition = emptyGroupDefinition,
 ) {
   return useMemo(
     () =>

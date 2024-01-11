@@ -108,18 +108,29 @@ Along with `Finput`, the core library provides `Fselect` and `Fcheckbox`. There 
 
 Every `Control` implements `ControlProperties`:
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/types.ts&lines=25-34) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/types.ts&lines=27-47) -->
 <!-- The below code snippet is automatically added from ./packages/core/src/types.ts -->
 ```ts
 export interface ControlProperties<V> {
   value: V;
   initialValue: V;
-  error?: string | null;
+  error: string | null | undefined;
+  readonly errors: { [k: string]: string };
   readonly valid: boolean;
   readonly dirty: boolean;
   disabled: boolean;
   touched: boolean;
-  readonly optional: Control<NonNullable<V>> | undefined;
+  readonly fields: V extends string | number | Array<any> | undefined | null
+    ? undefined
+    : V extends { [a: string]: any }
+    ? { [K in keyof V]-?: Control<V[K]> }
+    : V;
+  readonly elements: V extends (infer A)[]
+    ? Control<A>[]
+    : V extends string | number | { [k: string]: any }
+    ? never[]
+    : V;
+  readonly isNull: boolean;
 }
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
@@ -175,7 +186,7 @@ export interface FormControlProps<V, E extends HTMLElement> {
 
 The `Finput` component simply passes the properties through to the `<input>` tag.
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/html/Finput.tsx&lines=6-36) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/core/src/html/Finput.tsx&lines=5-36) -->
 <!-- The below code snippet is automatically added from ./packages/core/src/html/Finput.tsx -->
 ```tsx
 // Only allow strings and numbers
@@ -193,22 +204,19 @@ export function Finput<V extends string | number>({
     () => control.error,
     (s) => (control.element as HTMLInputElement)?.setCustomValidity(s ?? "")
   );
+  const { errorText, value, ...inputProps } = formControlProps(control);
   return (
-    <RenderForm
-      control={control}
-      children={({ errorText, value, ...inputProps }) => (
-        <input
-          {...inputProps}
-          value={value == null ? "" : value}
-          ref={(r) => {
-            control.element = r;
-            if (r) r.setCustomValidity(control.current.error ?? "");
-          }}
-          {...props}
-        />
-      )}
+    <input
+      {...inputProps}
+      value={value == null ? "" : value}
+      ref={(r) => {
+        control.element = r;
+        if (r) r.setCustomValidity(control.current.error ?? "");
+      }}
+      {...props}
     />
   );
+}
 ```
 <!-- AUTO-GENERATED-CONTENT:END -->
 
@@ -239,9 +247,9 @@ const mustBeHigherThan4 = useControl(0, {validator: (v: number) => v > 4 ? undef
 ## Arrays
 
 A `Control` containing an array can split each element out as it's own `Control` by using the 
-`renderElements` helper function.
+`RenderElements` component.
 
-<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/arrays.tsx&lines=12-25) -->
+<!-- AUTO-GENERATED-CONTENT:START (CODE:src=./packages/examples/src/docs/arrays.tsx&lines=9-25) -->
 <!-- The below code snippet is automatically added from ./packages/examples/src/docs/arrays.tsx -->
 ```tsx
 export function ListOfTextFields() {
@@ -249,10 +257,9 @@ export function ListOfTextFields() {
 
   return (
     <div>
-      <RenderControl
-        render={renderElements(textFields, (x) => (
-          <Finput key={x.uniqueId} control={x} />
-        ))}
+      <RenderElements
+        control={textFields}
+        children={(x) => <Finput control={x} />}
       />
       <button onClick={() => addElement(textFields, "")}>Add</button>
     </div>

@@ -12,7 +12,6 @@ import {
   DateTimeRenderOptions,
   FieldType,
   fieldValueExpr,
-  FormRendererProvider,
   GroupRenderType,
   makeScalarField,
   renderControl,
@@ -64,7 +63,7 @@ const nameFormSchema = buildSchema<NameForm>({
     { value: "F", name: "Female" },
     { name: "Other", value: "O" },
   ),
-  date: makeScalarField({ type: FieldType.DateTime }),
+  date: makeScalarField({ type: FieldType.Date }),
   compound: compoundField("Compound", nestSchema, {}),
   compoundOptional: compoundField("Compound Optional", nestSchema, {
     required: false,
@@ -75,10 +74,7 @@ const nameFormSchema = buildSchema<NameForm>({
   }),
 });
 
-const withDefaults = applyDefaultValues(
-  { date: "0001-01-01T11:43:21.861+09:40" },
-  nameFormSchema,
-);
+const withDefaults = applyDefaultValues({ date: "2024-10-12" }, nameFormSchema);
 
 const hooks = defaultFormEditHooks;
 
@@ -107,115 +103,114 @@ export default function RenderAForm() {
 
   return (
     <div className="container">
-      <FormRendererProvider value={renderer}>
-        {renderControl(
-          {
-            type: ControlDefinitionType.Group,
-            groupOptions: { type: GroupRenderType.Grid, hideTitle: true },
-            children: [
-              {
-                required: true,
-                title: undefined,
-                type: ControlDefinitionType.Data,
-                field: "first",
+      <h1>Simple Schema Test</h1>
+      {renderControl(
+        {
+          type: ControlDefinitionType.Group,
+          groupOptions: { type: GroupRenderType.Grid, hideTitle: true },
+          children: [
+            {
+              required: true,
+              title: undefined,
+              type: ControlDefinitionType.Data,
+              field: "first",
+            },
+            dataControl("middle", {
+              dynamic: [visibility(fieldValueExpr("first", "Jolse"))],
+            }),
+            {
+              renderOptions: { type: DataRenderType.Standard },
+              required: true,
+              title: undefined,
+              type: ControlDefinitionType.Data,
+              field: "last",
+            },
+            {
+              renderOptions: { type: DataRenderType.Standard },
+              required: true,
+              title: undefined,
+              type: ControlDefinitionType.Data,
+              field: "gender",
+            },
+            {
+              renderOptions: {
+                type: DataRenderType.DateTime,
+                format: "dd/MM/yyyy",
+              } as DateTimeRenderOptions,
+              readonly: true,
+              title: "Date",
+              type: ControlDefinitionType.Data,
+              field: "date",
+            },
+            {
+              title: "Required compound",
+              type: ControlDefinitionType.Group,
+              compoundField: "compound",
+              groupOptions: {
+                type: GroupRenderType.Standard,
+                hideTitle: true,
               },
-              dataControl("middle", {
-                dynamic: [visibility(fieldValueExpr("first", "Jolse"))],
-              }),
-              {
-                renderOptions: { type: DataRenderType.Standard },
-                required: true,
-                title: undefined,
-                type: ControlDefinitionType.Data,
-                field: "last",
-              },
-              {
-                renderOptions: { type: DataRenderType.Standard },
-                required: true,
-                title: undefined,
-                type: ControlDefinitionType.Data,
-                field: "gender",
-              },
-              {
-                renderOptions: {
-                  type: DataRenderType.DateTime,
-                  format: "dd/MM/yyyy",
-                } as DateTimeRenderOptions,
-                readonly: true,
-                title: "Date",
-                type: ControlDefinitionType.Data,
-                field: "date",
-              },
-              {
-                title: "Required compound",
-                type: ControlDefinitionType.Group,
-                compoundField: "compound",
-                groupOptions: {
-                  type: GroupRenderType.Standard,
-                  hideTitle: true,
+              children: [
+                {
+                  renderOptions: { type: DataRenderType.Standard },
+                  required: true,
+                  title: undefined,
+                  type: ControlDefinitionType.Data,
+                  field: "nest",
                 },
-                children: [
-                  {
-                    renderOptions: { type: DataRenderType.Standard },
-                    required: true,
-                    title: undefined,
-                    type: ControlDefinitionType.Data,
-                    field: "nest",
-                  },
-                ],
+              ],
+            },
+            {
+              title: "Optional compound",
+              type: ControlDefinitionType.Group,
+              compoundField: "compoundOptional",
+              groupOptions: {
+                type: GroupRenderType.Standard,
+                hideTitle: false,
               },
-              {
-                title: "Optional compound",
-                type: ControlDefinitionType.Group,
-                compoundField: "compoundOptional",
-                groupOptions: {
-                  type: GroupRenderType.Standard,
-                  hideTitle: false,
+              children: [
+                {
+                  renderOptions: { type: DataRenderType.Standard },
+                  required: true,
+                  title: undefined,
+                  type: ControlDefinitionType.Data,
+                  field: "nest",
                 },
-                children: [
-                  {
-                    renderOptions: { type: DataRenderType.Standard },
-                    required: true,
-                    title: undefined,
-                    type: ControlDefinitionType.Data,
-                    field: "nest",
-                  },
-                ],
+              ],
+            },
+            {
+              title: "Compound collection",
+              type: ControlDefinitionType.Group,
+              compoundField: "compoundCollection",
+              groupOptions: {
+                type: GroupRenderType.Standard,
+                hideTitle: false,
               },
-              {
-                title: "Compound collection",
-                type: ControlDefinitionType.Group,
-                compoundField: "compoundCollection",
-                groupOptions: {
-                  type: GroupRenderType.Standard,
-                  hideTitle: false,
+              children: [
+                {
+                  renderOptions: { type: DataRenderType.Standard },
+                  required: true,
+                  title: undefined,
+                  type: ControlDefinitionType.Data,
+                  field: "nest",
                 },
-                children: [
-                  {
-                    renderOptions: { type: DataRenderType.Standard },
-                    required: true,
-                    title: undefined,
-                    type: ControlDefinitionType.Data,
-                    field: "nest",
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            fields: nameFormSchema,
-            data: form,
-          },
+              ],
+            },
+          ],
+        },
+        form,
+        {
+          fields: nameFormSchema,
+          renderer,
           hooks,
-          "",
-        )}
-        <button onClick={() => (form.fields.compoundOptional.value = [])}>
-          Enable optional part
-        </button>
-        <RenderControl
-          render={() => <pre>{JSON.stringify(form.value, null, 2)}</pre>}
-        />
-      </FormRendererProvider>
+        },
+      )}
+      <button onClick={() => (form.fields.compoundOptional.value = [])}>
+        Enable optional part
+      </button>
+      <RenderControl
+        render={() => <pre>{JSON.stringify(form.value, null, 2)}</pre>}
+      />
     </div>
   );
 }
