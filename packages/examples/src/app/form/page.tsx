@@ -11,7 +11,7 @@ import {
   DataRenderType,
   DateTimeRenderOptions,
   FieldType,
-  fieldValueExpr,
+  fieldEqExpr,
   GroupRenderType,
   makeScalarField,
   renderControl,
@@ -115,8 +115,8 @@ export default function RenderAForm() {
               type: ControlDefinitionType.Data,
               field: "first",
             },
-            dataControl("middle", {
-              dynamic: [visibility(fieldValueExpr("first", "Jolse"))],
+            dataControl("middle", "middle", {
+              dynamic: [visibility(fieldEqExpr("first", "Jolse"))],
             }),
             {
               renderOptions: { type: DataRenderType.Standard },

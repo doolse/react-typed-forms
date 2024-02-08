@@ -352,25 +352,6 @@ export function visitControlDefinition<A>(
       return defaultValue(x);
   }
 }
-
-export function dataControl(
-  field: string,
-  options?: Partial<DataControlDefinition>,
-): DataControlDefinition {
-  return { type: ControlDefinitionType.Data, field, ...options };
-}
-
-export function fieldValueExpr(
-  field: string,
-  value: any,
-): FieldValueExpression {
-  return { type: ExpressionType.FieldValue, field, value };
-}
-
-export function visibility(expr: EntityExpression): DynamicProperty {
-  return { type: DynamicPropertyType.Visible, expr };
-}
-
 export function isGridRenderer(
   options: GroupRenderOptions,
 ): options is GridRenderer {

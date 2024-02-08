@@ -170,6 +170,7 @@ export function createDefaultSchemaHooks(): SchemaHooks {
           async (v) => {
             control.value = await compiledExpr.evaluate(v);
           },
+          true,
         );
         return control;
       case ExpressionType.FieldValue:
@@ -419,7 +420,7 @@ function defaultArrayRendererProps(
   };
 }
 
-const emptyGroupDefinition: GroupedControlsDefinition = {
+export const emptyGroupDefinition: GroupedControlsDefinition = {
   type: ControlDefinitionType.Group,
   children: [],
   groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
@@ -428,12 +429,12 @@ const emptyGroupDefinition: GroupedControlsDefinition = {
 export function useControlDefinitionForSchema(
   sf: SchemaField[],
   definition: GroupedControlsDefinition = emptyGroupDefinition,
-) {
-  return useMemo(
-    () =>
-      definition.children.length
-        ? definition
-        : { ...definition, children: addMissingControls(sf, []) },
+): GroupedControlsDefinition {
+  return useMemo<GroupedControlsDefinition>(
+    () => ({
+      ...definition,
+      children: addMissingControls(sf, definition.children),
+    }),
     [sf, definition],
   );
 }
