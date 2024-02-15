@@ -1,0 +1,46 @@
+{
+  "name": "@react-typed-forms/storybook",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "next": "14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "clsx": "^2.0.0",
+    "@tailwindcss/forms": "^0.5.7",
+    "@react-typed-forms/core": "^3.0.0-dev.114",
+    "@react-typed-forms/schemas": "^1.0.0-dev.12"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^1.1.6",
+    "@storybook/addon-essentials": "^8.0.0-beta.2",
+    "@storybook/addon-interactions": "^8.0.0-beta.2",
+    "@storybook/addon-links": "^8.0.0-beta.2",
+    "@storybook/addon-onboarding": "^1.0.11",
+    "@storybook/blocks": "^8.0.0-beta.2",
+    "@storybook/nextjs": "^8.0.0-beta.2",
+    "@storybook/react": "^8.0.0-beta.2",
+    "@storybook/test": "^8.0.0-beta.2",
+    "@storybook/preview-api": "^8.0.0-beta.2",
+    "@types/node": "^20",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.1.0",
+    "eslint-plugin-storybook": "^0.6.15",
+    "postcss": "^8",
+    "prettier": "^3.0.3",
+    "storybook": "^8.0.0-beta.2",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.2.2"
+  }
+}
