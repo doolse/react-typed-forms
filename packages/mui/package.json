@@ -25,7 +25,7 @@
 	],
 	"dependencies": {
 		"@mui/material": "^5.14.13",
-		"@react-typed-forms/core": "workspace:^3.0.0-dev.116"
+		"@react-typed-forms/core": "workspace:^3.0.0-dev.117"
 	},
 	"peerDependencies": {
 		"react": "18.x",

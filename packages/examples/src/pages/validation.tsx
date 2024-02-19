@@ -37,7 +37,7 @@ export default function ValidationExample() {
           elems: { fields: { notBlank: { validator: notEmpty("Blank") } } },
         },
       },
-    }
+    },
   );
   const fields = formState.fields;
   const valid = useControlValue(() => formState.valid);
@@ -55,7 +55,7 @@ export default function ValidationExample() {
       }).then((resp) => {
         return resp.json().then((r) => r.error);
       }),
-    500
+    500,
   );
   return (
     <div className="container">
@@ -87,13 +87,20 @@ export default function ValidationExample() {
         </button>{" "}
         <button
           id="add"
-          className="btn btn-secndary"
+          className="btn btn-secondary"
           onClick={() => {
             addElement(fields.array, { notBlank: "" });
             formState.touched = true;
           }}
         >
           Add array
+        </button>{" "}
+        <button
+          id="setErrors"
+          className="btn btn-secondary"
+          onClick={() => fields.email.setErrors({ default: "" })}
+        >
+          setErrors
         </button>
       </div>
       <span>

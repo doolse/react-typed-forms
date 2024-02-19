@@ -115,7 +115,7 @@ export default function RenderAForm() {
               type: ControlDefinitionType.Data,
               field: "first",
             },
-            dataControl("middle", "middle", {
+            dataControl("middle", undefined, {
               dynamic: [visibility(fieldEqExpr("first", "Jolse"))],
             }),
             {

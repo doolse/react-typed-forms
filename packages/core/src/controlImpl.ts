@@ -154,6 +154,18 @@ class ControlImpl<V> implements Control<V> {
     this.runChange(this.updateError(key, error));
   }
 
+  setErrors(errors: { [k: string]: string | null | undefined }) {
+    const realErrors = Object.entries(errors).filter((x) => !!x[1]);
+    const exactErrors = realErrors.length
+      ? (Object.fromEntries(realErrors) as Record<string, string>)
+      : null;
+    if (!basicShallowEquals(exactErrors, this._errors)) {
+      this._errors = exactErrors;
+      this._childSync |= ChildSyncFlags.Valid;
+      this.runChange(ControlChange.Error);
+    }
+  }
+
   get errors() {
     collectChange(this, ControlChange.Error);
     return this._errors ?? {};

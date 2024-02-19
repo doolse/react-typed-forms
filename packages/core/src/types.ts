@@ -78,6 +78,8 @@ export interface Control<V> extends ControlProperties<V> {
 
   setError(key: string, error: string | null | undefined): void;
 
+  setErrors(errors: { [k: string]: string | null | undefined }): void;
+
   clearErrors(): void;
 
   lookupControl(path: (string | number)[]): Control<any> | undefined;
