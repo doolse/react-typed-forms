@@ -48,11 +48,6 @@ export default function SimpleExample() {
 }
 `;
 
-interface SimpleForm {
-  firstName: string;
-  lastName: string;
-}
-
 const meta: Meta<{}> = {
   title: "React typed forms/Basic/Structured Form",
   component: undefined,

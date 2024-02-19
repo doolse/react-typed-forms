@@ -77,8 +77,7 @@ const meta: Meta<typeof Finput> = {
   parameters: {
     docs: {
       description: {
-        component:
-          "A control is dirty if the initialValue is not equal to the value",
+        component: `A control is <code>dirty</code> if the <code>initialValue</code> is not equal to the <code>value</code>`,
       },
       source: {
         language: "tsx",
