@@ -22,6 +22,27 @@ const preview: Preview = {
         </>
       ),
     },
+    options: {
+      // https://storybook.js.org/docs/8.0/writing-stories/naming-components-and-hierarchy#sorting-stories
+      storySort: {
+        order: [
+          "React typed forms",
+          [
+            "Basic",
+            ["Components", "*"],
+            "Arrays",
+            "Control Flags",
+            "Control Effects",
+            "Validation",
+            "Optional Nullable Values",
+            "formControlProps",
+            "Advanced",
+          ],
+          "Common Component",
+          "Styles",
+        ],
+      },
+    },
   },
   decorators: [],
 };

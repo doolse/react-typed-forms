@@ -1,5 +1,4 @@
-﻿import { Meta, StoryObj } from "@storybook/react";
-import {
+﻿import {
   addElement,
   Finput,
   RenderElements,
@@ -7,83 +6,7 @@ import {
   useControlEffect,
 } from "@react-typed-forms/core";
 import { useState } from "@storybook/preview-api";
-
-const meta: Meta<{}> = {
-  title: "React typed forms/Arrays",
-  component: undefined,
-  parameters: {
-    docs: {
-      description: {
-        component: `A <code>Control</code> containing an array can split each element out as it's own <code>Control</code> by using the <code>RenderElements</code> component.`,
-      },
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj<{}>;
-
-// language=text
-const arraysOfStringsExampleCode = `
-// Example code
-export function ListOfTextFields() {
-  const textFields = useControl<string[]>([]);
-
-  return (
-    <div>
-      <RenderElements
-        control={textFields}
-        children={(x) => <Finput control={x} />}
-      />
-      <button onClick={() => addElement(textFields, "")}>Add</button>
-    </div>
-  );
-}
-`;
-
-export const ArraysOfStrings: Story = {
-  parameters: {
-    docs: {
-      source: {
-        language: "tsx",
-        code: arraysOfStringsExampleCode,
-      },
-    },
-  },
-  render: () => {
-    const textFields = useControl<string[]>([]);
-
-    const [controlData, setControlData] = useState<string[]>([]);
-
-    useControlEffect(
-      () => textFields.value,
-      (v) => setControlData(v),
-    );
-
-    return (
-      <div className="flex flex-row gap-10 justify-center ">
-        <div className="flex flex-col gap-2 flex-1">
-          <RenderElements
-            control={textFields}
-            children={(x) => <Finput control={x} />}
-          />
-          <button
-            className="px-4 py-2 rounded-full bg-primary-800 text-surface-100"
-            onClick={() => addElement(textFields, "")}
-          >
-            Add
-          </button>
-        </div>
-
-        {controlData && (
-          <pre className="overflow-auto flex-1">
-            {JSON.stringify(controlData, undefined, 2)}
-          </pre>
-        )}
-      </div>
-    );
-  },
-};
+import { PlainStory, SimpleForm } from "@/index";
 
 //language=text
 const arraysOfStructuresExampleCode = `
@@ -93,7 +16,7 @@ interface SimpleForm {
   lastName: string;
 }
 
-export function ListOfStructureFields() {
+export function ArraysOfStructures() {
   const structureFields = useControl<SimpleForm[]>([]);
 
   return (
@@ -110,7 +33,7 @@ export function ListOfStructureFields() {
         )}
       />
       <button
-        className="px-4 py-2 rounded-full bg-primary-800 text-surface-100"
+        className="bg-primary-800 text-surface-100 rounded-full py-2 px-4"
         onClick={() =>
           addElement(structureFields, { firstName: "", lastName: "" })
         }
@@ -122,7 +45,7 @@ export function ListOfStructureFields() {
 }
 `;
 
-export const ArraysOfStructures: Story = {
+export const ArraysOfStructures: PlainStory = {
   parameters: {
     docs: {
       source: {
@@ -160,7 +83,7 @@ export const ArraysOfStructures: Story = {
             )}
           />
           <button
-            className="px-4 py-2 rounded-full bg-primary-800 text-surface-100"
+            className="btn-primary"
             onClick={() =>
               addElement(structureFields, { firstName: "", lastName: "" })
             }
@@ -168,7 +91,6 @@ export const ArraysOfStructures: Story = {
             Add
           </button>
         </div>
-
         {controlData && (
           <pre className="overflow-auto flex-1">
             {JSON.stringify(controlData, undefined, 2)}
@@ -176,11 +98,5 @@ export const ArraysOfStructures: Story = {
         )}
       </div>
     );
-  },
-};
-
-export const SelectableArrays: Story = {
-  render: () => {
-    return <></>;
   },
 };

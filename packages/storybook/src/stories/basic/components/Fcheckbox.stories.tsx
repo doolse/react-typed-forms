@@ -12,15 +12,17 @@ type Story = StoryObj<typeof Fcheckbox>;
 // language=text
 const checkboxCode = `    
 // Example code
-const control = useControl(true);
-
-return (
-  <div className="container">
-    <label className="flex gap-2 text-surface-950 items-center">
-      Checkbox <Fcheckbox control={control} />
-    </label>
-  </div>
-);
+export function CheckboxExample() {
+  const control = useControl(true);
+  
+  return (
+    <div className="container">
+      <label className="flex gap-2 text-surface-950 items-center">
+        Checkbox <Fcheckbox {...args} control={control} />
+      </label>
+    </div>
+  );
+}
 `;
 
 export const CheckboxControl: Story = {
@@ -47,16 +49,18 @@ export const CheckboxControl: Story = {
 // language=text
 const radioCode = `    
 // Example code
-const control = useControl(false);
+export function RadioButtonExample() {
+  const control = useControl(false);
 
-return (
-  <div className="container">
-    <label className="flex gap-2 text-surface-950 items-center">
-      Radio Button
-      <Fcheckbox control={control} type="radio" />
-    </label>
-  </div>
-);  
+  return (
+    <div className="container">
+      <label className="flex gap-2 text-surface-950 items-center">
+        Radio Button
+        <Fcheckbox {...args} control={control} type="radio" />
+      </label>
+    </div>
+  );
+}
 `;
 export const RadioButtonControl: Story = {
   parameters: {
@@ -69,6 +73,7 @@ export const RadioButtonControl: Story = {
   },
   render: (args) => {
     const control = useControl(false);
+
     return (
       <div className="container">
         <label className="flex gap-2 text-surface-950 items-center">

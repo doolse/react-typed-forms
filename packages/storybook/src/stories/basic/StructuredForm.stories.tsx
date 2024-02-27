@@ -4,21 +4,19 @@
   useControl,
   useControlEffect,
 } from "@react-typed-forms/core";
-import { Meta, StoryObj } from "@storybook/react";
+import { Meta } from "@storybook/react";
 import { useState } from "@storybook/preview-api";
+import { PlainStory, SimpleForm } from "@/index";
 
 // language=text
 const exampleCode = `    
 // Example code
-import { Finput, notEmpty, useControl } from "@react-typed-forms/core";
-import React, { useState } from "react";
-
 interface SimpleForm {
   firstName: string;
   lastName: string;
 }
 
-export default function SimpleExample() {
+export default function StructuredFormExample() {
   const formState = useControl(
     { firstName: "", lastName: "" },
     { fields: { lastName: { validator: notEmpty("Required field") } } }
@@ -65,9 +63,8 @@ const meta: Meta<{}> = {
 };
 
 export default meta;
-type Story = StoryObj<{}>;
 
-export const StructuredForm: Story = {
+export const StructuredForm: PlainStory = {
   render: () => {
     const formState = useControl(
       { firstName: "", lastName: "" },
@@ -104,10 +101,7 @@ export const StructuredForm: Story = {
         <label>Last Name *</label>
         <Finput id="lastName" type="text" control={fields.lastName} />
         <div>
-          <button
-            className="bg-primary-800 text-surface-100 rounded-full p-2"
-            id="submit"
-          >
+          <button className="btn-primary" id="submit">
             Validate and toObject()
           </button>
         </div>
