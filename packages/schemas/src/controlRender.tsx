@@ -33,7 +33,7 @@ export interface SchemaHooks {
   ): Control<any | undefined>;
   useValidators(
     formState: FormEditState,
-    isVisible: boolean,
+    isVisible: boolean | undefined,
     control: Control<any>,
     required: boolean,
     validations?: SchemaValidator[] | null,
@@ -137,7 +137,7 @@ export interface FormRenderer {
 }
 
 export interface Visibility {
-  value: boolean;
+  value: boolean | undefined;
   canChange: boolean;
 }
 export interface LabelRendererProps {

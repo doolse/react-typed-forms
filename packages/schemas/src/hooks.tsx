@@ -84,7 +84,7 @@ export function useIsControlVisible(
       formState,
     ).value;
     return {
-      value: Boolean(exprValue),
+      value: exprValue,
       canChange: true,
     };
   }
@@ -188,7 +188,7 @@ export function createDefaultSchemaHooks(): SchemaHooks {
 
   function useValidators(
     formState: FormEditState,
-    isVisible: boolean,
+    isVisible: boolean | undefined,
     control: Control<any>,
     required: boolean,
     validators?: SchemaValidator[] | null,
@@ -197,7 +197,9 @@ export function createDefaultSchemaHooks(): SchemaHooks {
       useValidator(
         control,
         (v) =>
-          isVisible && (v == null || v == "") ? "Please enter a value" : null,
+          isVisible === true && (v == null || v === "")
+            ? "Please enter a value"
+            : null,
         "required",
       );
     validators?.forEach((v, i) => {
@@ -277,7 +279,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
       const scalarControl = formState.data.fields[field.field];
 
       useEffect(() => {
-        if (!isVisible) scalarControl.value = null;
+        if (isVisible === false) scalarControl.value = null;
         else if (scalarControl.current.value == null) {
           scalarControl.value = defaultValue;
         }
@@ -332,7 +334,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
       const newFs: RenderControlOptions = {
         ...fs,
         fields: field ? field.children : fs.fields,
-        invisible: !visible.value || fs.invisible,
+        invisible: visible.value === false || fs.invisible,
       };
       const data = field ? fs.data.fields[field.field] : fs.data;
       const groupProps = {
