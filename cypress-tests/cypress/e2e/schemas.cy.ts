@@ -25,6 +25,19 @@ describe("Schemas Test", () => {
             nest: "Nested data",
           },
         ],
+        compoundCollectionWithDefault: [
+          {
+            nest: "wow",
+          },
+          {
+            nest: "wow2",
+          },
+        ],
+        compoundDynamic: [
+          {
+            nest: "DYNAMIC",
+          },
+        ],
       })
     );
   });

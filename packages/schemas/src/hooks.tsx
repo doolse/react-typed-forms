@@ -13,6 +13,7 @@ import {
   FieldValueExpression,
   GroupedControlsDefinition,
   GroupRenderType,
+  isDataControlDefinition,
   JsonataExpression,
   SchemaField,
   SchemaValidator,
@@ -56,7 +57,7 @@ import {
 import { FieldType } from "./types";
 
 export function useDefaultValue(
-  definition: DataControlDefinition,
+  definition: ControlDefinition,
   field: SchemaField,
   formState: FormEditState,
   hooks: SchemaHooks,
@@ -67,7 +68,11 @@ export function useDefaultValue(
   if (valueExpression) {
     return hooks.useExpression(valueExpression.expr, formState).value;
   }
-  return field.defaultValue;
+  return (
+    (isDataControlDefinition(definition)
+      ? definition.defaultValue
+      : undefined) ?? field.defaultValue
+  );
 }
 
 export function useIsControlVisible(
@@ -175,7 +180,6 @@ export function createDefaultSchemaHooks(): SchemaHooks {
       case ExpressionType.FieldValue:
         const fvExpr = expr as FieldValueExpression;
         return useComputed(() => {
-          console.log(fvExpr);
           const fv = controlForField(fvExpr.field, formState).value;
           return Array.isArray(fv)
             ? fv.includes(fvExpr.value)
@@ -331,6 +335,20 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
       const field = definition.compoundField
         ? findCompoundField(fs.fields, definition.compoundField)
         : undefined;
+
+      const defaultValue =
+        field && useDefaultValue(definition, field, fs, schemaHooks);
+      const dataControl = field && fs.data.fields[field.field];
+      const isVisible = visible.value && !fs.invisible;
+
+      useEffect(() => {
+        if (!dataControl) return;
+        if (isVisible === false) dataControl.value = null;
+        else if (dataControl.current.value == null) {
+          dataControl.value = defaultValue;
+        }
+      }, [dataControl, isVisible, defaultValue]);
+
       const newFs: RenderControlOptions = {
         ...fs,
         fields: field ? field.children : fs.fields,

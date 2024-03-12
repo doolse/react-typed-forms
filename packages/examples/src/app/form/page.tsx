@@ -8,6 +8,7 @@ import {
   createFormEditHooks,
   createFormRenderer,
   dataControl,
+  compoundControl,
   DataRenderType,
   DateTimeRenderOptions,
   FieldType,
@@ -18,6 +19,7 @@ import {
   stringField,
   stringOptionsField,
   visibility,
+  dynamicDefaultValue,
 } from "@react-typed-forms/schemas";
 import {
   Control,
@@ -30,23 +32,25 @@ import {
   muiDateRenderer,
   muiTextfieldRenderer,
 } from "@react-typed-forms/schemas-mui";
-import { defaultFormEditHooks } from "@react-typed-forms/schemas/lib";
+import {
+  defaultFormEditHooks,
+  jsonataExpr,
+} from "@react-typed-forms/schemas/lib";
 
+interface Nested {
+  nest: string;
+}
 interface NameForm {
   first: string;
   middle: string;
   last: string;
   gender: string;
   date: string;
-  compoundOptional: {
-    nest: string;
-  }[];
-  compound: {
-    nest: string;
-  };
-  compoundCollection: {
-    nest: string;
-  }[];
+  compoundOptional: Nested[];
+  compound: Nested;
+  compoundCollection: Nested[];
+  compoundCollectionWithDefault: Nested[];
+  compoundDynamic: Nested[];
 }
 
 const nestSchema = buildSchema<{ nest: string }>({
@@ -71,6 +75,19 @@ const nameFormSchema = buildSchema<NameForm>({
   }),
   compoundCollection: compoundField("Compound Collection", nestSchema, {
     collection: true,
+  }),
+  compoundCollectionWithDefault: compoundField(
+    "Compound with default",
+    nestSchema,
+    {
+      collection: true,
+      required: false,
+      defaultValue: [{ nest: "wow" }, { nest: "wow2" }],
+    },
+  ),
+  compoundDynamic: compoundField("Compound with dynamic", nestSchema, {
+    collection: true,
+    required: false,
   }),
 });
 
@@ -196,6 +213,34 @@ export default function RenderAForm() {
                 },
               ],
             },
+            {
+              title: "Compound collection with default",
+              type: ControlDefinitionType.Group,
+              compoundField: "compoundCollectionWithDefault",
+              groupOptions: {
+                type: GroupRenderType.Standard,
+                hideTitle: false,
+              },
+              children: [
+                {
+                  renderOptions: { type: DataRenderType.Standard },
+                  required: true,
+                  title: undefined,
+                  type: ControlDefinitionType.Data,
+                  field: "nest",
+                },
+              ],
+            },
+            compoundControl(
+              "compoundDynamic",
+              "Compound dynamic",
+              [dataControl("nest")],
+              {
+                dynamic: [
+                  dynamicDefaultValue(jsonataExpr('[{"nest": "DYNAMIC"}]')),
+                ],
+              },
+            ),
           ],
         },
         form,

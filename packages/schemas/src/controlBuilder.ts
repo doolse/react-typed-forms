@@ -1,4 +1,5 @@
 import {
+  ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
   DisplayControlDefinition,
@@ -8,6 +9,7 @@ import {
   EntityExpression,
   ExpressionType,
   FieldValueExpression,
+  GroupedControlsDefinition,
   HtmlDisplay,
   JsonataExpression,
   TextDisplay,
@@ -43,6 +45,9 @@ export function htmlDisplayControl(
   };
 }
 
+export function dynamicDefaultValue(expr: EntityExpression): DynamicProperty {
+  return { type: DynamicPropertyType.DefaultValue, expr };
+}
 export function visibility(expr: EntityExpression): DynamicProperty {
   return { type: DynamicPropertyType.Visible, expr };
 }
@@ -52,4 +57,20 @@ export function fieldEqExpr(field: string, value: any): FieldValueExpression {
 }
 export function jsonataExpr(expression: string): JsonataExpression {
   return { type: ExpressionType.Jsonata, expression };
+}
+
+export function compoundControl(
+  compoundField: string,
+  title: string | undefined,
+  children: ControlDefinition[],
+  options?: Partial<GroupedControlsDefinition>,
+): GroupedControlsDefinition {
+  return {
+    type: ControlDefinitionType.Group,
+    compoundField,
+    children,
+    title,
+    groupOptions: { type: "Standard", hideTitle: !title },
+    ...options,
+  };
 }
