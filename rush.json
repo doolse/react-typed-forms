@@ -416,7 +416,8 @@
     },
     {
       "packageName": "@react-typed-forms/schemas",
-      "projectFolder": "packages/schemas"
+      "projectFolder": "packages/schemas",
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/schemas-mui",
