@@ -51,9 +51,9 @@ import {
   elementValueForField,
   findCompoundField,
   findField,
-  isGroupControl,
   isScalarField,
 } from "./util";
+import { FieldType } from "./types";
 
 export function useDefaultValue(
   definition: DataControlDefinition,
@@ -90,30 +90,29 @@ export function useIsControlVisible(
   }
   const schemaFields = formState.fields;
 
-  const { typeControl, compoundField } = useMemo(() => {
+  const typeControl = useMemo(() => {
     const typeField = schemaFields.find(
       (x) => isScalarField(x) && x.isTypeField,
     ) as SchemaField | undefined;
 
-    const typeControl = ((typeField &&
-      formState.data.fields?.[typeField.field]) ??
+    return ((typeField && formState.data.fields?.[typeField.field]) ??
       newControl(undefined)) as Control<string | undefined>;
-    const compoundField =
-      isGroupControl(definition) && definition.compoundField
-        ? formState.data.fields[definition.compoundField]
-        : undefined;
-    return { typeControl, compoundField };
   }, [schemaFields, formState.data]);
 
   const fieldName = fieldForControl(definition);
-  const onlyForTypes = (
-    fieldName ? findField(schemaFields, fieldName) : undefined
-  )?.onlyForTypes;
-  const canChange = Boolean(compoundField || (onlyForTypes?.length ?? 0) > 0);
+  const schemaField = fieldName
+    ? findField(schemaFields, fieldName)
+    : undefined;
+  const isSingleCompoundField =
+    schemaField &&
+    schemaField.type === FieldType.Compound &&
+    !schemaField.collection;
+  const onlyForTypes = schemaField?.onlyForTypes ?? [];
+  const canChange = Boolean(isSingleCompoundField || onlyForTypes.length);
   const value =
-    (!compoundField || compoundField.value != null) &&
-    (!onlyForTypes ||
-      onlyForTypes.length === 0 ||
+    (!isSingleCompoundField ||
+      formState.data.fields[fieldName!].value != null) &&
+    (!onlyForTypes.length ||
       Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)));
   return { value, canChange };
 }
@@ -176,6 +175,7 @@ export function createDefaultSchemaHooks(): SchemaHooks {
       case ExpressionType.FieldValue:
         const fvExpr = expr as FieldValueExpression;
         return useComputed(() => {
+          console.log(fvExpr);
           const fv = controlForField(fvExpr.field, formState).value;
           return Array.isArray(fv)
             ? fv.includes(fvExpr.value)

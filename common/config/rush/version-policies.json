@@ -107,13 +107,6 @@
     "mainProject": "@react-typed-forms/core"
   },
   {
-    "policyName": "schemasRelease",
-    "definitionName": "lockStepVersion",
-    "version": "1.0.0-dev.24",
-    "nextBump": "prerelease",
-    "mainProject": "@react-typed-forms/schemas"
-  },
-  {
     "policyName": "muiRelease",
     "definitionName": "lockStepVersion",
     "version": "3.0.1-dev.1",
