@@ -56,7 +56,7 @@ export interface ControlDefinition {
   title?: string | null;
   dynamic?: DynamicProperty[] | null;
   adornments?: ControlAdornment[] | null;
-  children?: ControlDefinition[];
+  children?: ControlDefinition[] | null;
 }
 
 export enum ControlDefinitionType {
