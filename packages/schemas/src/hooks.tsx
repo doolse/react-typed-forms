@@ -1,5 +1,6 @@
 import {
   ActionControlDefinition,
+  CompoundField,
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
@@ -12,6 +13,7 @@ import {
   FieldOption,
   FieldValueExpression,
   GroupedControlsDefinition,
+  GroupRenderOptions,
   GroupRenderType,
   isDataControlDefinition,
   JsonataExpression,
@@ -52,6 +54,7 @@ import {
   elementValueForField,
   findCompoundField,
   findField,
+  isCompoundField,
   isScalarField,
 } from "./util";
 import { FieldType } from "./types";
@@ -314,16 +317,30 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
         return () => scalarControl.unsubscribe(subscription);
       }, []);
 
-      if (!field.collection) return dataProps;
+      if (!field.collection && !isCompoundField(field)) return dataProps;
       return {
         ...dataProps,
-        array: defaultArrayRendererProps(
-          scalarControl,
-          field,
-          definition,
-          dataProps.readonly,
-          (c) => formState.renderer.renderData({ ...dataProps, control: c }),
-        ),
+        array:
+          field.collection && !isCompoundField(field)
+            ? defaultArrayRendererProps(
+                scalarControl,
+                field,
+                definition,
+                dataProps.readonly,
+                (c) =>
+                  formState.renderer.renderData({ ...dataProps, control: c }),
+              )
+            : undefined,
+        group: isCompoundField(field)
+          ? defaultGroupRendererProperties(
+              formState,
+              definition,
+              field,
+              definition.children ?? [],
+              { type: "Standard" },
+              visible,
+            )
+          : undefined,
       };
     },
     useDisplayProperties: (fs, definition) => {
@@ -336,53 +353,14 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
         ? findCompoundField(fs.fields, definition.compoundField)
         : undefined;
 
-      const defaultValue =
-        field && useDefaultValue(definition, field, fs, schemaHooks);
-      const dataControl = field && fs.data.fields[field.field];
-      const isVisible = visible.value && !fs.invisible;
-
-      useEffect(() => {
-        if (!dataControl) return;
-        if (isVisible === false) dataControl.value = null;
-        else if (dataControl.current.value == null) {
-          dataControl.value = defaultValue;
-        }
-      }, [dataControl, isVisible, defaultValue]);
-
-      const newFs: RenderControlOptions = {
-        ...fs,
-        fields: field ? field.children : fs.fields,
-        invisible: visible.value === false || fs.invisible,
-      };
-      const data = field ? fs.data.fields[field.field] : fs.data;
-      const groupProps = {
-        visible,
-        hooks: fs.hooks,
-        hideTitle: definition.groupOptions.hideTitle ?? false,
-        childCount: definition.children.length,
-        renderChild: (i) =>
-          renderControl(definition.children[i], data, newFs, i),
+      return defaultGroupRendererProperties(
+        fs,
         definition,
-      } satisfies GroupRendererProps;
-      if (field?.collection) {
-        return {
-          ...groupProps,
-          array: defaultArrayRendererProps(
-            data,
-            field,
-            definition,
-            fs.readonly,
-            (e) =>
-              fs.renderer.renderGroup({
-                ...groupProps,
-                hideTitle: true,
-                renderChild: (i) =>
-                  renderControl(definition.children[i], e, newFs, i),
-              }),
-          ),
-        };
-      }
-      return groupProps;
+        field,
+        definition.children ?? [],
+        definition.groupOptions,
+        visible,
+      );
     },
     useActionProperties(
       formState: FormEditState,
@@ -453,8 +431,54 @@ export function useControlDefinitionForSchema(
   return useMemo<GroupedControlsDefinition>(
     () => ({
       ...definition,
-      children: addMissingControls(sf, definition.children),
+      children: addMissingControls(sf, definition.children ?? []),
     }),
     [sf, definition],
   );
+}
+
+export function defaultGroupRendererProperties(
+  formState: FormEditState,
+  definition: DataControlDefinition | GroupedControlsDefinition,
+  field: CompoundField | undefined,
+  children: ControlDefinition[],
+  renderOptions: GroupRenderOptions,
+  visible: Visibility,
+): GroupRendererProps {
+  const newFs: RenderControlOptions = {
+    ...formState,
+    fields: field ? field.children : formState.fields,
+    invisible: visible.value === false || formState.invisible,
+  };
+  const data = field ? formState.data.fields[field.field] : formState.data;
+  const groupProps = {
+    childCount: children.length,
+    definition,
+    formState,
+    hideTitle: false,
+    renderChild(child: number): React.ReactElement {
+      return renderControl(children[child], data, newFs, child);
+    },
+    renderOptions,
+    visible,
+  };
+
+  if (field?.collection) {
+    return {
+      ...groupProps,
+      array: defaultArrayRendererProps(
+        data,
+        field,
+        definition,
+        formState.readonly,
+        (e) =>
+          formState.renderer.renderGroup({
+            ...groupProps,
+            hideTitle: true,
+            renderChild: (i) => renderControl(children[i], e, newFs, i),
+          }),
+      ),
+    };
+  }
+  return groupProps;
 }

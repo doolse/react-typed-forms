@@ -10,6 +10,7 @@ import {
   EntityExpression,
   FieldOption,
   GroupedControlsDefinition,
+  GroupRenderOptions,
   RenderOptions,
   SchemaField,
   SchemaValidator,
@@ -74,15 +75,16 @@ export interface DataRendererProps {
   options: FieldOption[] | undefined | null;
   customRender?: (props: DataRendererProps) => ReactElement;
   formState: FormEditState;
+  group?: GroupRendererProps;
 }
-
 export interface GroupRendererProps {
-  definition: Omit<GroupedControlsDefinition, "children">;
+  definition: ControlDefinition;
+  renderOptions: GroupRenderOptions;
   visible: Visibility;
   field?: CompoundField;
   array?: ArrayRendererProps;
   hideTitle: boolean;
-  hooks: FormEditHooks;
+  formState: FormEditState;
   childCount: number;
   renderChild: (child: number) => ReactElement;
 }
@@ -330,7 +332,7 @@ export function visitControlData<S extends ControlDefinition, A>(
           data = data.fields[compound.field];
         }
         const childState = { fields, data };
-        for (let c of d.children) {
+        for (let c of d.children ?? []) {
           const res = visitControlData(c, childState, cb);
           if (res !== undefined) return res;
         }

@@ -56,6 +56,7 @@ export interface ControlDefinition {
   title?: string | null;
   dynamic?: DynamicProperty[] | null;
   adornments?: ControlAdornment[] | null;
+  children?: ControlDefinition[];
 }
 
 export enum ControlDefinitionType {
@@ -147,6 +148,7 @@ export interface DataControlDefinition extends ControlDefinition {
 
 export interface RenderOptions {
   type: string;
+  hideTitle?: boolean;
 }
 
 export enum DataRenderType {
@@ -219,7 +221,6 @@ export interface IconSelectionRenderOptions extends RenderOptions {
 
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
-  children: ControlDefinition[];
   compoundField?: string | null;
   groupOptions: GroupRenderOptions;
 }

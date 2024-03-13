@@ -163,7 +163,7 @@ function findReferencedControl(
   if (isGroupControl(control)) {
     if (control.compoundField)
       return field === control.compoundField ? control : undefined;
-    return findReferencedControlInArray(field, control.children);
+    return findReferencedControlInArray(field, control.children ?? []);
   }
   return undefined;
 }
@@ -200,7 +200,7 @@ export function addMissingControls(
       ...cf,
       children: addMissingControls(
         (ex.field as CompoundField).children,
-        cf.children,
+        cf.children ?? [],
       ),
     };
   });

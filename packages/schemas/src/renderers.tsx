@@ -481,7 +481,7 @@ export function createDefaultGroupRenderer(
       renderArray,
     }: Pick<FormRenderer, "renderLabel" | "renderArray" | "renderGroup">,
   ) {
-    const { childCount, renderChild, definition } = props;
+    const { childCount, renderChild, renderOptions } = props;
 
     return renderLabel(
       defaultLabel(),
@@ -489,9 +489,8 @@ export function createDefaultGroupRenderer(
     );
 
     function renderChildren() {
-      const { groupOptions } = definition;
-      const { style, className: gcn } = isGridRenderer(groupOptions)
-        ? gridStyles(groupOptions)
+      const { style, className: gcn } = isGridRenderer(renderOptions)
+        ? gridStyles(renderOptions)
         : ({ className: standardClassName } satisfies StyleProps);
       return (
         <div className={clsx(className, gcn)} style={style}>
@@ -561,6 +560,9 @@ export function createDefaultDataRenderer(
   return createDataRenderer((props, defaultLabel, renderers) => {
     if (props.array) {
       return renderers.renderArray(props.array);
+    }
+    if (props.group) {
+      return renderers.renderGroup(props.group);
     }
     let renderType = props.renderOptions.type;
     const fieldType = props.field.type;

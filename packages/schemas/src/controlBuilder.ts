@@ -60,17 +60,17 @@ export function jsonataExpr(expression: string): JsonataExpression {
 }
 
 export function compoundControl(
-  compoundField: string,
+  field: string,
   title: string | undefined,
   children: ControlDefinition[],
-  options?: Partial<GroupedControlsDefinition>,
-): GroupedControlsDefinition {
+  options?: Partial<DataControlDefinition>,
+): DataControlDefinition {
   return {
-    type: ControlDefinitionType.Group,
-    compoundField,
+    type: ControlDefinitionType.Data,
+    field,
     children,
     title,
-    groupOptions: { type: "Standard", hideTitle: !title },
+    renderOptions: { type: "Standard", hideTitle: !title },
     ...options,
   };
 }
