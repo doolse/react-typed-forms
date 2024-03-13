@@ -65,5 +65,26 @@ describe("Optional data", () => {
         nullableStruct: { id: "hi" },
       })
     );
+    cy.get("#addString").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
+        nested: { optional: "optional" },
+        nullableStruct: { id: "hi" },
+        optionalStrings: [""],
+      })
+    );
+    cy.get("#clearStrings").click();
+    cy.get("#updateStrings").click();
+    cy.get("#submit").click();
+    cy.get("pre").should(
+      compareJson({
+        age: 10.3,
+        nested: { optional: "optional" },
+        nullableStruct: { id: "hi" },
+        optionalStrings: ["cool"],
+      })
+    );
   });
 });

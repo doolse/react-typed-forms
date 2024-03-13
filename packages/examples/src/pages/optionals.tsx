@@ -1,8 +1,10 @@
 import {
   addElement,
+  newControl,
   RenderControl,
   RenderElements,
   RenderOptional,
+  updateElements,
   useControl,
 } from "@react-typed-forms/core";
 import { FNumberField, FTextField } from "@react-typed-forms/mui";
@@ -60,15 +62,6 @@ export default function OptionalsTest() {
           </div>
         )}
       </RenderElements>
-      <div>
-        <button
-          onClick={() => {
-            addElement(optionalArray, "");
-          }}
-        >
-          Add optional string
-        </button>
-      </div>
       <RenderOptional
         control={nullable}
         children={(c) => (
@@ -140,6 +133,24 @@ export default function OptionalsTest() {
         >
           Toggle nullable
         </button>{" "}
+        <button
+          id="addString"
+          className="btn btn-secondary"
+          onClick={() => {
+            addElement(optionalArray, "");
+          }}
+        >
+          Add optional string
+        </button>
+        <button
+          id="updateStrings"
+          className="btn btn-secondary"
+          onClick={() => {
+            updateElements(optionalArray, (e) => [newControl("cool")]);
+          }}
+        >
+          Update optional strings
+        </button>
         <button
           id="submit"
           className="btn btn-primary"

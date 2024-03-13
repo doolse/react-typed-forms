@@ -845,11 +845,11 @@ export function findElement<T>(
 }
 
 export function updateElements<V>(
-  control: Control<V[]>,
+  control: Control<V[] | null | undefined>,
   cb: (elems: Control<V>[]) => Control<V>[],
 ): void {
   const c = control as unknown as ControlImpl<V[]>;
-  const e = control.current.elements;
+  const e = control.current.elements ?? [];
   const newElems = cb(e);
   if (!basicShallowEquals(e, newElems)) {
     ensureArrayAttachment(c, newElems, e);

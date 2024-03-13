@@ -100,24 +100,10 @@
   //   // "includeEmailInChangeFile": true
   // }
   {
-    "policyName": "publicRelease",
-    "definitionName": "lockStepVersion",
-    "version": "3.0.0-dev.117",
-    "nextBump": "prerelease",
-    "mainProject": "@react-typed-forms/core"
-  },
-  {
     "policyName": "muiRelease",
     "definitionName": "lockStepVersion",
     "version": "3.0.1-dev.1",
     "nextBump": "prerelease",
     "mainProject": "@react-typed-forms/mui"
-  },
-  {
-    "policyName": "transformRelease",
-    "definitionName": "lockStepVersion",
-    "version": "0.2.0",
-    "nextBump": "prerelease",
-    "mainProject": "@react-typed-forms/schemas"
   }
 ]

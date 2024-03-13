@@ -399,7 +399,7 @@
     {
       "packageName": "@react-typed-forms/core",
       "projectFolder": "packages/core",
-      "versionPolicyName": "publicRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/mui",
@@ -427,7 +427,7 @@
     {
       "packageName": "@react-typed-forms/transform",
       "projectFolder": "packages/transform",
-      "versionPolicyName": "transformRelease"
+      "shouldPublish": true
     }
 
 
