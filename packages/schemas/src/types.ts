@@ -144,11 +144,11 @@ export interface DataControlDefinition extends ControlDefinition {
   defaultValue?: any;
   readonly?: boolean | null;
   validators?: SchemaValidator[] | null;
+  hideTitle?: boolean;
 }
 
 export interface RenderOptions {
   type: string;
-  hideTitle?: boolean;
 }
 
 export enum DataRenderType {

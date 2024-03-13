@@ -64,6 +64,7 @@ export interface FormEditHooks {
 
 export interface DataRendererProps {
   definition: DataControlDefinition;
+  hideTitle: boolean;
   renderOptions: RenderOptions;
   visible: Visibility;
   control: Control<any>;

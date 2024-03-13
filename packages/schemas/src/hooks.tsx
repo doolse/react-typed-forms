@@ -138,12 +138,13 @@ export function getDefaultScalarControlProperties(
     field,
     defaultValue,
     options: getOptionsForScalarField(field),
+    hideTitle: !!definition.hideTitle,
     renderOptions: definition.renderOptions ?? {
       type: DataRenderType.Standard,
     },
-    required: definition.required ?? false,
+    required: !!definition.required,
     visible,
-    readonly: formState.readonly ?? definition.readonly ?? false,
+    readonly: formState.readonly ?? !!definition.readonly,
     control,
     formState,
   };
@@ -337,7 +338,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
               definition,
               field,
               definition.children ?? [],
-              { type: "Standard" },
+              { type: "Standard", hideTitle: true },
               visible,
             )
           : undefined,
@@ -455,7 +456,9 @@ export function defaultGroupRendererProperties(
     childCount: children.length,
     definition,
     formState,
-    hideTitle: false,
+    hideTitle: !!(isDataControlDefinition(definition)
+      ? definition.hideTitle
+      : definition.groupOptions.hideTitle),
     renderChild(child: number): React.ReactElement {
       return renderControl(children[child], data, newFs, child);
     },

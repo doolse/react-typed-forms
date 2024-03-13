@@ -199,6 +199,7 @@ export function createFormRenderer(
     const {
       definition,
       renderOptions: { type: renderType },
+      hideTitle,
       visible,
       required,
       control,
@@ -235,7 +236,9 @@ export function createFormRenderer(
         forId: "c" + control.uniqueId,
         renderAdornment,
         ...labelProps,
-        title: labelProps?.title ?? controlTitle(definition.title, field),
+        title: !hideTitle
+          ? labelProps?.title ?? controlTitle(definition.title, field)
+          : undefined,
       };
     }
   }
@@ -244,7 +247,11 @@ export function createFormRenderer(
     props: GroupRendererProps,
     adornments?: AdornmentRenderer[],
   ): ReactElement {
-    const { definition, visible, field } = props;
+    const {
+      definition: { title: deftitle },
+      visible,
+      field,
+    } = props;
 
     const [rAdornments, renderAdornment, wrapElem] = withAdornments(
       props.definition,
@@ -254,8 +261,8 @@ export function createFormRenderer(
     const title = props.hideTitle
       ? undefined
       : field
-      ? controlTitle(definition.title, field)
-      : definition.title;
+      ? controlTitle(deftitle, field)
+      : deftitle;
 
     return wrapElem(
       defaultRenderers.group.render(props, createLabel, {
