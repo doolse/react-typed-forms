@@ -37,7 +37,7 @@ export interface SchemaHooks {
     isVisible: boolean | undefined,
     control: Control<any>,
     required: boolean,
-    validations?: SchemaValidator[] | null,
+    definition: DataControlDefinition,
   ): void;
 }
 
@@ -86,6 +86,7 @@ export interface GroupRendererProps {
   array?: ArrayRendererProps;
   hideTitle: boolean;
   formState: FormEditState;
+  labelControl?: Control<any>;
   childCount: number;
   renderChild: (child: number) => ReactElement;
 }

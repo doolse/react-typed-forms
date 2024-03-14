@@ -280,6 +280,7 @@ export function createFormRenderer(
         group: true,
         renderAdornment,
         title,
+        control: props.labelControl,
         ...labelProps,
       };
     }

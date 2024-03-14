@@ -70,7 +70,7 @@ export function compoundControl(
     field,
     children,
     title,
-    renderOptions: { type: "Standard", hideTitle: !title },
+    renderOptions: { type: "Standard" },
     ...options,
   };
 }

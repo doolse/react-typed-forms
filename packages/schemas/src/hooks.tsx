@@ -43,10 +43,12 @@ import {
   ControlChange,
   newControl,
   removeElement,
+  trackControlChange,
   useComputed,
   useControl,
   useControlEffect,
   useValidator,
+  useValueChangeEffect,
 } from "@react-typed-forms/core";
 import jsonata from "jsonata";
 import {
@@ -199,18 +201,20 @@ export function createDefaultSchemaHooks(): SchemaHooks {
     isVisible: boolean | undefined,
     control: Control<any>,
     required: boolean,
-    validators?: SchemaValidator[] | null,
+    definition: DataControlDefinition,
   ) {
     if (required)
       useValidator(
         control,
         (v) =>
-          isVisible === true && (v == null || v === "")
+          isVisible === true &&
+          (v == null || v === "" || (Array.isArray(v) && v.length === 0))
             ? "Please enter a value"
             : null,
         "required",
       );
-    validators?.forEach((v, i) => {
+    useValueChangeEffect(control, () => control.setError("default", ""));
+    definition.validators?.forEach((v, i) => {
       switch (v.type) {
         case ValidatorType.Date:
           processDateValidator(v as DateValidator);
@@ -307,7 +311,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
         isVisible,
         scalarControl,
         dataProps.required,
-        definition.validators,
+        definition,
       );
 
       useEffect(() => {
@@ -456,6 +460,7 @@ export function defaultGroupRendererProperties(
     childCount: children.length,
     definition,
     formState,
+    labelControl: field ? data : undefined,
     hideTitle: !!(isDataControlDefinition(definition)
       ? definition.hideTitle
       : definition.groupOptions.hideTitle),
@@ -477,6 +482,7 @@ export function defaultGroupRendererProperties(
         (e) =>
           formState.renderer.renderGroup({
             ...groupProps,
+            labelControl: undefined,
             hideTitle: true,
             renderChild: (i) => renderControl(children[i], e, newFs, i),
           }),
