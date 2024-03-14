@@ -16,16 +16,16 @@ export function muiTextfieldRenderer(
     type: "data",
     schemaType: FieldType.String,
     renderType: DataRenderType.Standard,
-    render: (r, makeLabel, { renderVisibility }) => {
-      const { title, required } = makeLabel();
+    render: ({ control, label, visible }, { renderVisibility }) => {
+      const { title, required } = label;
       return renderVisibility(
-        r.visible,
+        visible,
         <FTextField
           variant={variant}
           required={required}
           fullWidth
           size="small"
-          state={r.control}
+          state={control}
           label={title}
         />,
       );
@@ -52,12 +52,8 @@ export function muiDateRenderer(): DataRendererRegistration {
   return {
     type: "data",
     schemaType: FieldType.Date,
-    render: (
-      { control, required, visible },
-      defaultLabel,
-      { renderVisibility },
-    ) => {
-      const { title } = defaultLabel();
+    render: ({ control, required, visible, label }, { renderVisibility }) => {
+      const { title } = label;
       return renderVisibility(
         visible,
         <FDateField

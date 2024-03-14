@@ -11,6 +11,7 @@ import {
   EntityExpression,
   ExpressionType,
   FieldOption,
+  FieldType,
   FieldValueExpression,
   GroupedControlsDefinition,
   GroupRenderOptions,
@@ -18,7 +19,6 @@ import {
   isDataControlDefinition,
   JsonataExpression,
   SchemaField,
-  SchemaValidator,
   ValidatorType,
 } from "./types";
 import {
@@ -43,7 +43,6 @@ import {
   ControlChange,
   newControl,
   removeElement,
-  trackControlChange,
   useComputed,
   useControl,
   useControlEffect,
@@ -59,7 +58,6 @@ import {
   isCompoundField,
   isScalarField,
 } from "./util";
-import { FieldType } from "./types";
 
 export function useDefaultValue(
   definition: ControlDefinition,
@@ -135,16 +133,25 @@ export function getDefaultScalarControlProperties(
   control: Control<any>,
   formState: FormEditState,
 ): DataRendererProps {
+  const required = !!definition.required;
   return {
     definition,
     field,
     defaultValue,
     options: getOptionsForScalarField(field),
-    hideTitle: !!definition.hideTitle,
+    label: {
+      visible,
+      required,
+      control,
+      forId: "c" + control.uniqueId,
+      title: controlTitle(definition.title, field),
+      group: false,
+      renderAdornment: () => null,
+    },
     renderOptions: definition.renderOptions ?? {
       type: DataRenderType.Standard,
     },
-    required: !!definition.required,
+    required,
     visible,
     readonly: formState.readonly ?? !!definition.readonly,
     control,
@@ -456,38 +463,24 @@ export function defaultGroupRendererProperties(
     invisible: visible.value === false || formState.invisible,
   };
   const data = field ? formState.data.fields[field.field] : formState.data;
-  const groupProps = {
+  return {
     childCount: children.length,
     definition,
     formState,
-    labelControl: field ? data : undefined,
-    hideTitle: !!(isDataControlDefinition(definition)
-      ? definition.hideTitle
-      : definition.groupOptions.hideTitle),
+    label: {
+      control: field ? data : undefined,
+      group: true,
+      title: field ? controlTitle(definition.title, field) : definition.title,
+      visible,
+      required: isDataControlDefinition(definition)
+        ? !!definition.required
+        : false,
+      renderAdornment: () => null,
+    },
     renderChild(child: number): React.ReactElement {
       return renderControl(children[child], data, newFs, child);
     },
     renderOptions,
     visible,
   };
-
-  if (field?.collection) {
-    return {
-      ...groupProps,
-      array: defaultArrayRendererProps(
-        data,
-        field,
-        definition,
-        formState.readonly,
-        (e) =>
-          formState.renderer.renderGroup({
-            ...groupProps,
-            labelControl: undefined,
-            hideTitle: true,
-            renderChild: (i) => renderControl(children[i], e, newFs, i),
-          }),
-      ),
-    };
-  }
-  return groupProps;
 }

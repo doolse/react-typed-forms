@@ -52,11 +52,7 @@ export interface DataRendererRegistration {
   options?: boolean;
   collection?: boolean;
   match?: (props: DataRendererProps) => boolean;
-  render: (
-    props: DataRendererProps,
-    defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
-    renderers: FormRenderer,
-  ) => ReactElement;
+  render: (props: DataRendererProps, renderers: FormRenderer) => ReactElement;
 }
 
 export interface LabelRendererRegistration {
@@ -80,11 +76,7 @@ export interface ArrayRendererRegistration {
 
 export interface GroupRendererRegistration {
   type: "group";
-  render: (
-    props: GroupRendererProps,
-    defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
-    renderers: FormRenderer,
-  ) => ReactElement;
+  render: (props: GroupRendererProps, renderers: FormRenderer) => ReactElement;
 }
 
 export interface DisplayRendererRegistration {
@@ -199,11 +191,11 @@ export function createFormRenderer(
     const {
       definition,
       renderOptions: { type: renderType },
-      hideTitle,
       visible,
       required,
       control,
       field,
+      label,
     } = props;
 
     const options = hasOptions(props);
@@ -222,68 +214,36 @@ export function createFormRenderer(
       adornments,
     );
     return wrapElem(
-      renderer.render(props, createLabel, {
-        ...formRenderers,
-        renderData: (p) => renderData(p, rAdornments),
-      }),
+      renderer.render(
+        { ...props, label: { ...label, renderAdornment } },
+        {
+          ...formRenderers,
+          renderData: (p) => renderData(p, rAdornments),
+        },
+      ),
     );
-
-    function createLabel(labelProps?: Partial<LabelRendererProps>) {
-      return {
-        visible,
-        required,
-        control,
-        forId: "c" + control.uniqueId,
-        renderAdornment,
-        ...labelProps,
-        title: !hideTitle
-          ? labelProps?.title ?? controlTitle(definition.title, field)
-          : undefined,
-      };
-    }
   }
 
   function renderGroup(
     props: GroupRendererProps,
     adornments?: AdornmentRenderer[],
   ): ReactElement {
-    const {
-      definition: { title: deftitle },
-      visible,
-      field,
-    } = props;
+    const { visible, label } = props;
 
     const [rAdornments, renderAdornment, wrapElem] = withAdornments(
       props.definition,
       adornments,
     );
 
-    const title = props.hideTitle
-      ? undefined
-      : field
-      ? controlTitle(deftitle, field)
-      : deftitle;
-
     return wrapElem(
-      defaultRenderers.group.render(props, createLabel, {
-        ...formRenderers,
-        renderGroup: (p) => renderGroup(p, rAdornments),
-      }),
+      defaultRenderers.group.render(
+        { ...props, label: { ...label, renderAdornment } },
+        {
+          ...formRenderers,
+          renderGroup: (p) => renderGroup(p, rAdornments),
+        },
+      ),
     );
-
-    function createLabel(
-      labelProps?: Partial<LabelRendererProps>,
-    ): LabelRendererProps {
-      return {
-        required: false,
-        visible,
-        group: true,
-        renderAdornment,
-        title,
-        control: props.labelControl,
-        ...labelProps,
-      };
-    }
   }
 
   function renderAction(
@@ -483,18 +443,14 @@ export function createDefaultGroupRenderer(
 
   function render(
     props: GroupRendererProps,
-    defaultLabel: (label?: Partial<LabelRendererProps>) => LabelRendererProps,
     {
       renderLabel,
       renderArray,
     }: Pick<FormRenderer, "renderLabel" | "renderArray" | "renderGroup">,
   ) {
-    const { childCount, renderChild, renderOptions } = props;
+    const { childCount, renderChild, renderOptions, label } = props;
 
-    return renderLabel(
-      defaultLabel(),
-      props.array ? renderArray(props.array) : renderChildren(),
-    );
+    return renderLabel(label, renderChildren());
 
     function renderChildren() {
       const { style, className: gcn } = isGridRenderer(renderOptions)
@@ -565,7 +521,7 @@ export function createDefaultDataRenderer(
     booleanOptions: DefaultBoolOptions,
     ...options,
   };
-  return createDataRenderer((props, defaultLabel, renderers) => {
+  return createDataRenderer((props, renderers) => {
     if (props.array) {
       return renderers.renderArray(props.array);
     }
@@ -579,21 +535,20 @@ export function createDefaultDataRenderer(
       return renderers.renderData({ ...props, options: booleanOptions });
     }
     if (renderType === DataRenderType.Standard && hasOptions(props)) {
-      return optionRenderer.render(props, defaultLabel, renderers);
+      return optionRenderer.render(props, renderers);
     }
     switch (renderType) {
       case DataRenderType.Dropdown:
-        return selectRenderer.render(props, defaultLabel, renderers);
+        return selectRenderer.render(props, renderers);
     }
-    const l = defaultLabel();
     return renderers.renderLabel(
-      l,
+      props.label,
       renderType === DataRenderType.Checkbox ? (
         <Fcheckbox control={props.control} />
       ) : (
         <ControlInput
           className={inputClass}
-          id={l.forId}
+          id={props.label.forId}
           readOnly={props.readonly}
           control={props.control}
           convert={createInputConversion(props.field.type)}
@@ -745,9 +700,11 @@ export function createDataRendererLabelled(
 ): DataRendererRegistration {
   return {
     type: "data",
-    render: (props, defaultLabel, renderers) => {
-      const dl = defaultLabel();
-      return renderers.renderLabel(dl, render(props, dl.forId!, renderers));
+    render: (props, renderers) => {
+      return renderers.renderLabel(
+        props.label,
+        render(props, props.label.forId!, renderers),
+      );
     },
     ...options,
   };

@@ -64,18 +64,18 @@ export interface FormEditHooks {
 
 export interface DataRendererProps {
   definition: DataControlDefinition;
-  hideTitle: boolean;
+  label: LabelRendererProps;
   renderOptions: RenderOptions;
   visible: Visibility;
   control: Control<any>;
   field: SchemaField;
-  array?: ArrayRendererProps;
   readonly: boolean;
   defaultValue: any;
   required: boolean;
   options: FieldOption[] | undefined | null;
   customRender?: (props: DataRendererProps) => ReactElement;
   formState: FormEditState;
+  array?: ArrayRendererProps;
   group?: GroupRendererProps;
 }
 export interface GroupRendererProps {
@@ -83,10 +83,8 @@ export interface GroupRendererProps {
   renderOptions: GroupRenderOptions;
   visible: Visibility;
   field?: CompoundField;
-  array?: ArrayRendererProps;
-  hideTitle: boolean;
+  label: LabelRendererProps;
   formState: FormEditState;
-  labelControl?: Control<any>;
   childCount: number;
   renderChild: (child: number) => ReactElement;
 }
@@ -147,11 +145,12 @@ export interface Visibility {
 export interface LabelRendererProps {
   visible: Visibility;
   title?: ReactNode;
+  hideTitle?: boolean;
   forId?: string;
   required: boolean;
   control?: Control<any>;
   group?: boolean;
-  renderAdornment: (placement: AdornmentPlacement) => ReactElement;
+  renderAdornment: (placement: AdornmentPlacement) => ReactNode;
 }
 
 export interface DisplayRendererProps {
