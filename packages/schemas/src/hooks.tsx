@@ -144,6 +144,7 @@ export function getDefaultScalarControlProperties(
       visible,
       required,
       control,
+      hideTitle: !!definition.hideTitle,
       forId: "c" + control.uniqueId,
       title: controlTitle(definition.title, field),
       group: false,
@@ -467,14 +468,16 @@ export function defaultGroupRendererProperties(
     invisible: visible.value === false || formState.invisible,
   };
   const data = field ? formState.data.fields[field.field] : formState.data;
+  const [required, hideTitle] = isDataControlDefinition(definition)
+    ? [!!definition.required, !!definition.hideTitle]
+    : [false, !!definition.groupOptions.hideTitle];
   const label: LabelRendererProps = {
     control: field ? data : undefined,
     group: true,
     title: field ? controlTitle(definition.title, field) : definition.title,
     visible,
-    required: isDataControlDefinition(definition)
-      ? !!definition.required
-      : false,
+    required,
+    hideTitle,
     renderAdornment: () => null,
   };
   const groupProps: GroupRendererProps = {
@@ -500,6 +503,7 @@ export function defaultGroupRendererProperties(
         (e) =>
           formState.renderer.renderGroup({
             ...groupProps,
+            label: { ...label, hideTitle: true },
             renderChild: (i) => renderControl(children[i], e, newFs, i),
           }),
       ),

@@ -147,7 +147,7 @@ export interface Visibility {
 export interface LabelRendererProps {
   visible: Visibility;
   title?: ReactNode;
-  hideTitle?: boolean;
+  hideTitle: boolean;
   forId?: string;
   required: boolean;
   control?: Control<any>;

@@ -213,24 +213,11 @@ export default function RenderAForm() {
                 },
               ],
             },
-            {
-              title: "Compound collection with default",
-              type: ControlDefinitionType.Group,
-              compoundField: "compoundCollectionWithDefault",
-              groupOptions: {
-                type: GroupRenderType.Standard,
-                hideTitle: false,
-              },
-              children: [
-                {
-                  renderOptions: { type: DataRenderType.Standard },
-                  required: true,
-                  title: undefined,
-                  type: ControlDefinitionType.Data,
-                  field: "nest",
-                },
-              ],
-            },
+            compoundControl(
+              "compoundCollectionWithDefault",
+              "Compound collection with default",
+              [dataControl("nest", null, { required: true })],
+            ),
             compoundControl(
               "compoundDynamic",
               "Compound dynamic",

@@ -321,12 +321,13 @@ export function DefaultLabelRenderer({
   required,
   children,
   group,
+  hideTitle,
   groupLabelClass,
   renderAdornment,
   requiredElement,
 }: LabelRendererProps &
   DefaultLabelRendererOptions & { children: ReactElement }) {
-  return title ? (
+  return title && !hideTitle ? (
     <div className={className}>
       {renderAdornment(AdornmentPlacement.LabelStart)}
       <label
@@ -373,11 +374,13 @@ export function createDefaultArrayRenderer(
       addAction,
       removeAction,
       childKey,
+      label,
     }: ArrayRendererProps,
-    { renderAction }: Pick<FormRenderer, "renderAction">,
+    { renderAction, renderLabel }: FormRenderer,
   ) {
-    return (
-      <>
+    return renderLabel(
+      label,
+      <div>
         <div className={clsx(className, removeAction && removableClass)}>
           {Array.from({ length: childCount }, (_, x) =>
             removeAction ? (
@@ -399,7 +402,7 @@ export function createDefaultArrayRenderer(
         {addAction && (
           <div className={addActionClass}>{renderAction(addAction)}</div>
         )}
-      </>
+      </div>,
     );
   }
   return { render, type: "array" };
@@ -448,6 +451,7 @@ export function createDefaultGroupRenderer(
       renderArray,
     }: Pick<FormRenderer, "renderLabel" | "renderArray" | "renderGroup">,
   ) {
+    if (props.array) return renderArray(props.array);
     const { childCount, renderChild, renderOptions, label } = props;
 
     return renderLabel(label, renderChildren());
