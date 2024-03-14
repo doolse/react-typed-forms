@@ -85,6 +85,7 @@ export interface GroupRendererProps {
   field?: CompoundField;
   label: LabelRendererProps;
   formState: FormEditState;
+  array?: ArrayRendererProps;
   childCount: number;
   renderChild: (child: number) => ReactElement;
 }
@@ -109,12 +110,13 @@ export type RenderControlOptions = Omit<FormEditState, "data">;
 export interface ArrayRendererProps {
   definition: DataControlDefinition | GroupedControlsDefinition;
   control: Control<any[]>;
+  label: LabelRendererProps;
   field: SchemaField;
   addAction?: ActionRendererProps;
-  removeAction?: (childCount: number) => ActionRendererProps;
+  removeAction?: (childIndex: number) => ActionRendererProps;
   childCount: number;
-  renderChild: (childCount: number) => ReactElement;
-  childKey: (childCount: number) => Key;
+  renderChild: (childIndex: number) => ReactElement;
+  childKey: (childIndex: number) => Key;
 }
 
 export interface AdornmentProps {

@@ -31,6 +31,7 @@ import {
   FormEditHooks,
   FormEditState,
   GroupRendererProps,
+  LabelRendererProps,
   renderControl,
   RenderControlOptions,
   SchemaHooks,
@@ -336,6 +337,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
           field.collection && !isCompoundField(field)
             ? defaultArrayRendererProps(
                 scalarControl,
+                dataProps.label,
                 field,
                 definition,
                 dataProps.readonly,
@@ -390,6 +392,7 @@ export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
 
 function defaultArrayRendererProps(
   control: Control<any[]>,
+  label: LabelRendererProps,
   field: SchemaField,
   definition: DataControlDefinition | GroupedControlsDefinition,
   readonly: boolean | undefined | null,
@@ -400,6 +403,7 @@ function defaultArrayRendererProps(
     childCount: control.elements?.length ?? 0,
     field,
     definition,
+    label,
     addAction: !readonly
       ? {
           definition: {
@@ -463,24 +467,43 @@ export function defaultGroupRendererProperties(
     invisible: visible.value === false || formState.invisible,
   };
   const data = field ? formState.data.fields[field.field] : formState.data;
-  return {
+  const label: LabelRendererProps = {
+    control: field ? data : undefined,
+    group: true,
+    title: field ? controlTitle(definition.title, field) : definition.title,
+    visible,
+    required: isDataControlDefinition(definition)
+      ? !!definition.required
+      : false,
+    renderAdornment: () => null,
+  };
+  const groupProps: GroupRendererProps = {
     childCount: children.length,
     definition,
     formState,
-    label: {
-      control: field ? data : undefined,
-      group: true,
-      title: field ? controlTitle(definition.title, field) : definition.title,
-      visible,
-      required: isDataControlDefinition(definition)
-        ? !!definition.required
-        : false,
-      renderAdornment: () => null,
-    },
+    label,
     renderChild(child: number): React.ReactElement {
       return renderControl(children[child], data, newFs, child);
     },
     renderOptions,
     visible,
   };
+  if (field?.collection) {
+    return {
+      ...groupProps,
+      array: defaultArrayRendererProps(
+        data,
+        label,
+        field,
+        definition,
+        formState.readonly,
+        (e) =>
+          formState.renderer.renderGroup({
+            ...groupProps,
+            renderChild: (i) => renderControl(children[i], e, newFs, i),
+          }),
+      ),
+    };
+  }
+  return groupProps;
 }
