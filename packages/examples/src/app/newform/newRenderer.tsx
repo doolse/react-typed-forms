@@ -498,6 +498,37 @@ export function useRenderControlLayout(
   }
 }
 
+function useJsonataExpression(
+  jExpr: JsonataExpression,
+  data: Control<any>,
+): Control<any> {
+  const compiledExpr = useMemo(
+    () => jsonata(jExpr.expression),
+    [jExpr.expression],
+  );
+  const control = useControl();
+  useControlEffect(
+    () => data.value,
+    async (v) => {
+      control.value = await compiledExpr.evaluate(v);
+    },
+    true,
+  );
+  return control;
+}
+
+function useFieldValueExpression(
+  fvExpr: FieldValueExpression,
+  fields: SchemaField[],
+  data: Control<any>,
+) {
+  const refField = findField(fields, fvExpr.field);
+  const otherField = refField ? data.fields[refField.field] : undefined;
+  return useComputed(() => {
+    const fv = otherField?.value;
+    return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
+  });
+}
 function useExpression(
   expr: EntityExpression,
   data: Control<any>,
@@ -505,30 +536,13 @@ function useExpression(
 ): Control<any | undefined> {
   switch (expr.type) {
     case ExpressionType.Jsonata:
-      const jExpr = expr as JsonataExpression;
-      const compiledExpr = useMemo(
-        () => jsonata(jExpr.expression),
-        [jExpr.expression],
-      );
-      const control = useControl();
-      useControlEffect(
-        () => data.value,
-        async (v) => {
-          control.value = await compiledExpr.evaluate(v);
-        },
-        true,
-      );
-      return control;
+      return useJsonataExpression(expr as JsonataExpression, data);
     case ExpressionType.FieldValue:
-      const fvExpr = expr as FieldValueExpression;
-      const refField = findField(fields, fvExpr.field);
-      const otherField = refField ? data.fields[refField.field] : undefined;
-      return useComputed(() => {
-        const fv = otherField?.value;
-        return Array.isArray(fv)
-          ? fv.includes(fvExpr.value)
-          : fv === fvExpr.value;
-      });
+      return useFieldValueExpression(
+        expr as FieldValueExpression,
+        fields,
+        data,
+      );
     default:
       return useControl(undefined);
   }
