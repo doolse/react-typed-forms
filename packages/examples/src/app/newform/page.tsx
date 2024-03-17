@@ -36,7 +36,7 @@ import {
   defaultFormEditHooks,
   jsonataExpr,
 } from "@react-typed-forms/schemas/lib";
-import { makeContext, RenderNewControl } from "./newRenderer";
+import { useControlRenderer } from "./newRenderer";
 
 interface Nested {
   nest: string;
@@ -217,7 +217,10 @@ const formDef = {
       "Compound dynamic",
       [dataControl("nest")],
       {
-        dynamic: [dynamicDefaultValue(jsonataExpr('[{"nest": "DYNAMIC"}]'))],
+        dynamic: [
+          dynamicDefaultValue(jsonataExpr('[{"nest": "DYNAMIC"}]')),
+          visibility(fieldEqExpr("first", "Jolse")),
+        ],
       },
     ),
   ],
@@ -225,11 +228,12 @@ const formDef = {
 
 export default function RenderAForm() {
   const form = useControl<NameForm>(withDefaults);
+  const RenderForm = useControlRenderer(formDef, nameFormSchema);
 
   return (
     <div className="container">
       <h1>Simple Schema Test</h1>
-      <RenderNewControl c={formDef} ctx={makeContext(form, nameFormSchema)} />
+      <RenderForm control={form} />
       <button onClick={() => (form.fields.compoundOptional.value = [])}>
         Enable optional part
       </button>

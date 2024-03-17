@@ -60,6 +60,7 @@ importers:
       '@types/react': ^18.2.28
       '@types/react-dom': ^18.2.13
       autoprefixer: 10.4.16
+      jsonata: ^2.0.4
       next: 13.5.5
       postcss: 8.4.31
       prettier: ^3.0.3
@@ -81,6 +82,7 @@ importers:
       '@react-typed-forms/mui': link:../mui
       '@react-typed-forms/schemas': link:../schemas
       '@react-typed-forms/schemas-mui': link:../schemas-mui
+      jsonata: 2.0.4
       next: 13.5.5_react-dom@18.2.0+react@18.2.0
       prism-react-renderer: 2.1.0_react@18.2.0
       raw-loader: 4.0.2
@@ -130,7 +132,7 @@ importers:
       '@react-typed-forms/transform': ^0.2.0
       '@types/react': ^18.2.28
       clsx: ^1 || ^2
-      jsonata: ^2.0.3
+      jsonata: ^2.0.4
       markdown-magic: ^2.6.1
       microbundle: ^0.15.1
       nswag: ^13.18.2
@@ -141,7 +143,7 @@ importers:
     dependencies:
       '@react-typed-forms/core': link:../core
       clsx: 2.0.0
-      jsonata: 2.0.3
+      jsonata: 2.0.4
       react: 18.2.0
     devDependencies:
       '@react-typed-forms/transform': 0.2.0
@@ -208,7 +210,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.2
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
       path: 0.12.7
 
 packages:
@@ -4704,8 +4706,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  /jsonata/2.0.3:
-    resolution: {integrity: sha512-Up2H81MUtjqI/dWwWX7p4+bUMfMrQJVMN/jW6clFMTiYP528fBOBNtRu944QhKTs3+IsVWbgMeUTny5fw2VMUA==}
+  /jsonata/2.0.4:
+    resolution: {integrity: sha512-vfavX4/G/yrYxE+UrmT/oUJ3ph7KqUrb0R7b0LVRcntQwxw+Z5kA1pNUIQzX5hF04Oe1eKxyoIPsmXtc2LgJTQ==}
     engines: {node: '>= 8'}
     dev: false
 
@@ -5196,7 +5198,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:

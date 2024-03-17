@@ -26,7 +26,7 @@
   "dependencies": {
     "@react-typed-forms/core": "workspace:^3.0.0-dev.117",
     "clsx": "^1 || ^2",
-    "jsonata": "^2.0.3",
+    "jsonata": "^2.0.4",
     "react": "^18.2.0"
   },
   "devDependencies": {
