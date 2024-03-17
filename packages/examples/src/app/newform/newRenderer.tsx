@@ -473,14 +473,13 @@ export function useRenderControlLayout(
 
   function compoundRenderer(i: number, control: Control<any>): ReactNode {
     return (
-      <Fragment key={i}>
+      <Fragment key={control.uniqueId}>
         {renderer.renderGroup({
           renderOptions: { type: "Standard", hideTitle: true },
           childCount: childRenderer.length,
           renderChild: (ci) => {
             const RenderChild = childRenderer[ci];
-            const childKey = "a" + ci + "_" + control.uniqueId;
-            return <RenderChild key={childKey} control={control} />;
+            return <RenderChild key={ci} control={control} />;
           },
         })}
       </Fragment>
@@ -522,9 +521,10 @@ function useExpression(
       return control;
     case ExpressionType.FieldValue:
       const fvExpr = expr as FieldValueExpression;
+      const refField = findField(fields, fvExpr.field);
+      const otherField = refField ? data.fields[refField.field] : undefined;
       return useComputed(() => {
-        const refField = findField(fields, fvExpr.field);
-        const fv = refField ? data.fields[refField.field].value : undefined;
+        const fv = otherField?.value;
         return Array.isArray(fv)
           ? fv.includes(fvExpr.value)
           : fv === fvExpr.value;
