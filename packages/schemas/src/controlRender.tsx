@@ -1,353 +1,515 @@
+import React, {
+  FC,
+  Fragment,
+  Key,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from "react";
 import {
-  ActionControlDefinition,
+  addElement,
+  Control,
+  removeElement,
+  useComponentTracking,
+  useComputed,
+  useControl,
+  useControlEffect,
+} from "@react-typed-forms/core";
+import jsonata from "jsonata";
+import {
   AdornmentPlacement,
-  CompoundField,
   ControlAdornment,
   ControlDefinition,
-  ControlDefinitionType,
   DataControlDefinition,
-  DisplayControlDefinition,
+  DisplayData,
+  DynamicPropertyType,
   EntityExpression,
+  ExpressionType,
   FieldOption,
-  GroupedControlsDefinition,
+  FieldType,
+  FieldValueExpression,
   GroupRenderOptions,
+  isActionControlsDefinition,
+  isDataControlDefinition,
+  isDisplayControlsDefinition,
+  isGroupControlsDefinition,
+  JsonataExpression,
   RenderOptions,
   SchemaField,
-  SchemaValidator,
-  visitControlDefinition,
 } from "./types";
-import React, { Key, ReactElement, ReactNode } from "react";
-import { Control, newControl } from "@react-typed-forms/core";
 import {
+  elementValueForField,
   fieldDisplayName,
-  findCompoundField,
   findField,
-  findScalarField,
-  isDataControl,
-  isGroupControl,
+  isCompoundField,
 } from "./util";
-
-export interface SchemaHooks {
-  useExpression(
-    expr: EntityExpression,
-    formState: FormEditState,
-  ): Control<any | undefined>;
-  useValidators(
-    formState: FormEditState,
-    isVisible: boolean | undefined,
-    control: Control<any>,
-    required: boolean,
-    definition: DataControlDefinition,
-  ): void;
-}
-
-export interface FormEditHooks {
-  useDataProperties(
-    formState: FormEditState,
-    definition: DataControlDefinition,
-    field: SchemaField,
-  ): DataRendererProps;
-  useGroupProperties(
-    formState: FormEditState,
-    definition: GroupedControlsDefinition,
-  ): GroupRendererProps;
-  useDisplayProperties(
-    formState: FormEditState,
-    definition: DisplayControlDefinition,
-  ): DisplayRendererProps;
-  useActionProperties(
-    formState: FormEditState,
-    definition: ActionControlDefinition,
-  ): ActionRendererProps;
-  schemaHooks: SchemaHooks;
-}
-
-export interface DataRendererProps {
-  definition: DataControlDefinition;
-  label: LabelRendererProps;
-  renderOptions: RenderOptions;
-  visible: Visibility;
-  control: Control<any>;
-  field: SchemaField;
-  readonly: boolean;
-  defaultValue: any;
-  required: boolean;
-  options: FieldOption[] | undefined | null;
-  customRender?: (props: DataRendererProps) => ReactElement;
-  formState: FormEditState;
-  array?: ArrayRendererProps;
-  group?: GroupRendererProps;
-}
-export interface GroupRendererProps {
-  definition: ControlDefinition;
-  renderOptions: GroupRenderOptions;
-  visible: Visibility;
-  field?: CompoundField;
-  label: LabelRendererProps;
-  formState: FormEditState;
-  array?: ArrayRendererProps;
-  childCount: number;
-  renderChild: (child: number) => ReactElement;
-}
-
-export interface ControlData {
-  [field: string]: any;
-}
-
-export interface FormDataContext {
-  fields: SchemaField[];
-  data: Control<ControlData>;
-}
-export interface FormEditState extends FormDataContext {
-  hooks: FormEditHooks;
-  renderer: FormRenderer;
-  readonly?: boolean;
-  invisible?: boolean;
-}
-
-export type RenderControlOptions = Omit<FormEditState, "data">;
-
-export interface ArrayRendererProps {
-  definition: DataControlDefinition | GroupedControlsDefinition;
-  control: Control<any[]>;
-  label: LabelRendererProps;
-  field: SchemaField;
-  addAction?: ActionRendererProps;
-  removeAction?: (childIndex: number) => ActionRendererProps;
-  childCount: number;
-  renderChild: (childIndex: number) => ReactElement;
-  childKey: (childIndex: number) => Key;
-}
-
-export interface AdornmentProps {
-  key: Key;
-  definition: ControlAdornment;
-}
-
-export interface AdornmentRenderer {
-  wrap?: (children: ReactElement) => ReactElement;
-  child?: [AdornmentPlacement, ReactNode];
-}
+import { dataControl } from "./controlBuilder";
 
 export interface FormRenderer {
-  renderData: (props: DataRendererProps) => ReactElement;
-  renderGroup: (props: GroupRendererProps) => ReactElement;
-  renderDisplay: (props: DisplayRendererProps) => ReactElement;
-  renderAction: (props: ActionRendererProps) => ReactElement;
-  renderArray: (props: ArrayRendererProps) => ReactElement;
-  renderLabel: (props: LabelRendererProps, elem: ReactElement) => ReactElement;
-  renderVisibility: (visible: Visibility, elem: ReactElement) => ReactElement;
+  renderData: (
+    props: DataRendererProps,
+    asArray: (() => ReactNode) | undefined,
+  ) => (layout: ControlLayoutProps) => ControlLayoutProps;
+  renderGroup: (props: GroupRendererProps) => ReactNode;
+  renderDisplay: (props: DisplayRendererProps) => ReactNode;
+  renderAction: (props: ActionRendererProps) => ReactNode;
+  renderArray: (props: ArrayRendererProps) => ReactNode;
   renderAdornment: (props: AdornmentProps) => AdornmentRenderer;
-}
-
-export interface Visibility {
-  value: boolean | undefined;
-  canChange: boolean;
-}
-export interface LabelRendererProps {
-  visible: Visibility;
-  title?: ReactNode;
-  hideTitle: boolean;
-  forId?: string;
-  required: boolean;
-  control?: Control<any>;
-  group?: boolean;
-  renderAdornment: (placement: AdornmentPlacement) => ReactNode;
+  renderLabel: (props: LabelRendererProps) => ReactNode;
+  renderLayout: (props: ControlLayoutProps) => ReactNode;
+  renderVisibility: (
+    control: Control<Visibility | undefined>,
+    children: () => ReactNode,
+  ) => ReactNode;
 }
 
 export interface DisplayRendererProps {
-  definition: DisplayControlDefinition;
-  visible: Visibility;
+  data: DisplayData;
+}
+export interface AdornmentProps {
+  key: Key;
+  adornment: ControlAdornment;
+}
+
+export interface AdornmentRenderer {
+  wrap?: (children: ReactNode) => ReactNode;
+  child?: ReactNode;
+  placement?: AdornmentPlacement;
+}
+
+export interface ArrayRendererProps {
+  addAction?: ActionRendererProps;
+  removeAction?: (childIndex: number) => ActionRendererProps;
+  childCount: number;
+  renderChild: (childIndex: number) => ReactNode;
+  childKey: (childIndex: number) => Key;
+}
+export interface Visibility {
+  visible: boolean;
+  showing: boolean;
+}
+
+export interface ControlLayoutProps {
+  labelStart?: ReactNode;
+  label?: ReactNode;
+  labelText?: ReactNode;
+  labelEnd?: ReactNode;
+  controlStart?: ReactNode;
+  children?: ReactNode;
+  controlEnd?: ReactNode;
+  errorControl?: Control<any>;
+  processLayout?: (props: ControlLayoutProps) => ControlLayoutProps;
+}
+
+export enum LabelType {
+  Control,
+  Group,
+}
+export interface LabelRendererProps {
+  type: LabelType;
+  label: ReactNode;
+  required?: boolean | null;
+  forId?: string;
+}
+export interface GroupRendererProps {
+  renderOptions: GroupRenderOptions;
+  childCount: number;
+  renderChild: (child: number) => ReactNode;
+}
+
+export interface DataRendererProps {
+  renderOptions: RenderOptions;
+  field: SchemaField;
+  id: string;
+  control: Control<any>;
+  readonly: boolean;
+  required: boolean;
+  options: FieldOption[] | undefined | null;
 }
 
 export interface ActionRendererProps {
-  definition: ActionControlDefinition;
-  visible: Visibility;
+  actionId: string;
+  actionText: string;
   onClick: () => void;
 }
 
-export type AnySchemaFields =
-  | SchemaField
-  | (Omit<CompoundField, "children"> & { children: AnySchemaFields[] });
+export interface ControlRenderProps {
+  control: Control<any>;
+}
+
+export function useControlRenderer(
+  c: ControlDefinition,
+  fields: SchemaField[],
+  renderer: FormRenderer,
+): FC<ControlRenderProps> {
+  const Component = useCallback(
+    ({ control }: ControlRenderProps) => {
+      const stopTracking = useComponentTracking();
+      try {
+        const visibleControl = useIsControlVisible(c, control, fields);
+        const visible = visibleControl.current.value;
+        const visibility = useControl<Visibility | undefined>(
+          visible != null
+            ? {
+                visible,
+                showing: false,
+              }
+            : undefined,
+        );
+        useControlEffect(
+          () => visibleControl.value,
+          (visible) => {
+            if (visible != null)
+              visibility.setValue((ex) => ({
+                visible,
+                showing: ex?.showing ?? false,
+              }));
+          },
+        );
+        const childField = isGroupControlsDefinition(c)
+          ? c.compoundField
+          : isDataControlDefinition(c)
+          ? c.field
+          : undefined;
+        const childSchemaField = useMemo(
+          () => (childField ? findField(fields, childField) : undefined),
+          [fields, childField],
+        );
+        const childControl: Control<any> | undefined = childSchemaField
+          ? control.fields[childSchemaField.field]
+          : undefined;
+
+        const defaultValueControl = useDefaultValue(
+          c,
+          control,
+          fields,
+          childSchemaField,
+        );
+        useControlEffect(
+          () => [visibility.value, defaultValueControl.value],
+          ([vc, dv]) => {
+            if (vc && childControl && vc.visible === vc.showing) {
+              if (!vc.visible) {
+                childControl.value = undefined;
+              } else if (childControl.value == null) {
+                childControl.value = dv;
+              }
+            }
+          },
+          true,
+        );
+        const childFields =
+          childSchemaField && isCompoundField(childSchemaField)
+            ? childSchemaField.children
+            : fields;
+        const childRenderers =
+          c.children?.map((cd) =>
+            useControlRenderer(cd, childFields, renderer),
+          ) ?? [];
+        const labelAndChildren = useRenderControlLayout(
+          c,
+          renderer,
+          childRenderers,
+          control,
+          childControl,
+          childSchemaField,
+        );
+        return renderer.renderVisibility(visibility, () =>
+          renderer.renderLayout(labelAndChildren),
+        );
+      } finally {
+        stopTracking();
+      }
+    },
+    [c, fields, renderer],
+  );
+  (Component as any).displayName = "RenderControl";
+  return Component;
+}
+
+function renderArray(
+  renderer: FormRenderer,
+  noun: string,
+  field: SchemaField,
+  controlArray: Control<any[] | undefined | null>,
+  renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
+) {
+  const elems = controlArray.elements ?? [];
+  return renderer.renderArray({
+    childCount: elems.length,
+    addAction: {
+      actionId: "add",
+      actionText: "Add " + noun,
+      onClick: () => addElement(controlArray, elementValueForField(field)),
+    },
+    childKey: (i) => elems[i].uniqueId,
+    removeAction: (i: number) => ({
+      actionId: "",
+      actionText: "Remove",
+      onClick: () => removeElement(controlArray, i),
+    }),
+    renderChild: (i) => renderChild(i, elems[i]),
+  });
+}
+function groupProps(
+  renderOptions: GroupRenderOptions,
+  children: FC<ControlRenderProps>[],
+  control: Control<any>,
+): GroupRendererProps {
+  return {
+    childCount: children?.length ?? 0,
+    renderChild: (i) => {
+      const RenderChild = children[i];
+      return <RenderChild key={i} control={control} />;
+    },
+    renderOptions,
+  };
+}
+
+function dataProps(
+  definition: DataControlDefinition,
+  field: SchemaField,
+  control: Control<any>,
+  globalReadonly: boolean,
+): DataRendererProps {
+  return {
+    control,
+    field,
+    id: "c" + control.uniqueId,
+    options: field.options,
+    readonly: globalReadonly || !!definition.readonly,
+    renderOptions: definition.renderOptions ?? { type: "Standard" },
+    required: !!definition.required,
+  };
+}
+
+export function useRenderControlLayout(
+  c: ControlDefinition,
+  renderer: FormRenderer,
+  childRenderer: FC<ControlRenderProps>[],
+  parentControl: Control<any>,
+  childControl?: Control<any>,
+  schemaField?: SchemaField,
+): Pick<
+  ControlLayoutProps,
+  "label" | "errorControl" | "processLayout" | "children" | "labelText"
+> {
+  if (isDataControlDefinition(c)) {
+    return renderData(c);
+  }
+  if (isGroupControlsDefinition(c)) {
+    if (c.compoundField) {
+      return renderData(
+        dataControl(c.compoundField, c.title, {
+          children: c.children,
+          hideTitle: c.groupOptions.hideTitle,
+        }),
+      );
+    }
+    const labelText = !c.groupOptions.hideTitle ? c.title : undefined;
+    return {
+      children: renderer.renderGroup(
+        groupProps(c.groupOptions, childRenderer, parentControl),
+      ),
+      label: labelText
+        ? renderer.renderLabel({ label: labelText, type: LabelType.Group })
+        : undefined,
+      labelText,
+    };
+  }
+  if (isActionControlsDefinition(c)) {
+    return {
+      children: renderer.renderAction({
+        actionText: c.title ?? c.actionId,
+        actionId: c.actionId,
+        onClick: () => {},
+      }),
+    };
+  }
+  if (isDisplayControlsDefinition(c)) {
+    return { children: renderer.renderDisplay({ data: c.displayData }) };
+  }
+  return {};
+
+  function renderData(c: DataControlDefinition) {
+    const field: SchemaField = schemaField ?? {
+      field: c.field,
+      type: FieldType.String,
+    };
+    if (isCompoundField(field)) {
+      const label = !c.hideTitle
+        ? renderer.renderLabel({
+            label: controlTitle(c.title, field),
+            type: field.collection ? LabelType.Control : LabelType.Group,
+          })
+        : undefined;
+
+      if (field.collection) {
+        return {
+          label,
+          children: renderArray(
+            renderer,
+            controlTitle(c.title, field),
+            field,
+            childControl!,
+            compoundRenderer,
+          ),
+          errorControl: childControl,
+        };
+      }
+      return {
+        children: renderer.renderGroup(
+          groupProps({ type: "Standard" }, childRenderer, childControl!),
+        ),
+        label,
+        errorControl: childControl,
+      };
+    }
+    const props = dataProps(c, field, childControl!, false);
+    const labelText = !c.hideTitle ? controlTitle(c.title, field) : undefined;
+    return {
+      processLayout: renderer.renderData(
+        props,
+        field.collection
+          ? () =>
+              renderArray(
+                renderer,
+                controlTitle(c.title, field),
+                field,
+                childControl!,
+                scalarRenderer(props),
+              )
+          : undefined,
+      ),
+      labelText,
+      label: labelText
+        ? renderer.renderLabel({
+            type: LabelType.Control,
+            label: labelText,
+            forId: props.id,
+            required: c.required,
+          })
+        : undefined,
+      errorControl: childControl,
+    };
+  }
+
+  function compoundRenderer(i: number, control: Control<any>): ReactNode {
+    return (
+      <Fragment key={control.uniqueId}>
+        {renderer.renderGroup({
+          renderOptions: { type: "Standard", hideTitle: true },
+          childCount: childRenderer.length,
+          renderChild: (ci) => {
+            const RenderChild = childRenderer[ci];
+            return <RenderChild key={ci} control={control} />;
+          },
+        })}
+      </Fragment>
+    );
+  }
+  function scalarRenderer(
+    dataProps: DataRendererProps,
+  ): (i: number, control: Control<any>) => ReactNode {
+    return (i, control) => {
+      return (
+        <Fragment key={control.uniqueId}>
+          {
+            renderer.renderData({ ...dataProps, control }, undefined)({})
+              .children
+          }
+        </Fragment>
+      );
+    };
+  }
+}
+
+function useJsonataExpression(
+  jExpr: JsonataExpression,
+  data: Control<any>,
+): Control<any> {
+  const compiledExpr = useMemo(
+    () => jsonata(jExpr.expression),
+    [jExpr.expression],
+  );
+  const control = useControl();
+  useControlEffect(
+    () => data.value,
+    async (v) => {
+      control.value = await compiledExpr.evaluate(v);
+    },
+    true,
+  );
+  return control;
+}
+
+function useFieldValueExpression(
+  fvExpr: FieldValueExpression,
+  fields: SchemaField[],
+  data: Control<any>,
+) {
+  const refField = findField(fields, fvExpr.field);
+  const otherField = refField ? data.fields[refField.field] : undefined;
+  return useComputed(() => {
+    const fv = otherField?.value;
+    return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
+  });
+}
+function useExpression(
+  expr: EntityExpression,
+  data: Control<any>,
+  fields: SchemaField[],
+): Control<any | undefined> {
+  switch (expr.type) {
+    case ExpressionType.Jsonata:
+      return useJsonataExpression(expr as JsonataExpression, data);
+    case ExpressionType.FieldValue:
+      return useFieldValueExpression(
+        expr as FieldValueExpression,
+        fields,
+        data,
+      );
+    default:
+      return useControl(undefined);
+  }
+}
+
+export function useIsControlVisible(
+  definition: ControlDefinition,
+  data: Control<any>,
+  fields: SchemaField[],
+): Control<boolean | undefined> {
+  const visibleExpression = definition.dynamic?.find(
+    (x) => x.type === DynamicPropertyType.Visible,
+  );
+  if (visibleExpression && visibleExpression.expr) {
+    return useExpression(visibleExpression.expr, data, fields);
+  }
+  return useControl(true);
+}
+
+export function useDefaultValue(
+  definition: ControlDefinition,
+  data: Control<any>,
+  fields: SchemaField[],
+  schemaField?: SchemaField,
+): Control<any> {
+  const defaultValueExpr = definition.dynamic?.find(
+    (x) => x.type === DynamicPropertyType.DefaultValue,
+  );
+  if (defaultValueExpr && defaultValueExpr.expr) {
+    return useExpression(defaultValueExpr.expr, data, fields);
+  }
+  return useControl(
+    (isDataControlDefinition(definition)
+      ? definition.defaultValue
+      : undefined) ?? schemaField?.defaultValue,
+  );
+}
 
 export function controlTitle(
   title: string | undefined | null,
   field: SchemaField,
 ) {
   return title ? title : fieldDisplayName(field);
-}
-
-export function renderControl<S extends ControlDefinition>(
-  definition: S,
-  data: Control<any>,
-  options: RenderControlOptions,
-  key?: Key,
-): ReactElement {
-  const { fields } = options;
-  const formState = { ...options, data };
-  return visitControlDefinition(
-    definition,
-    {
-      data: (def) => {
-        const fieldData = findScalarField(fields, def.field);
-        if (!fieldData)
-          return <h1 key={key}>No schema field for: {def.field}</h1>;
-        return (
-          <DataRenderer
-            key={key}
-            formState={formState}
-            controlDef={def}
-            fieldData={fieldData}
-          />
-        );
-      },
-      group: (d: GroupedControlsDefinition) => (
-        <GroupRenderer key={key} groupDef={d} formState={formState} />
-      ),
-      action: (d: ActionControlDefinition) => (
-        <ActionRenderer key={key} formState={formState} actionDef={d} />
-      ),
-      display: (d: DisplayControlDefinition) => (
-        <DisplayRenderer key={key} formState={formState} displayDef={d} />
-      ),
-    },
-    () => <h1>Unknown control: {(definition as any).type}</h1>,
-  );
-}
-
-/** @trackControls */
-function DataRenderer({
-  formState,
-  controlDef,
-  fieldData,
-}: {
-  controlDef: DataControlDefinition;
-  formState: FormEditState;
-  fieldData: SchemaField;
-}) {
-  const props = formState.hooks.useDataProperties(
-    formState,
-    controlDef,
-    fieldData,
-  );
-  return (props.customRender ?? formState.renderer.renderData)(props);
-}
-
-/** @trackControls */
-function ActionRenderer({
-  formState,
-  actionDef,
-}: {
-  actionDef: ActionControlDefinition;
-  formState: FormEditState;
-}) {
-  const actionControlProperties = formState.hooks.useActionProperties(
-    formState,
-    actionDef,
-  );
-  return formState.renderer.renderAction(actionControlProperties);
-}
-
-/** @trackControls */
-function GroupRenderer({
-  formState,
-  groupDef,
-}: {
-  groupDef: GroupedControlsDefinition;
-  formState: FormEditState;
-}) {
-  const groupProps = formState.hooks.useGroupProperties(formState, groupDef);
-  return formState.renderer.renderGroup(groupProps);
-}
-
-/** @trackControls */
-function DisplayRenderer({
-  formState,
-  displayDef,
-}: {
-  displayDef: DisplayControlDefinition;
-  formState: FormEditState;
-}) {
-  const displayProps = formState.hooks.useDisplayProperties(
-    formState,
-    displayDef,
-  );
-  return formState.renderer.renderDisplay(displayProps);
-}
-
-export function controlForField(
-  field: string,
-  formState: FormEditState,
-): Control<any> {
-  const refField = findField(formState.fields, field);
-  return (
-    (refField && formState.data.fields[refField.field]) ?? newControl(undefined)
-  );
-}
-
-export function fieldForControl(c: ControlDefinition) {
-  return isDataControl(c)
-    ? c.field
-    : isGroupControl(c)
-    ? c.compoundField
-    : undefined;
-}
-
-export const AlwaysVisible: Visibility = { value: true, canChange: false };
-
-export function createAction(
-  label: string,
-  onClick: () => void,
-  actionId?: string,
-): ActionRendererProps {
-  return {
-    definition: {
-      type: ControlDefinitionType.Action,
-      actionId: actionId ?? label,
-      title: label,
-    },
-    visible: AlwaysVisible,
-    onClick,
-  };
-}
-
-export function visitControlData<S extends ControlDefinition, A>(
-  definition: S,
-  { fields, data }: FormDataContext,
-  cb: (
-    definition: DataControlDefinition,
-    control: Control<any>,
-  ) => A | undefined,
-): A | undefined {
-  return visitControlDefinition<A | undefined>(
-    definition,
-    {
-      data(def: DataControlDefinition) {
-        const fieldData = findScalarField(fields, def.field);
-        if (!fieldData) return undefined;
-        return cb(def, data.fields[fieldData.field]);
-      },
-      group(d: GroupedControlsDefinition) {
-        if (d.compoundField) {
-          const compound = findCompoundField(fields, d.compoundField);
-          if (!compound) return;
-          fields = compound.children;
-          data = data.fields[compound.field];
-        }
-        const childState = { fields, data };
-        for (let c of d.children ?? []) {
-          const res = visitControlData(c, childState, cb);
-          if (res !== undefined) return res;
-        }
-        return undefined;
-      },
-      action(d: ActionControlDefinition) {
-        return undefined;
-      },
-      display(d: DisplayControlDefinition) {
-        return undefined;
-      },
-    },
-    () => undefined,
-  );
 }

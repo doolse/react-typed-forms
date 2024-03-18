@@ -60,6 +60,7 @@ importers:
       '@types/react': ^18.2.28
       '@types/react-dom': ^18.2.13
       autoprefixer: 10.4.16
+      clsx: ^1 || ^2
       jsonata: ^2.0.4
       next: 13.5.5
       postcss: 8.4.31
@@ -82,6 +83,7 @@ importers:
       '@react-typed-forms/mui': link:../mui
       '@react-typed-forms/schemas': link:../schemas
       '@react-typed-forms/schemas-mui': link:../schemas-mui
+      clsx: 2.0.0
       jsonata: 2.0.4
       next: 13.5.5_react-dom@18.2.0+react@18.2.0
       prism-react-renderer: 2.1.0_react@18.2.0
@@ -210,7 +212,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.2
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
       path: 0.12.7
 
 packages:
@@ -5198,7 +5200,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:

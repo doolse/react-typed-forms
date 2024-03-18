@@ -4,14 +4,13 @@ import {
   buildSchema,
   createDefaultRenderers,
   createFormRenderer,
-  defaultFormEditHooks,
   defaultTailwindTheme,
   defaultValueForFields,
   FormRenderer,
   intField,
-  renderControl,
   stringField,
   useControlDefinitionForSchema,
+  useControlRenderer,
 } from "@react-typed-forms/schemas";
 
 /** Define your form */
@@ -42,15 +41,16 @@ export default function SimpleSchemasExample() {
 
   /* Generate a ControlDefinition automatically from the schema */
   const controlDefinition = useControlDefinitionForSchema(simpleSchema);
+  const RenderForm = useControlRenderer(
+    controlDefinition,
+    simpleSchema,
+    renderer,
+  );
 
   return (
     <div className="container my-4 max-w-2xl">
       {/* Render the ControlDefinition using `data` for the form state */}
-      {renderControl(controlDefinition, data, {
-        fields: simpleSchema,
-        renderer,
-        hooks: defaultFormEditHooks,
-      })}
+      <RenderForm control={data} />
       <pre>{JSON.stringify(data.value, null, 2)}</pre>
     </div>
   );
