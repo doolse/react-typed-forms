@@ -148,10 +148,10 @@ export function useControlRenderer(
   renderer: FormRenderer,
 ): FC<ControlRenderProps> {
   const Component = useCallback(
-    ({ control }: ControlRenderProps) => {
+    ({ control: parentControl }: ControlRenderProps) => {
       const stopTracking = useComponentTracking();
       try {
-        const visibleControl = useIsControlVisible(c, control, fields);
+        const visibleControl = useIsControlVisible(c, parentControl, fields);
         const visible = visibleControl.current.value;
         const visibility = useControl<Visibility | undefined>(
           visible != null
@@ -171,53 +171,46 @@ export function useControlRenderer(
               }));
           },
         );
-        const childField = isGroupControlsDefinition(c)
-          ? c.compoundField
-          : isDataControlDefinition(c)
-          ? c.field
-          : undefined;
-        const childSchemaField = useMemo(
-          () => (childField ? findField(fields, childField) : undefined),
-          [fields, childField],
+        const { control, schemaField, childFields } = lookupControlData(
+          c,
+          parentControl,
+          fields,
         );
-        const childControl: Control<any> | undefined = childSchemaField
-          ? control.fields[childSchemaField.field]
-          : undefined;
 
         const defaultValueControl = useDefaultValue(
           c,
-          control,
+          parentControl,
           fields,
-          childSchemaField,
+          schemaField,
         );
         useControlEffect(
-          () => [visibility.value, defaultValueControl.value],
-          ([vc, dv]) => {
-            if (vc && childControl && vc.visible === vc.showing) {
+          () => [visibility.value, defaultValueControl.value, control],
+          ([vc, dv, cd]) => {
+            if (vc && cd && vc.visible === vc.showing) {
               if (!vc.visible) {
-                childControl.value = undefined;
-              } else if (childControl.value == null) {
-                childControl.value = dv;
+                cd.value = undefined;
+              } else if (cd.value == null) {
+                cd.value = dv;
               }
             }
           },
           true,
         );
-        const childFields =
-          childSchemaField && isCompoundField(childSchemaField)
-            ? childSchemaField.children
-            : fields;
-        const childRenderers =
+        const childRenderers: FC<ControlRenderProps>[] =
           c.children?.map((cd) =>
             useControlRenderer(cd, childFields, renderer),
           ) ?? [];
         const labelAndChildren = renderControlLayout(
           c,
           renderer,
-          childRenderers,
+          childRenderers.length,
+          (k, i, props) => {
+            const RenderChild = childRenderers[i];
+            return <RenderChild key={k} {...props} />;
+          },
+          parentControl,
           control,
-          childControl,
-          childSchemaField,
+          schemaField,
         );
         return renderer.renderVisibility(visibility, () =>
           renderer.renderLayout(labelAndChildren),
@@ -230,6 +223,31 @@ export function useControlRenderer(
   );
   (Component as any).displayName = "RenderControl";
   return Component;
+}
+
+export interface ControlData {
+  fieldName?: string | null;
+  schemaField?: SchemaField;
+  childFields: SchemaField[];
+  control?: Control<any>;
+}
+export function lookupControlData(
+  c: ControlDefinition,
+  control: Control<any>,
+  fields: SchemaField[],
+): ControlData {
+  const fieldName = isGroupControlsDefinition(c)
+    ? c.compoundField
+    : isDataControlDefinition(c)
+    ? c.field
+    : undefined;
+  const schemaField = fieldName ? findField(fields, fieldName) : undefined;
+  const childControl: Control<any> | undefined = schemaField
+    ? control.fields[schemaField.field]
+    : undefined;
+  const childFields =
+    schemaField && isCompoundField(schemaField) ? schemaField.children : fields;
+  return { fieldName, schemaField, childFields, control: childControl };
 }
 
 function renderArray(
@@ -258,15 +276,13 @@ function renderArray(
 }
 function groupProps(
   renderOptions: GroupRenderOptions,
-  children: FC<ControlRenderProps>[],
+  childCount: number,
+  renderChild: ChildRenderer,
   control: Control<any>,
 ): GroupRendererProps {
   return {
-    childCount: children?.length ?? 0,
-    renderChild: (i) => {
-      const RenderChild = children[i];
-      return <RenderChild key={i} control={control} />;
-    },
+    childCount,
+    renderChild: (i) => renderChild(i, i, { control }),
     renderOptions,
   };
 }
@@ -288,17 +304,20 @@ function dataProps(
   };
 }
 
+export type ChildRenderer = (
+  k: Key,
+  childIndex: number,
+  props: ControlRenderProps,
+) => ReactNode;
 export function renderControlLayout(
   c: ControlDefinition,
   renderer: FormRenderer,
-  childRenderer: FC<ControlRenderProps>[],
+  childCount: number,
+  childRenderer: ChildRenderer,
   parentControl: Control<any>,
   childControl?: Control<any>,
   schemaField?: SchemaField,
-): Pick<
-  ControlLayoutProps,
-  "label" | "errorControl" | "processLayout" | "children"
-> {
+): ControlLayoutProps {
   if (isDataControlDefinition(c)) {
     return renderData(c);
   }
@@ -313,7 +332,7 @@ export function renderControlLayout(
     }
     return {
       children: renderer.renderGroup(
-        groupProps(c.groupOptions, childRenderer, parentControl),
+        groupProps(c.groupOptions, childCount, childRenderer, parentControl),
       ),
       label: {
         label: c.title,
@@ -363,7 +382,12 @@ export function renderControlLayout(
       }
       return {
         children: renderer.renderGroup(
-          groupProps({ type: "Standard" }, childRenderer, childControl!),
+          groupProps(
+            { type: "Standard" },
+            childCount,
+            childRenderer,
+            childControl!,
+          ),
         ),
         label,
         errorControl: childControl,
@@ -402,10 +426,7 @@ export function renderControlLayout(
         {renderer.renderGroup({
           renderOptions: { type: "Standard", hideTitle: true },
           childCount: childRenderer.length,
-          renderChild: (ci) => {
-            const RenderChild = childRenderer[ci];
-            return <RenderChild key={ci} control={control} />;
-          },
+          renderChild: (ci) => childRenderer(ci, ci, { control }),
         })}
       </Fragment>
     );
