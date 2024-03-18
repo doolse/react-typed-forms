@@ -1232,13 +1232,25 @@ export class SubscriptionTracker {
   }
 }
 
+const restoreControlSymbol = Symbol("restoreControl");
 export function trackedValue<A>(c: Control<A>): A {
-  const cv = c.current.value;
+  const cv: any = c.current.value;
   if (cv == null) return cv;
   if (typeof cv !== "object") return c.value;
   return new Proxy(cv, {
     get(target: object, p: string | symbol, receiver: any): any {
-      return p;
+      if (p === restoreControlSymbol) return c;
+      if (Array.isArray(cv)) {
+        if (p === "length" || p === "toJSON") return Reflect.get(cv, p);
+        const nc = (c.elements as any)[p];
+        if (typeof nc === "function") return nc;
+        return trackedValue(nc);
+      }
+      return trackedValue((c.fields as any)[p]);
     },
   }) as A;
+}
+
+export function unsafeRestoreControl<A>(v: A): Control<A> {
+  return (v as any)[restoreControlSymbol];
 }
