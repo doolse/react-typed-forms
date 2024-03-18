@@ -14,6 +14,7 @@ import {
   JsonataExpression,
   TextDisplay,
 } from "./types";
+import { ActionRendererProps } from "./controlRender";
 
 export function dataControl(
   field: string,
@@ -59,6 +60,19 @@ export function jsonataExpr(expression: string): JsonataExpression {
   return { type: ExpressionType.Jsonata, expression };
 }
 
+export function groupedControl(
+  children: ControlDefinition[],
+  title?: string,
+  options?: Partial<GroupedControlsDefinition>,
+): GroupedControlsDefinition {
+  return {
+    type: ControlDefinitionType.Group,
+    children,
+    title,
+    groupOptions: { type: "Standard", hideTitle: !title },
+    ...options,
+  };
+}
 export function compoundControl(
   field: string,
   title: string | undefined,
@@ -73,4 +87,12 @@ export function compoundControl(
     renderOptions: { type: "Standard" },
     ...options,
   };
+}
+
+export function createAction(
+  actionId: string,
+  onClick: () => void,
+  actionText?: string,
+): ActionRendererProps {
+  return { actionId, onClick, actionText: actionText ?? actionId };
 }

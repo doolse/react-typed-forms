@@ -71,6 +71,8 @@ export interface LabelRendererRegistration {
   labelType?: LabelType | LabelType[];
   render: (
     labelProps: LabelRendererProps,
+    labelStart: ReactNode,
+    labelEnd: ReactNode,
     renderers: FormRenderer,
   ) => ReactElement;
 }
@@ -179,11 +181,15 @@ export function createFormRenderer(
     );
   }
 
-  function renderLabel(props: LabelRendererProps) {
+  function renderLabel(
+    props: LabelRendererProps,
+    labelStart: ReactNode,
+    labelEnd: ReactNode,
+  ) {
     const renderer =
       labelRenderers.find((x) => isOneOf(x.labelType, props.type)) ??
       defaultRenderers.label;
-    return renderer.render(props, formRenderers);
+    return renderer.render(props, labelStart, labelEnd, formRenderers);
   }
 
   // function withAdornments(
@@ -297,17 +303,21 @@ export function createDefaultLabelRenderer(
 ): LabelRendererRegistration {
   const { className, labelClass, groupLabelClass, requiredElement } = options;
   return {
-    render: (props) => (
-      <label
-        htmlFor={props.forId}
-        className={clsx(
-          labelClass,
-          props.type === LabelType.Group && groupLabelClass,
-        )}
-      >
-        {props.label}
-        {props.required && requiredElement}
-      </label>
+    render: (props, labelStart, labelEnd) => (
+      <>
+        {labelStart}
+        <label
+          htmlFor={props.forId}
+          className={clsx(
+            labelClass,
+            props.type === LabelType.Group && groupLabelClass,
+          )}
+        >
+          {props.label}
+          {props.required && requiredElement}
+        </label>
+        {labelEnd}
+      </>
     ),
     type: "label",
   };
@@ -573,12 +583,19 @@ export function createDefaultRenderers(
 function createDefaultLayoutRenderer(
   options: DefaultLayoutRendererOptions = {},
 ) {
-  return createLayoutRenderer(({ label, children }) => (
-    <div>
-      {label}
-      {children}
-    </div>
-  ));
+  return createLayoutRenderer(
+    ({ children, label, renderedLabel, labelStart, labelEnd }, renderers) => {
+      return (
+        <div>
+          {renderedLabel ||
+            (label &&
+              !label.hide &&
+              renderers.renderLabel(label, labelStart, labelEnd))}
+          {children}
+        </div>
+      );
+    },
+  );
 }
 
 function createClassStyledRenderers() {
@@ -671,9 +688,10 @@ export function createDataRenderer(
 }
 
 export function createLabelRenderer(
-  options: Omit<LabelRendererRegistration, "type">,
+  render: LabelRendererRegistration["render"],
+  options?: Omit<LabelRendererRegistration, "type">,
 ): LabelRendererRegistration {
-  return { type: "label", ...options };
+  return { type: "label", render, ...options };
 }
 
 export function createVisibilityRenderer(

@@ -55,7 +55,11 @@ export interface FormRenderer {
   renderAction: (props: ActionRendererProps) => ReactNode;
   renderArray: (props: ArrayRendererProps) => ReactNode;
   renderAdornment: (props: AdornmentProps) => AdornmentRenderer;
-  renderLabel: (props: LabelRendererProps) => ReactNode;
+  renderLabel: (
+    props: LabelRendererProps,
+    labelStart: ReactNode,
+    labelEnd: ReactNode,
+  ) => ReactNode;
   renderLayout: (props: ControlLayoutProps) => ReactNode;
   renderVisibility: (
     control: Control<Visibility | undefined>,
@@ -91,8 +95,8 @@ export interface Visibility {
 
 export interface ControlLayoutProps {
   labelStart?: ReactNode;
-  label?: ReactNode;
-  labelText?: ReactNode;
+  label?: LabelRendererProps;
+  renderedLabel?: ReactNode;
   labelEnd?: ReactNode;
   controlStart?: ReactNode;
   children?: ReactNode;
@@ -107,6 +111,7 @@ export enum LabelType {
 }
 export interface LabelRendererProps {
   type: LabelType;
+  hide?: boolean | null;
   label: ReactNode;
   required?: boolean | null;
   forId?: string;
@@ -206,7 +211,7 @@ export function useControlRenderer(
           c.children?.map((cd) =>
             useControlRenderer(cd, childFields, renderer),
           ) ?? [];
-        const labelAndChildren = useRenderControlLayout(
+        const labelAndChildren = renderControlLayout(
           c,
           renderer,
           childRenderers,
@@ -283,7 +288,7 @@ function dataProps(
   };
 }
 
-export function useRenderControlLayout(
+export function renderControlLayout(
   c: ControlDefinition,
   renderer: FormRenderer,
   childRenderer: FC<ControlRenderProps>[],
@@ -292,7 +297,7 @@ export function useRenderControlLayout(
   schemaField?: SchemaField,
 ): Pick<
   ControlLayoutProps,
-  "label" | "errorControl" | "processLayout" | "children" | "labelText"
+  "label" | "errorControl" | "processLayout" | "children"
 > {
   if (isDataControlDefinition(c)) {
     return renderData(c);
@@ -306,15 +311,15 @@ export function useRenderControlLayout(
         }),
       );
     }
-    const labelText = !c.groupOptions.hideTitle ? c.title : undefined;
     return {
       children: renderer.renderGroup(
         groupProps(c.groupOptions, childRenderer, parentControl),
       ),
-      label: labelText
-        ? renderer.renderLabel({ label: labelText, type: LabelType.Group })
-        : undefined,
-      labelText,
+      label: {
+        label: c.title,
+        type: LabelType.Group,
+        hide: c.groupOptions.hideTitle,
+      },
     };
   }
   if (isActionControlsDefinition(c)) {
@@ -337,12 +342,11 @@ export function useRenderControlLayout(
       type: FieldType.String,
     };
     if (isCompoundField(field)) {
-      const label = !c.hideTitle
-        ? renderer.renderLabel({
-            label: controlTitle(c.title, field),
-            type: field.collection ? LabelType.Control : LabelType.Group,
-          })
-        : undefined;
+      const label: LabelRendererProps = {
+        hide: c.hideTitle,
+        label: controlTitle(c.title, field),
+        type: field.collection ? LabelType.Control : LabelType.Group,
+      };
 
       if (field.collection) {
         return {
@@ -381,15 +385,13 @@ export function useRenderControlLayout(
               )
           : undefined,
       ),
-      labelText,
-      label: labelText
-        ? renderer.renderLabel({
-            type: LabelType.Control,
-            label: labelText,
-            forId: props.id,
-            required: c.required,
-          })
-        : undefined,
+      label: {
+        type: LabelType.Control,
+        label: labelText,
+        forId: props.id,
+        required: c.required,
+        hide: c.hideTitle,
+      },
       errorControl: childControl,
     };
   }
