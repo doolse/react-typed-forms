@@ -1231,3 +1231,14 @@ export class SubscriptionTracker {
     this.subscribed = [];
   }
 }
+
+export function trackedValue<A>(c: Control<A>): A {
+  const cv = c.current.value;
+  if (cv == null) return cv;
+  if (typeof cv !== "object") return c.value;
+  return new Proxy(cv, {
+    get(target: object, p: string | symbol, receiver: any): any {
+      return p;
+    },
+  }) as A;
+}
