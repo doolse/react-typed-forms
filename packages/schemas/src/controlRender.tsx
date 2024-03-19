@@ -2,9 +2,12 @@ import React, {
   FC,
   Fragment,
   Key,
+  MutableRefObject,
   ReactNode,
+  RefObject,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import {
   addElement,
@@ -142,16 +145,47 @@ export interface ControlRenderProps {
   control: Control<any>;
 }
 
+export interface CreateDataOptions {
+  readonly?: boolean | null;
+}
+
+export interface ControlGroupContext {
+  groupControl: Control<any>;
+  fields: SchemaField[];
+}
+
+export type CreateDataProps = (
+  definition: DataControlDefinition,
+  field: SchemaField,
+  groupContext: ControlGroupContext,
+  control: Control<any>,
+  options: CreateDataOptions,
+) => DataRendererProps;
+export interface ControlRenderOptions extends CreateDataOptions {
+  useDataHook?: (c: ControlDefinition) => CreateDataProps;
+}
+
 export function useControlRenderer(
-  c: ControlDefinition,
+  definition: ControlDefinition,
   fields: SchemaField[],
   renderer: FormRenderer,
+  options: ControlRenderOptions = {},
 ): FC<ControlRenderProps> {
+  const dataProps = options.useDataHook?.(definition) ?? defaultDataProps;
+  const schemaField = lookupSchemaField(definition, fields);
+  const useDefaultValue = useEvalDefaultValueHook(definition, schemaField);
+  const useIsVisible = useEvalVisibilityHook(definition, schemaField);
+  const r = useUpdatedRef({ options, definition, fields, schemaField });
   const Component = useCallback(
     ({ control: parentControl }: ControlRenderProps) => {
       const stopTracking = useComponentTracking();
       try {
-        const visibleControl = useIsControlVisible(c, parentControl, fields);
+        const { definition: c, options, fields, schemaField } = r.current;
+        const groupContext: ControlGroupContext = {
+          groupControl: parentControl,
+          fields,
+        };
+        const visibleControl = useIsVisible(groupContext);
         const visible = visibleControl.current.value;
         const visibility = useControl<Visibility | undefined>(
           visible != null
@@ -171,17 +205,11 @@ export function useControlRenderer(
               }));
           },
         );
-        const { control, schemaField, childFields } = lookupControlData(
-          c,
-          parentControl,
-          fields,
-        );
 
-        const defaultValueControl = useDefaultValue(
-          c,
-          parentControl,
-          fields,
+        const defaultValueControl = useDefaultValue(groupContext);
+        const [control, childContext] = getControlData(
           schemaField,
+          groupContext,
         );
         useControlEffect(
           () => [visibility.value, defaultValueControl.value, control],
@@ -198,7 +226,7 @@ export function useControlRenderer(
         );
         const childRenderers: FC<ControlRenderProps>[] =
           c.children?.map((cd) =>
-            useControlRenderer(cd, childFields, renderer),
+            useControlRenderer(cd, childContext.fields, renderer, options),
           ) ?? [];
         const labelAndChildren = renderControlLayout(
           c,
@@ -208,7 +236,9 @@ export function useControlRenderer(
             const RenderChild = childRenderers[i];
             return <RenderChild key={k} {...props} />;
           },
-          parentControl,
+          dataProps,
+          options,
+          groupContext,
           control,
           schemaField,
         );
@@ -219,35 +249,35 @@ export function useControlRenderer(
         stopTracking();
       }
     },
-    [c, fields, renderer],
+    [r, dataProps, useIsVisible, useDefaultValue, renderer],
   );
   (Component as any).displayName = "RenderControl";
   return Component;
 }
-
-export interface ControlData {
-  fieldName?: string | null;
-  schemaField?: SchemaField;
-  childFields: SchemaField[];
-  control?: Control<any>;
-}
-export function lookupControlData(
+export function lookupSchemaField(
   c: ControlDefinition,
-  control: Control<any>,
   fields: SchemaField[],
-): ControlData {
+): SchemaField | undefined {
   const fieldName = isGroupControlsDefinition(c)
     ? c.compoundField
     : isDataControlDefinition(c)
     ? c.field
     : undefined;
-  const schemaField = fieldName ? findField(fields, fieldName) : undefined;
+  return fieldName ? findField(fields, fieldName) : undefined;
+}
+export function getControlData(
+  schemaField: SchemaField | undefined,
+  parentContext: ControlGroupContext,
+): [Control<any> | undefined, ControlGroupContext] {
   const childControl: Control<any> | undefined = schemaField
-    ? control.fields[schemaField.field]
+    ? parentContext.groupControl.fields[schemaField.field]
     : undefined;
-  const childFields =
-    schemaField && isCompoundField(schemaField) ? schemaField.children : fields;
-  return { fieldName, schemaField, childFields, control: childControl };
+  return [
+    childControl,
+    schemaField && isCompoundField(schemaField)
+      ? { groupControl: childControl!, fields: schemaField.children }
+      : parentContext,
+  ];
 }
 
 function renderArray(
@@ -287,22 +317,23 @@ function groupProps(
   };
 }
 
-function dataProps(
-  definition: DataControlDefinition,
-  field: SchemaField,
-  control: Control<any>,
-  globalReadonly: boolean,
-): DataRendererProps {
+export const defaultDataProps: CreateDataProps = (
+  definition,
+  field,
+  groupContext,
+  control,
+  options,
+) => {
   return {
     control,
     field,
     id: "c" + control.uniqueId,
-    options: field.options,
-    readonly: globalReadonly || !!definition.readonly,
+    options: (field.options?.length ?? 0) === 0 ? null : field.options,
+    readonly: options.readonly || !!definition.readonly,
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required: !!definition.required,
   };
-}
+};
 
 export type ChildRenderer = (
   k: Key,
@@ -314,7 +345,9 @@ export function renderControlLayout(
   renderer: FormRenderer,
   childCount: number,
   childRenderer: ChildRenderer,
-  parentControl: Control<any>,
+  dataProps: CreateDataProps,
+  dataOptions: CreateDataOptions,
+  groupContext: ControlGroupContext,
   childControl?: Control<any>,
   schemaField?: SchemaField,
 ): ControlLayoutProps {
@@ -332,7 +365,12 @@ export function renderControlLayout(
     }
     return {
       children: renderer.renderGroup(
-        groupProps(c.groupOptions, childCount, childRenderer, parentControl),
+        groupProps(
+          c.groupOptions,
+          childCount,
+          childRenderer,
+          groupContext.groupControl,
+        ),
       ),
       label: {
         label: c.title,
@@ -393,7 +431,7 @@ export function renderControlLayout(
         errorControl: childControl,
       };
     }
-    const props = dataProps(c, field, childControl!, false);
+    const props = dataProps(c, field, groupContext, childControl!, dataOptions);
     const labelText = !c.hideTitle ? controlTitle(c.title, field) : undefined;
     return {
       processLayout: renderer.renderData(
@@ -466,6 +504,10 @@ function useJsonataExpression(
   return control;
 }
 
+export type EvalExpressionHook<A = any> = (
+  groupContext: ControlGroupContext,
+) => Control<A | undefined>;
+
 function useFieldValueExpression(
   fvExpr: FieldValueExpression,
   fields: SchemaField[],
@@ -478,55 +520,100 @@ function useFieldValueExpression(
     return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
   });
 }
-function useExpression(
-  expr: EntityExpression,
-  data: Control<any>,
-  fields: SchemaField[],
-): Control<any | undefined> {
-  switch (expr.type) {
-    case ExpressionType.Jsonata:
-      return useJsonataExpression(expr as JsonataExpression, data);
-    case ExpressionType.FieldValue:
-      return useFieldValueExpression(
-        expr as FieldValueExpression,
-        fields,
-        data,
-      );
-    default:
-      return useControl(undefined);
-  }
-}
-
-export function useIsControlVisible(
-  definition: ControlDefinition,
-  data: Control<any>,
-  fields: SchemaField[],
-): Control<boolean | undefined> {
-  const visibleExpression = definition.dynamic?.find(
-    (x) => x.type === DynamicPropertyType.Visible,
+function useEvalExpressionHook(
+  expr: EntityExpression | undefined,
+): EvalExpressionHook | undefined {
+  const r = useUpdatedRef(expr);
+  const cb = useCallback(
+    ({ groupControl, fields }: ControlGroupContext) => {
+      const expr = r.current!;
+      switch (expr.type) {
+        case ExpressionType.Jsonata:
+          return useJsonataExpression(expr as JsonataExpression, groupControl);
+        case ExpressionType.FieldValue:
+          return useFieldValueExpression(
+            expr as FieldValueExpression,
+            fields,
+            groupControl,
+          );
+        default:
+          return useControl(undefined);
+      }
+    },
+    [expr?.type, r],
   );
-  if (visibleExpression && visibleExpression.expr) {
-    return useExpression(visibleExpression.expr, data, fields);
-  }
-  return useControl(true);
+  return expr ? cb : undefined;
 }
 
-export function useDefaultValue(
+export function useEvalDynamicHook(
   definition: ControlDefinition,
-  data: Control<any>,
-  fields: SchemaField[],
+  type: DynamicPropertyType,
+): EvalExpressionHook | undefined {
+  const expression = definition.dynamic?.find((x) => x.type === type);
+  return useEvalExpressionHook(expression?.expr);
+}
+
+export function matchesType(
+  context: ControlGroupContext,
+  types?: string[] | null,
+) {
+  if (types == null || types.length === 0) return true;
+  const typeField = getTypeField(context);
+  return types.includes(typeField!.value);
+}
+
+export function useEvalVisibilityHook(
+  definition: ControlDefinition,
   schemaField?: SchemaField,
-): Control<any> {
-  const defaultValueExpr = definition.dynamic?.find(
-    (x) => x.type === DynamicPropertyType.DefaultValue,
+): EvalExpressionHook<boolean> {
+  const dynamicVisibility = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.Visible,
   );
-  if (defaultValueExpr && defaultValueExpr.expr) {
-    return useExpression(defaultValueExpr.expr, data, fields);
-  }
-  return useControl(
-    (isDataControlDefinition(definition)
-      ? definition.defaultValue
-      : undefined) ?? schemaField?.defaultValue,
+  const r = useUpdatedRef(schemaField);
+  return useCallback(
+    (ctx) => {
+      const schemaField = r.current;
+      return (
+        dynamicVisibility?.(ctx) ??
+        useComputed(() => matchesType(ctx, schemaField?.onlyForTypes))
+      );
+    },
+    [dynamicVisibility, r],
+  );
+}
+
+export function getTypeField(
+  context: ControlGroupContext,
+): Control<string> | undefined {
+  const typeSchemaField = context.fields.find((x) => x.isTypeField);
+  return typeSchemaField
+    ? context.groupControl.fields[typeSchemaField.field]
+    : undefined;
+}
+
+export function useEvalDefaultValueHook(
+  definition: ControlDefinition,
+  schemaField?: SchemaField,
+): EvalExpressionHook {
+  const dynamicValue = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.DefaultValue,
+  );
+  const r = useUpdatedRef({ definition, schemaField });
+  return useCallback(
+    (ctx) => {
+      const { definition, schemaField } = r.current;
+      return (
+        dynamicValue?.(ctx) ??
+        useControl(
+          (isDataControlDefinition(definition)
+            ? definition.defaultValue
+            : undefined) ?? schemaField?.defaultValue,
+        )
+      );
+    },
+    [dynamicValue, r],
   );
 }
 
@@ -535,4 +622,10 @@ export function controlTitle(
   field: SchemaField,
 ) {
   return title ? title : fieldDisplayName(field);
+}
+
+function useUpdatedRef<A>(a: A): MutableRefObject<A> {
+  const r = useRef(a);
+  r.current = a;
+  return r;
 }

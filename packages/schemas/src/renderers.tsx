@@ -279,7 +279,6 @@ interface DefaultLabelRendererOptions {
   className?: string;
   groupLabelClass?: string;
   requiredElement?: ReactNode;
-  labelClass?: string;
 }
 
 interface DefaultActionRendererOptions {
@@ -301,7 +300,7 @@ export function createDefaultActionRenderer(
 export function createDefaultLabelRenderer(
   options: DefaultLabelRendererOptions = { requiredElement: <span> *</span> },
 ): LabelRendererRegistration {
-  const { className, labelClass, groupLabelClass, requiredElement } = options;
+  const { className, groupLabelClass, requiredElement } = options;
   return {
     render: (props, labelStart, labelEnd) => (
       <>
@@ -309,7 +308,7 @@ export function createDefaultLabelRenderer(
         <label
           htmlFor={props.forId}
           className={clsx(
-            labelClass,
+            className,
             props.type === LabelType.Group && groupLabelClass,
           )}
         >
@@ -551,7 +550,9 @@ export function createDefaultAdornmentRenderer(
   return { type: "adornment", render: () => ({}) };
 }
 
-export interface DefaultLayoutRendererOptions {}
+export interface DefaultLayoutRendererOptions {
+  className?: string;
+}
 
 export interface DefaultRendererOptions {
   data?: DefaultDataRendererOptions;
@@ -580,13 +581,13 @@ export function createDefaultRenderers(
   };
 }
 
-function createDefaultLayoutRenderer(
-  options: DefaultLayoutRendererOptions = {},
-) {
+function createDefaultLayoutRenderer({
+  className,
+}: DefaultLayoutRendererOptions = {}) {
   return createLayoutRenderer(
     ({ children, label, renderedLabel, labelStart, labelEnd }, renderers) => {
       return (
-        <div>
+        <div className={className}>
           {renderedLabel ||
             (label &&
               !label.hide &&

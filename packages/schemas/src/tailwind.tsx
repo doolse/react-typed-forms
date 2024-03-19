@@ -3,7 +3,6 @@ import { DefaultRendererOptions } from "./renderers";
 
 export const defaultTailwindTheme: DefaultRendererOptions = {
   label: {
-    className: "flex flex-col",
     groupLabelClass: "font-bold",
     requiredElement: <span className="text-red-500"> *</span>,
   },
@@ -17,5 +16,8 @@ export const defaultTailwindTheme: DefaultRendererOptions = {
   },
   action: {
     className: "bg-primary rounded-lg p-3 text-white",
+  },
+  layout: {
+    className: "flex flex-col",
   },
 };
