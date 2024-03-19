@@ -1,14 +1,4 @@
-import React, {
-  FC,
-  Fragment,
-  Key,
-  MutableRefObject,
-  ReactNode,
-  RefObject,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import React, { FC, Fragment, Key, ReactNode, useCallback } from "react";
 import {
   addElement,
   Control,
@@ -18,35 +8,32 @@ import {
   useControl,
   useControlEffect,
 } from "@react-typed-forms/core";
-import jsonata from "jsonata";
 import {
   AdornmentPlacement,
   ControlAdornment,
   ControlDefinition,
   DataControlDefinition,
   DisplayData,
-  DynamicPropertyType,
-  EntityExpression,
-  ExpressionType,
   FieldOption,
-  FieldType,
-  FieldValueExpression,
   GroupRenderOptions,
   isActionControlsDefinition,
   isDataControlDefinition,
   isDisplayControlsDefinition,
   isGroupControlsDefinition,
-  JsonataExpression,
   RenderOptions,
   SchemaField,
 } from "./types";
 import {
+  ControlGroupContext,
   elementValueForField,
   fieldDisplayName,
   findField,
   isCompoundField,
+  useUpdatedRef,
 } from "./util";
 import { dataControl } from "./controlBuilder";
+import { useEvalDefaultValueHook, useEvalVisibilityHook } from "./hooks";
+import { useValidationHook } from "./validators";
 
 export interface FormRenderer {
   renderData: (
@@ -74,14 +61,16 @@ export interface DisplayRendererProps {
   data: DisplayData;
 }
 export interface AdornmentProps {
-  key: Key;
   adornment: ControlAdornment;
 }
 
+export const AppendAdornmentPriority = 0;
+export const WrapAdornmentPriority = 1000;
+
 export interface AdornmentRenderer {
-  wrap?: (children: ReactNode) => ReactNode;
-  child?: ReactNode;
-  placement?: AdornmentPlacement;
+  apply(children: RenderedLayout): void;
+  adornment?: ControlAdornment;
+  priority: number;
 }
 
 export interface ArrayRendererProps {
@@ -96,15 +85,20 @@ export interface Visibility {
   showing: boolean;
 }
 
-export interface ControlLayoutProps {
+export interface RenderedLayout {
   labelStart?: ReactNode;
-  label?: LabelRendererProps;
-  renderedLabel?: ReactNode;
   labelEnd?: ReactNode;
   controlStart?: ReactNode;
-  children?: ReactNode;
   controlEnd?: ReactNode;
+  label?: ReactNode;
+  children?: ReactNode;
+}
+
+export interface ControlLayoutProps {
+  label?: LabelRendererProps;
   errorControl?: Control<any>;
+  adornments?: AdornmentRenderer[];
+  children?: ReactNode;
   processLayout?: (props: ControlLayoutProps) => ControlLayoutProps;
 }
 
@@ -133,6 +127,7 @@ export interface DataRendererProps {
   readonly: boolean;
   required: boolean;
   options: FieldOption[] | undefined | null;
+  hidden: boolean;
 }
 
 export interface ActionRendererProps {
@@ -145,13 +140,9 @@ export interface ControlRenderProps {
   control: Control<any>;
 }
 
-export interface CreateDataOptions {
+export interface FormContextOptions {
   readonly?: boolean | null;
-}
-
-export interface ControlGroupContext {
-  groupControl: Control<any>;
-  fields: SchemaField[];
+  hidden?: boolean;
 }
 
 export type CreateDataProps = (
@@ -159,9 +150,9 @@ export type CreateDataProps = (
   field: SchemaField,
   groupContext: ControlGroupContext,
   control: Control<any>,
-  options: CreateDataOptions,
+  options: FormContextOptions,
 ) => DataRendererProps;
-export interface ControlRenderOptions extends CreateDataOptions {
+export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
 }
 
@@ -175,6 +166,7 @@ export function useControlRenderer(
   const schemaField = lookupSchemaField(definition, fields);
   const useDefaultValue = useEvalDefaultValueHook(definition, schemaField);
   const useIsVisible = useEvalVisibilityHook(definition, schemaField);
+  const useValidation = useValidationHook(definition);
   const r = useUpdatedRef({ options, definition, fields, schemaField });
   const Component = useCallback(
     ({ control: parentControl }: ControlRenderProps) => {
@@ -191,7 +183,7 @@ export function useControlRenderer(
           visible != null
             ? {
                 visible,
-                showing: false,
+                showing: visible,
               }
             : undefined,
         );
@@ -224,9 +216,19 @@ export function useControlRenderer(
           },
           true,
         );
+        const hidden = useComputed(
+          () => options.hidden || !visibility.fields?.showing.value,
+        ).value;
+        useValidation(control!, hidden, groupContext);
+        const myOptions =
+          options.hidden !== hidden ? { ...options, hidden } : options;
         const childRenderers: FC<ControlRenderProps>[] =
           c.children?.map((cd) =>
-            useControlRenderer(cd, childContext.fields, renderer, options),
+            useControlRenderer(cd, childContext.fields, renderer, myOptions),
+          ) ?? [];
+        const adornments =
+          definition.adornments?.map((x) =>
+            renderer.renderAdornment({ adornment: x }),
           ) ?? [];
         const labelAndChildren = renderControlLayout(
           c,
@@ -237,19 +239,19 @@ export function useControlRenderer(
             return <RenderChild key={k} {...props} />;
           },
           dataProps,
-          options,
+          myOptions,
           groupContext,
           control,
           schemaField,
         );
         return renderer.renderVisibility(visibility, () =>
-          renderer.renderLayout(labelAndChildren),
+          renderer.renderLayout({ ...labelAndChildren, adornments }),
         );
       } finally {
         stopTracking();
       }
     },
-    [r, dataProps, useIsVisible, useDefaultValue, renderer],
+    [r, dataProps, useIsVisible, useDefaultValue, useValidation, renderer],
   );
   (Component as any).displayName = "RenderControl";
   return Component;
@@ -332,6 +334,7 @@ export const defaultDataProps: CreateDataProps = (
     readonly: options.readonly || !!definition.readonly,
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required: !!definition.required,
+    hidden: !!options.hidden,
   };
 };
 
@@ -346,7 +349,7 @@ export function renderControlLayout(
   childCount: number,
   childRenderer: ChildRenderer,
   dataProps: CreateDataProps,
-  dataOptions: CreateDataOptions,
+  dataOptions: FormContextOptions,
   groupContext: ControlGroupContext,
   childControl?: Control<any>,
   schemaField?: SchemaField,
@@ -394,24 +397,21 @@ export function renderControlLayout(
   return {};
 
   function renderData(c: DataControlDefinition) {
-    const field: SchemaField = schemaField ?? {
-      field: c.field,
-      type: FieldType.String,
-    };
-    if (isCompoundField(field)) {
+    if (!schemaField) throw "No schemafield";
+    if (isCompoundField(schemaField)) {
       const label: LabelRendererProps = {
         hide: c.hideTitle,
-        label: controlTitle(c.title, field),
-        type: field.collection ? LabelType.Control : LabelType.Group,
+        label: controlTitle(c.title, schemaField),
+        type: schemaField.collection ? LabelType.Control : LabelType.Group,
       };
 
-      if (field.collection) {
+      if (schemaField.collection) {
         return {
           label,
           children: renderArray(
             renderer,
-            controlTitle(c.title, field),
-            field,
+            controlTitle(c.title, schemaField),
+            schemaField,
             childControl!,
             compoundRenderer,
           ),
@@ -431,17 +431,25 @@ export function renderControlLayout(
         errorControl: childControl,
       };
     }
-    const props = dataProps(c, field, groupContext, childControl!, dataOptions);
-    const labelText = !c.hideTitle ? controlTitle(c.title, field) : undefined;
+    const props = dataProps(
+      c,
+      schemaField,
+      groupContext,
+      childControl!,
+      dataOptions,
+    );
+    const labelText = !c.hideTitle
+      ? controlTitle(c.title, schemaField)
+      : undefined;
     return {
       processLayout: renderer.renderData(
         props,
-        field.collection
+        schemaField.collection
           ? () =>
               renderArray(
                 renderer,
-                controlTitle(c.title, field),
-                field,
+                controlTitle(c.title, schemaField),
+                schemaField,
                 childControl!,
                 scalarRenderer(props),
               )
@@ -463,7 +471,7 @@ export function renderControlLayout(
       <Fragment key={control.uniqueId}>
         {renderer.renderGroup({
           renderOptions: { type: "Standard", hideTitle: true },
-          childCount: childRenderer.length,
+          childCount,
           renderChild: (ci) => childRenderer(ci, ci, { control }),
         })}
       </Fragment>
@@ -485,136 +493,70 @@ export function renderControlLayout(
   }
 }
 
-function useJsonataExpression(
-  jExpr: JsonataExpression,
-  data: Control<any>,
-): Control<any> {
-  const compiledExpr = useMemo(
-    () => jsonata(jExpr.expression),
-    [jExpr.expression],
-  );
-  const control = useControl();
-  useControlEffect(
-    () => data.value,
-    async (v) => {
-      control.value = await compiledExpr.evaluate(v);
-    },
-    true,
-  );
-  return control;
+export function appendMarkup(
+  k: keyof RenderedLayout,
+  markup: ReactNode,
+): (layout: RenderedLayout) => void {
+  return (layout) =>
+    (layout[k] = (
+      <>
+        {layout[k]}
+        {markup}
+      </>
+    ));
 }
 
-export type EvalExpressionHook<A = any> = (
-  groupContext: ControlGroupContext,
-) => Control<A | undefined>;
-
-function useFieldValueExpression(
-  fvExpr: FieldValueExpression,
-  fields: SchemaField[],
-  data: Control<any>,
-) {
-  const refField = findField(fields, fvExpr.field);
-  const otherField = refField ? data.fields[refField.field] : undefined;
-  return useComputed(() => {
-    const fv = otherField?.value;
-    return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
-  });
-}
-function useEvalExpressionHook(
-  expr: EntityExpression | undefined,
-): EvalExpressionHook | undefined {
-  const r = useUpdatedRef(expr);
-  const cb = useCallback(
-    ({ groupControl, fields }: ControlGroupContext) => {
-      const expr = r.current!;
-      switch (expr.type) {
-        case ExpressionType.Jsonata:
-          return useJsonataExpression(expr as JsonataExpression, groupControl);
-        case ExpressionType.FieldValue:
-          return useFieldValueExpression(
-            expr as FieldValueExpression,
-            fields,
-            groupControl,
-          );
-        default:
-          return useControl(undefined);
-      }
-    },
-    [expr?.type, r],
-  );
-  return expr ? cb : undefined;
+export function wrapMarkup(
+  k: keyof RenderedLayout,
+  wrap: (ex: ReactNode) => ReactNode,
+): (layout: RenderedLayout) => void {
+  return (layout) => (layout[k] = wrap(layout[k]));
 }
 
-export function useEvalDynamicHook(
-  definition: ControlDefinition,
-  type: DynamicPropertyType,
-): EvalExpressionHook | undefined {
-  const expression = definition.dynamic?.find((x) => x.type === type);
-  return useEvalExpressionHook(expression?.expr);
+export function layoutKeyForPlacement(
+  pos: AdornmentPlacement,
+): keyof RenderedLayout {
+  switch (pos) {
+    case AdornmentPlacement.ControlEnd:
+      return "controlEnd";
+    case AdornmentPlacement.ControlStart:
+      return "controlStart";
+    case AdornmentPlacement.LabelStart:
+      return "labelStart";
+    case AdornmentPlacement.LabelEnd:
+      return "labelEnd";
+  }
 }
 
-export function matchesType(
-  context: ControlGroupContext,
-  types?: string[] | null,
-) {
-  if (types == null || types.length === 0) return true;
-  const typeField = getTypeField(context);
-  return types.includes(typeField!.value);
+export function appendMarkupAt(
+  pos: AdornmentPlacement,
+  markup: ReactNode,
+): (layout: RenderedLayout) => void {
+  return appendMarkup(layoutKeyForPlacement(pos), markup);
 }
 
-export function useEvalVisibilityHook(
-  definition: ControlDefinition,
-  schemaField?: SchemaField,
-): EvalExpressionHook<boolean> {
-  const dynamicVisibility = useEvalDynamicHook(
-    definition,
-    DynamicPropertyType.Visible,
-  );
-  const r = useUpdatedRef(schemaField);
-  return useCallback(
-    (ctx) => {
-      const schemaField = r.current;
-      return (
-        dynamicVisibility?.(ctx) ??
-        useComputed(() => matchesType(ctx, schemaField?.onlyForTypes))
-      );
-    },
-    [dynamicVisibility, r],
-  );
+export function wrapMarkupAt(
+  pos: AdornmentPlacement,
+  wrap: (ex: ReactNode) => ReactNode,
+): (layout: RenderedLayout) => void {
+  return wrapMarkup(layoutKeyForPlacement(pos), wrap);
 }
 
-export function getTypeField(
-  context: ControlGroupContext,
-): Control<string> | undefined {
-  const typeSchemaField = context.fields.find((x) => x.isTypeField);
-  return typeSchemaField
-    ? context.groupControl.fields[typeSchemaField.field]
-    : undefined;
-}
-
-export function useEvalDefaultValueHook(
-  definition: ControlDefinition,
-  schemaField?: SchemaField,
-): EvalExpressionHook {
-  const dynamicValue = useEvalDynamicHook(
-    definition,
-    DynamicPropertyType.DefaultValue,
-  );
-  const r = useUpdatedRef({ definition, schemaField });
-  return useCallback(
-    (ctx) => {
-      const { definition, schemaField } = r.current;
-      return (
-        dynamicValue?.(ctx) ??
-        useControl(
-          (isDataControlDefinition(definition)
-            ? definition.defaultValue
-            : undefined) ?? schemaField?.defaultValue,
-        )
-      );
-    },
-    [dynamicValue, r],
-  );
+export function renderLayoutParts(
+  props: ControlLayoutProps,
+  renderer: FormRenderer,
+): RenderedLayout {
+  const processed = props.processLayout?.(props) ?? props;
+  const layout: RenderedLayout = { children: processed.children };
+  (processed.adornments ?? [])
+    .toSorted((a, b) => a.priority - b.priority)
+    .forEach((x) => x.apply(layout));
+  const l = processed.label;
+  layout.label =
+    l && !l.hide
+      ? renderer.renderLabel(l, layout.labelStart, layout.labelEnd)
+      : undefined;
+  return layout;
 }
 
 export function controlTitle(
@@ -622,10 +564,4 @@ export function controlTitle(
   field: SchemaField,
 ) {
   return title ? title : fieldDisplayName(field);
-}
-
-function useUpdatedRef<A>(a: A): MutableRefObject<A> {
-  const r = useRef(a);
-  r.current = a;
-  return r;
 }

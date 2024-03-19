@@ -10,11 +10,15 @@ import {
   ExpressionType,
   FieldValueExpression,
   GroupedControlsDefinition,
+  GroupRenderType,
   HtmlDisplay,
   JsonataExpression,
+  SchemaField,
   TextDisplay,
 } from "./types";
 import { ActionRendererProps } from "./controlRender";
+import { useMemo } from "react";
+import { addMissingControls } from "./util";
 
 export function dataControl(
   field: string,
@@ -95,4 +99,23 @@ export function createAction(
   actionText?: string,
 ): ActionRendererProps {
   return { actionId, onClick, actionText: actionText ?? actionId };
+}
+
+export const emptyGroupDefinition: GroupedControlsDefinition = {
+  type: ControlDefinitionType.Group,
+  children: [],
+  groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
+};
+
+export function useControlDefinitionForSchema(
+  sf: SchemaField[],
+  definition: GroupedControlsDefinition = emptyGroupDefinition,
+): GroupedControlsDefinition {
+  return useMemo<GroupedControlsDefinition>(
+    () => ({
+      ...definition,
+      children: addMissingControls(sf, definition.children ?? []),
+    }),
+    [sf, definition],
+  );
 }

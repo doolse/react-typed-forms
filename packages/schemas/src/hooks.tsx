@@ -1,103 +1,148 @@
 import {
-  ControlDefinitionType,
-  GroupedControlsDefinition,
-  GroupRenderType,
+  ControlDefinition,
+  DynamicPropertyType,
+  EntityExpression,
+  ExpressionType,
+  FieldValueExpression,
+  isDataControlDefinition,
+  JsonataExpression,
   SchemaField,
 } from "./types";
-import { useMemo } from "react";
-import { addMissingControls } from "./util";
+import { useCallback, useMemo } from "react";
+import {
+  Control,
+  useComputed,
+  useControl,
+  useControlEffect,
+} from "@react-typed-forms/core";
 
-//   function useValidators(
-//     formState: FormEditState,
-//     isVisible: boolean | undefined,
-//     control: Control<any>,
-//     required: boolean,
-//     definition: DataControlDefinition,
-//   ) {
-//     if (required)
-//       useValidator(
-//         control,
-//         (v) =>
-//           isVisible === true &&
-//           (v == null || v === "" || (Array.isArray(v) && v.length === 0))
-//             ? "Please enter a value"
-//             : null,
-//         "required",
-//       );
-//     useValueChangeEffect(control, () => control.setError("default", ""));
-//     definition.validators?.forEach((v, i) => {
-//       switch (v.type) {
-//         case ValidatorType.Date:
-//           processDateValidator(v as DateValidator);
-//           break;
-//         case ValidatorType.Jsonata:
-//           const errorMsg = useExpression(
-//             v satisfies EntityExpression,
-//             formState,
-//           );
-//           useControlEffect(
-//             () => [isVisible, errorMsg.value],
-//             ([isVisible, msg]) =>
-//               control.setError(v.type + i, isVisible ? msg : null),
-//             true,
-//           );
-//           break;
-//       }
-//
-//       function processDateValidator(dv: DateValidator) {
-//         let comparisonDate: number;
-//         if (dv.fixedDate) {
-//           comparisonDate = Date.parse(dv.fixedDate);
-//         } else {
-//           const nowDate = new Date();
-//           comparisonDate = Date.UTC(
-//             nowDate.getFullYear(),
-//             nowDate.getMonth(),
-//             nowDate.getDate(),
-//           );
-//           if (dv.daysFromCurrent) {
-//             comparisonDate += dv.daysFromCurrent * 86400000;
-//           }
-//         }
-//         useValidator(
-//           control,
-//           (v) => {
-//             if (v) {
-//               const selDate = Date.parse(v);
-//               const notAfter = dv.comparison === DateComparison.NotAfter;
-//               if (
-//                 notAfter ? selDate > comparisonDate : selDate < comparisonDate
-//               ) {
-//                 return `Date must not be ${
-//                   notAfter ? "after" : "before"
-//                 } ${new Date(comparisonDate).toDateString()}`;
-//               }
-//             }
-//             return null;
-//           },
-//           "date" + i,
-//         );
-//       }
-//     });
-//   }
-//   return { useExpression, useValidators };
-// }
+import {
+  ControlGroupContext,
+  findField,
+  getTypeField,
+  useUpdatedRef,
+} from "./util";
+import jsonata from "jsonata";
 
-export const emptyGroupDefinition: GroupedControlsDefinition = {
-  type: ControlDefinitionType.Group,
-  children: [],
-  groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
-};
-
-export function useControlDefinitionForSchema(
-  sf: SchemaField[],
-  definition: GroupedControlsDefinition = emptyGroupDefinition,
-): GroupedControlsDefinition {
-  return useMemo<GroupedControlsDefinition>(
-    () => ({
-      ...definition,
-      children: addMissingControls(sf, definition.children ?? []),
-    }),
-    [sf, definition],
+export function useEvalVisibilityHook(
+  definition: ControlDefinition,
+  schemaField?: SchemaField,
+): EvalExpressionHook<boolean> {
+  const dynamicVisibility = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.Visible,
   );
+  const r = useUpdatedRef(schemaField);
+  return useCallback(
+    (ctx) => {
+      const schemaField = r.current;
+      return (
+        dynamicVisibility?.(ctx) ??
+        useComputed(() => matchesType(ctx, schemaField?.onlyForTypes))
+      );
+    },
+    [dynamicVisibility, r],
+  );
+}
+
+export function useEvalDefaultValueHook(
+  definition: ControlDefinition,
+  schemaField?: SchemaField,
+): EvalExpressionHook {
+  const dynamicValue = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.DefaultValue,
+  );
+  const r = useUpdatedRef({ definition, schemaField });
+  return useCallback(
+    (ctx) => {
+      const { definition, schemaField } = r.current;
+      return (
+        dynamicValue?.(ctx) ??
+        useControl(
+          (isDataControlDefinition(definition)
+            ? definition.defaultValue
+            : undefined) ?? schemaField?.defaultValue,
+        )
+      );
+    },
+    [dynamicValue, r],
+  );
+}
+
+export type EvalExpressionHook<A = any> = (
+  groupContext: ControlGroupContext,
+) => Control<A | undefined>;
+
+function useFieldValueExpression(
+  fvExpr: FieldValueExpression,
+  fields: SchemaField[],
+  data: Control<any>,
+) {
+  const refField = findField(fields, fvExpr.field);
+  const otherField = refField ? data.fields[refField.field] : undefined;
+  return useComputed(() => {
+    const fv = otherField?.value;
+    return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
+  });
+}
+function useEvalExpressionHook(
+  expr: EntityExpression | undefined,
+): EvalExpressionHook | undefined {
+  const r = useUpdatedRef(expr);
+  const cb = useCallback(
+    ({ groupControl, fields }: ControlGroupContext) => {
+      const expr = r.current!;
+      switch (expr.type) {
+        case ExpressionType.Jsonata:
+          return useJsonataExpression(
+            (expr as JsonataExpression).expression,
+            groupControl,
+          );
+        case ExpressionType.FieldValue:
+          return useFieldValueExpression(
+            expr as FieldValueExpression,
+            fields,
+            groupControl,
+          );
+        default:
+          return useControl(undefined);
+      }
+    },
+    [expr?.type, r],
+  );
+  return expr ? cb : undefined;
+}
+
+export function useEvalDynamicHook(
+  definition: ControlDefinition,
+  type: DynamicPropertyType,
+): EvalExpressionHook | undefined {
+  const expression = definition.dynamic?.find((x) => x.type === type);
+  return useEvalExpressionHook(expression?.expr);
+}
+
+export function matchesType(
+  context: ControlGroupContext,
+  types?: string[] | null,
+) {
+  if (types == null || types.length === 0) return true;
+  const typeField = getTypeField(context);
+  return types.includes(typeField!.value);
+}
+
+export function useJsonataExpression(
+  jExpr: string,
+  data: Control<any>,
+): Control<any> {
+  const compiledExpr = useMemo(() => jsonata(jExpr), [jExpr]);
+  const control = useControl();
+  useControlEffect(
+    () => data.value,
+    async (v) => {
+      control.value = await compiledExpr.evaluate(v);
+    },
+    true,
+  );
+  return control;
 }

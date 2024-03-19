@@ -8,7 +8,8 @@ export const defaultTailwindTheme: DefaultRendererOptions = {
   },
   array: {
     removableClass: "grid grid-cols-[1fr_auto] items-center gap-x-2",
-    childClass: "grow",
+    childClass: "grow my-2",
+    addActionClass: "my-2",
   },
   group: {
     standardClassName: "space-y-4",
@@ -19,5 +20,6 @@ export const defaultTailwindTheme: DefaultRendererOptions = {
   },
   layout: {
     className: "flex flex-col",
+    errorClass: "text-sm text-danger-500",
   },
 };

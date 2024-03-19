@@ -21,6 +21,7 @@ import {
   GroupRendererProps,
   LabelRendererProps,
   LabelType,
+  renderLayoutParts,
   Visibility,
 } from "./controlRender";
 import {
@@ -159,7 +160,6 @@ export function createFormRenderer(
   };
 
   function renderLayout(props: ControlLayoutProps) {
-    props = props.processLayout ? props.processLayout(props) : props;
     const renderer =
       layoutRenderers.find((x) => !x.match || x.match(props)) ??
       defaultRenderers.renderLayout;
@@ -547,11 +547,15 @@ export interface DefaultAdornmentRendererOptions {}
 export function createDefaultAdornmentRenderer(
   options: DefaultAdornmentRendererOptions = {},
 ): AdornmentRendererRegistration {
-  return { type: "adornment", render: () => ({}) };
+  return {
+    type: "adornment",
+    render: ({ adornment }) => ({ apply: () => {}, priority: 0, adornment }),
+  };
 }
 
 export interface DefaultLayoutRendererOptions {
   className?: string;
+  errorClass?: string;
 }
 
 export interface DefaultRendererOptions {
@@ -583,25 +587,30 @@ export function createDefaultRenderers(
 
 function createDefaultLayoutRenderer({
   className,
+  errorClass,
 }: DefaultLayoutRendererOptions = {}) {
-  return createLayoutRenderer(
-    ({ children, label, renderedLabel, labelStart, labelEnd }, renderers) => {
-      return (
-        <div className={className}>
-          {renderedLabel ||
-            (label &&
-              !label.hide &&
-              renderers.renderLabel(label, labelStart, labelEnd))}
-          {children}
-        </div>
-      );
-    },
-  );
+  return createLayoutRenderer((props, renderers) => {
+    const { children, label, controlStart, controlEnd } = renderLayoutParts(
+      props,
+      renderers,
+    );
+    const ec = props.errorControl;
+    const errorText = ec && ec.touched ? ec.error : undefined;
+    return (
+      <div className={className}>
+        {label}
+        {controlStart}
+        {children}
+        {errorText && <div className={errorClass}>{errorText}</div>}
+        {controlEnd}
+      </div>
+    );
+  });
 }
 
 function createClassStyledRenderers() {
   return createDefaultRenderers({
-    label: { className: "control" },
+    layout: { className: "control" },
     group: { className: "group" },
     array: { className: "control-array" },
     action: { className: "action" },
@@ -704,7 +713,7 @@ export function createVisibilityRenderer(
 
 export function createAdornmentRenderer(
   render: (props: AdornmentProps) => AdornmentRenderer,
-  options?: Omit<AdornmentRendererRegistration, "type">,
+  options?: Partial<AdornmentRendererRegistration>,
 ): AdornmentRendererRegistration {
   return { type: "adornment", ...options, render };
 }

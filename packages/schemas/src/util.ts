@@ -11,6 +11,13 @@ import {
   GroupRenderType,
   SchemaField,
 } from "./types";
+import { MutableRefObject, useRef } from "react";
+import { Control } from "@react-typed-forms/core";
+
+export interface ControlGroupContext {
+  groupControl: Control<any>;
+  fields: SchemaField[];
+}
 
 export function applyDefaultValues(
   v: { [k: string]: any } | undefined,
@@ -209,4 +216,19 @@ export function addMissingControls(
       .filter((x) => !x.existing)
       .map((x) => defaultControlForField(x.field)),
   );
+}
+
+export function useUpdatedRef<A>(a: A): MutableRefObject<A> {
+  const r = useRef(a);
+  r.current = a;
+  return r;
+}
+
+export function getTypeField(
+  context: ControlGroupContext,
+): Control<string> | undefined {
+  const typeSchemaField = context.fields.find((x) => x.isTypeField);
+  return typeSchemaField
+    ? context.groupControl.fields[typeSchemaField.field]
+    : undefined;
 }
