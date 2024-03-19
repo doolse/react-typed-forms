@@ -1,4 +1,11 @@
-import React, { FC, Fragment, Key, ReactNode, useCallback } from "react";
+import React, {
+  FC,
+  Fragment,
+  Key,
+  ReactNode,
+  useCallback,
+  useRef,
+} from "react";
 import {
   addElement,
   Control,
@@ -156,6 +163,14 @@ export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
 }
 
+// export function useDebug(a: any, msg: string) {
+//   const r2 = useRef(a);
+//   if (r2.current !== a) {
+//     console.log("Changed " + msg);
+//   }
+//   r2.current = a;
+// }
+
 export function useControlRenderer(
   definition: ControlDefinition,
   fields: SchemaField[],
@@ -163,11 +178,13 @@ export function useControlRenderer(
   options: ControlRenderOptions = {},
 ): FC<ControlRenderProps> {
   const dataProps = options.useDataHook?.(definition) ?? defaultDataProps;
+
   const schemaField = lookupSchemaField(definition, fields);
   const useDefaultValue = useEvalDefaultValueHook(definition, schemaField);
   const useIsVisible = useEvalVisibilityHook(definition, schemaField);
   const useValidation = useValidationHook(definition);
   const r = useUpdatedRef({ options, definition, fields, schemaField });
+
   const Component = useCallback(
     ({ control: parentControl }: ControlRenderProps) => {
       const stopTracking = useComponentTracking();
@@ -307,7 +324,7 @@ function renderArray(
   });
 }
 function groupProps(
-  renderOptions: GroupRenderOptions,
+  renderOptions: GroupRenderOptions = { type: "Standard" },
   childCount: number,
   renderChild: ChildRenderer,
   control: Control<any>,
@@ -362,7 +379,7 @@ export function renderControlLayout(
       return renderData(
         dataControl(c.compoundField, c.title, {
           children: c.children,
-          hideTitle: c.groupOptions.hideTitle,
+          hideTitle: c.groupOptions?.hideTitle,
         }),
       );
     }
@@ -378,7 +395,7 @@ export function renderControlLayout(
       label: {
         label: c.title,
         type: LabelType.Group,
-        hide: c.groupOptions.hideTitle,
+        hide: c.groupOptions?.hideTitle,
       },
     };
   }
@@ -397,7 +414,7 @@ export function renderControlLayout(
   return {};
 
   function renderData(c: DataControlDefinition) {
-    if (!schemaField) throw "No schemafield";
+    if (!schemaField) return { children: "No schema field for: " + c.field };
     if (isCompoundField(schemaField)) {
       const label: LabelRendererProps = {
         hide: c.hideTitle,

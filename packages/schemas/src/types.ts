@@ -222,7 +222,7 @@ export interface IconSelectionRenderOptions extends RenderOptions {
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
   compoundField?: string | null;
-  groupOptions: GroupRenderOptions;
+  groupOptions?: GroupRenderOptions;
 }
 
 export interface GroupRenderOptions {
