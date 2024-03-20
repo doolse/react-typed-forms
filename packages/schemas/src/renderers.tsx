@@ -22,6 +22,7 @@ import {
   GroupRendererProps,
   LabelRendererProps,
   LabelType,
+  RenderedLayout,
   renderLayoutParts,
   Visibility,
 } from "./controlRender";
@@ -192,38 +193,6 @@ export function createFormRenderer(
       defaultRenderers.label;
     return renderer.render(props, labelStart, labelEnd, formRenderers);
   }
-
-  // function withAdornments(
-  //   definition: ControlDefinition,
-  //   adornments?: AdornmentRenderer[],
-  // ): [
-  //   AdornmentRenderer[],
-  //   (placement: AdornmentPlacement) => ReactElement,
-  //   (elem: ReactElement) => ReactElement,
-  // ] {
-  //   const rAdornments = adornments
-  //     ? adornments
-  //     : definition.adornments?.map((x, i) =>
-  //         renderAdornment({ definition: x, key: i }),
-  //       ) ?? [];
-  //   function combineAdornments(placement: AdornmentPlacement) {
-  //     return (
-  //       <>
-  //         {rAdornments
-  //           .filter((x) => x.child && x.child[0] === placement)
-  //           .map((x) => x.child![1])}
-  //       </>
-  //     );
-  //   }
-  //   return [
-  //     rAdornments,
-  //     combineAdornments,
-  //     (mainElem) =>
-  //       !adornments
-  //         ? mainElem
-  //         : rAdornments.reduce((e, n) => n.wrap?.(e) ?? e, mainElem),
-  //   ];
-  // }
 
   function renderData(
     props: DataRendererProps,
@@ -589,31 +558,16 @@ export function createDefaultRenderers(
   };
 }
 
-function createDefaultLayoutRenderer({
-  className,
-  errorClass,
-}: DefaultLayoutRendererOptions = {}) {
+function createDefaultLayoutRenderer(
+  options: DefaultLayoutRendererOptions = {},
+) {
   return createLayoutRenderer((props, renderers) => {
-    const { children, label, controlStart, controlEnd } = renderLayoutParts(
-      props,
-      renderers,
-    );
-    const ec = props.errorControl;
-    const errorText = ec && ec.touched ? ec.error : undefined;
-    const refCb = useCallback(
-      (e: HTMLDivElement | null) => {
-        if (ec) ec.meta.scrollElement = e;
-      },
-      [ec],
-    );
     return (
-      <div className={className} ref={refCb}>
-        {label}
-        {controlStart}
-        {children}
-        {errorText && <div className={errorClass}>{errorText}</div>}
-        {controlEnd}
-      </div>
+      <DefaultLayout
+        errorControl={props.errorControl}
+        layout={renderLayoutParts(props, renderers)}
+        {...options}
+      />
     );
   });
 }
@@ -861,4 +815,32 @@ export function DefaultVisibility({
     }
   }, [v?.visible]);
   return v?.visible ? children() : <></>;
+}
+
+export function DefaultLayout({
+  className,
+  errorClass,
+  errorControl,
+  layout: { controlEnd, controlStart, label, children },
+}: DefaultLayoutRendererOptions & {
+  errorControl?: Control<any>;
+  layout: RenderedLayout;
+}) {
+  const ec = errorControl;
+  const errorText = ec && ec.touched ? ec.error : undefined;
+  const refCb = useCallback(
+    (e: HTMLDivElement | null) => {
+      if (ec) ec.meta.scrollElement = e;
+    },
+    [ec],
+  );
+  return (
+    <div className={className} ref={refCb}>
+      {label}
+      {controlStart}
+      {children}
+      {errorText && <div className={errorClass}>{errorText}</div>}
+      {controlEnd}
+    </div>
+  );
 }
