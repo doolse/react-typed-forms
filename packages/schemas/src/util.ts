@@ -314,3 +314,47 @@ export function visitControlData<A>(
     }
   }
 }
+
+export function cleanDataForSchema(
+  v: { [k: string]: any } | undefined,
+  fields: SchemaField[],
+): any {
+  if (!v) return v;
+  const typeField = fields.find((x) => x.isTypeField);
+  if (!typeField) return v;
+  const typeValue = v[typeField.field];
+  const cleanableFields = fields.filter(
+    (x) => isCompoundField(x) || (x.onlyForTypes?.length ?? 0) > 0,
+  );
+  if (!cleanableFields.length) return v;
+  const out = { ...v };
+  cleanableFields.forEach((x) => {
+    const childValue = v[x.field];
+    if (
+      x.onlyForTypes?.includes(typeValue) === false ||
+      (!x.notNullable && canBeNull())
+    ) {
+      delete out[x.field];
+      return;
+    }
+    if (isCompoundField(x)) {
+      const childFields = x.treeChildren ? fields : x.children;
+      if (x.collection) {
+        if (Array.isArray(childValue)) {
+          out[x.field] = childValue.map((cv) =>
+            cleanDataForSchema(cv, childFields),
+          );
+        }
+      } else {
+        out[x.field] = cleanDataForSchema(childValue, childFields);
+      }
+    }
+    function canBeNull() {
+      return (
+        x.collection && Array.isArray(childValue) && !childValue.length
+        //|| (x.type === FieldType.Bool && childValue === false)
+      );
+    }
+  });
+  return out;
+}
