@@ -18,6 +18,7 @@ import {
 
 import {
   ControlGroupContext,
+  defaultValueForField,
   findField,
   getTypeField,
   useUpdatedRef,
@@ -57,14 +58,18 @@ export function useEvalDefaultValueHook(
   return useCallback(
     (ctx) => {
       const { definition, schemaField } = r.current;
-      return (
-        dynamicValue?.(ctx) ??
-        useControl(
-          (isDataControlDefinition(definition)
-            ? definition.defaultValue
-            : undefined) ?? schemaField?.defaultValue,
-        )
-      );
+      return dynamicValue?.(ctx) ?? useComputed(calcDefault);
+      function calcDefault() {
+        const [required, dcv] = isDataControlDefinition(definition)
+          ? [definition.required, definition.defaultValue]
+          : [false, undefined];
+        return (
+          dcv ??
+          (schemaField
+            ? defaultValueForField(schemaField, required)
+            : undefined)
+        );
+      }
     },
     [dynamicValue, r],
   );
@@ -128,7 +133,7 @@ export function matchesType(
 ) {
   if (types == null || types.length === 0) return true;
   const typeField = getTypeField(context);
-  return types.includes(typeField!.value);
+  return typeField && types.includes(typeField.value);
 }
 
 export function useJsonataExpression(

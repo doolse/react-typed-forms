@@ -7,6 +7,7 @@ export interface SchemaField {
   collection?: boolean | null;
   onlyForTypes?: string[] | null;
   required?: boolean | null;
+  notNullable?: boolean | null;
   defaultValue?: any;
   isTypeField?: boolean | null;
   searchable?: boolean | null;

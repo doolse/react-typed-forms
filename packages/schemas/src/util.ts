@@ -1,15 +1,18 @@
 import {
+  ActionControlDefinition,
   CompoundField,
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
   DataRenderType,
+  DisplayControlDefinition,
   FieldOption,
   FieldType,
   GridRenderer,
   GroupedControlsDefinition,
   GroupRenderType,
   SchemaField,
+  visitControlDefinition,
 } from "./types";
 import { MutableRefObject, useRef } from "react";
 import { Control } from "@react-typed-forms/core";
@@ -62,15 +65,22 @@ export function defaultValueForFields(fields: SchemaField[]): any {
   );
 }
 
-export function defaultValueForField(sf: SchemaField): any {
+export function defaultValueForField(
+  sf: SchemaField,
+  required?: boolean | null,
+): any {
+  const isRequired = !!(required || sf.required);
   if (isCompoundField(sf)) {
-    return sf.required
-      ? sf.collection
-        ? []
-        : defaultValueForFields(sf.children)
-      : undefined;
+    // if (sf.field === "options" && sf.collection) {
+    //   debugger;
+    // }
+    if (!isRequired)
+      return sf.notNullable ? (sf.collection ? [] : {}) : undefined;
+    const childValue = defaultValueForFields(sf.children);
+    return sf.collection ? [childValue] : childValue;
   }
-  if (sf.collection) return [];
+  if (sf.collection)
+    return isRequired ? [sf.defaultValue] : sf.notNullable ? [] : undefined;
   return sf.defaultValue;
 }
 
@@ -229,6 +239,78 @@ export function getTypeField(
 ): Control<string> | undefined {
   const typeSchemaField = context.fields.find((x) => x.isTypeField);
   return typeSchemaField
-    ? context.groupControl.fields[typeSchemaField.field]
+    ? context.groupControl.fields?.[typeSchemaField.field]
     : undefined;
+}
+
+export function visitControlDataArray<A>(
+  controls: ControlDefinition[] | undefined | null,
+  context: ControlGroupContext,
+  cb: (
+    definition: DataControlDefinition,
+    field: SchemaField,
+    control: Control<any>,
+    element: boolean,
+  ) => A | undefined,
+): A | undefined {
+  if (!controls) return undefined;
+  for (const c of controls) {
+    const r = visitControlData(c, context, cb);
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}
+
+export function visitControlData<A>(
+  definition: ControlDefinition,
+  ctx: ControlGroupContext,
+  cb: (
+    definition: DataControlDefinition,
+    field: SchemaField,
+    control: Control<any>,
+    element: boolean,
+  ) => A | undefined,
+): A | undefined {
+  return visitControlDefinition<A | undefined>(
+    definition,
+    {
+      data(def: DataControlDefinition) {
+        return processData(def, def.field, def.children);
+      },
+      group(d: GroupedControlsDefinition) {
+        return processData(undefined, d.compoundField, d.children);
+      },
+      action: () => undefined,
+      display: () => undefined,
+    },
+    () => undefined,
+  );
+
+  function processData(
+    def: DataControlDefinition | undefined,
+    fieldName: string | undefined | null,
+    children: ControlDefinition[] | null | undefined,
+  ) {
+    const fieldData = fieldName ? findField(ctx.fields, fieldName) : undefined;
+    if (!fieldData)
+      return !fieldName ? visitControlDataArray(children, ctx, cb) : undefined;
+
+    const control = ctx.groupControl.fields[fieldData.field];
+    const result = def ? cb(def, fieldData, control, false) : undefined;
+    if (result !== undefined) return result;
+    if (fieldData.collection) {
+      for (const c of control.elements ?? []) {
+        const elemResult = def ? cb(def, fieldData, c, true) : undefined;
+        if (elemResult !== undefined) return elemResult;
+        if (isCompoundField(fieldData)) {
+          const cfResult = visitControlDataArray(
+            children,
+            { fields: fieldData.children, groupControl: c },
+            cb,
+          );
+          if (cfResult !== undefined) return cfResult;
+        }
+      }
+    }
+  }
 }

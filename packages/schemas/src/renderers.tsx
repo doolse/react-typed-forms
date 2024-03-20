@@ -3,6 +3,7 @@ import React, {
   Fragment,
   ReactElement,
   ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -349,9 +350,11 @@ export function createDefaultArrayRenderer(
       addAction,
       removeAction,
       childKey,
+      required,
     }: ArrayRendererProps,
     { renderAction }: FormRenderer,
   ) {
+    const showRemove = !required || childCount > 1;
     return (
       <div>
         <div className={clsx(className, removeAction && removableClass)}>
@@ -362,7 +365,7 @@ export function createDefaultArrayRenderer(
                   {renderChild(x)}
                 </div>
                 <div className={removeActionClass}>
-                  {renderAction(removeAction(x))}
+                  {showRemove && renderAction(removeAction(x))}
                 </div>
               </Fragment>
             ) : (
@@ -491,6 +494,7 @@ export function createDefaultDataRenderer(
     }
     let renderType = props.renderOptions.type;
     const fieldType = props.field.type;
+    if (fieldType == FieldType.Any) return <>No control for Any</>;
     const isBool = fieldType === FieldType.Bool;
     if (booleanOptions != null && isBool && props.options == null) {
       return renderers.renderData(
@@ -596,8 +600,14 @@ function createDefaultLayoutRenderer({
     );
     const ec = props.errorControl;
     const errorText = ec && ec.touched ? ec.error : undefined;
+    const refCb = useCallback(
+      (e: HTMLDivElement | null) => {
+        if (ec) ec.meta.scrollElement = e;
+      },
+      [ec],
+    );
     return (
-      <div className={className}>
+      <div className={className} ref={refCb}>
         {label}
         {controlStart}
         {children}

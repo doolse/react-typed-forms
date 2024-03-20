@@ -9,6 +9,7 @@ import React, {
 import {
   addElement,
   Control,
+  newControl,
   removeElement,
   useComponentTracking,
   useComputed,
@@ -82,6 +83,7 @@ export interface AdornmentRenderer {
 
 export interface ArrayRendererProps {
   addAction?: ActionRendererProps;
+  required: boolean;
   removeAction?: (childIndex: number) => ActionRendererProps;
   childCount: number;
   renderChild: (childIndex: number) => ReactNode;
@@ -161,16 +163,8 @@ export type CreateDataProps = (
 ) => DataRendererProps;
 export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
+  clearHidden?: boolean;
 }
-
-// export function useDebug(a: any, msg: string) {
-//   const r2 = useRef(a);
-//   if (r2.current !== a) {
-//     console.log("Changed " + msg);
-//   }
-//   r2.current = a;
-// }
-
 export function useControlRenderer(
   definition: ControlDefinition,
   fields: SchemaField[],
@@ -196,7 +190,7 @@ export function useControlRenderer(
         };
         const visibleControl = useIsVisible(groupContext);
         const visible = visibleControl.current.value;
-        const visibility = useControl<Visibility | undefined>(
+        const visibility = useControl<Visibility | undefined>(() =>
           visible != null
             ? {
                 visible,
@@ -210,7 +204,7 @@ export function useControlRenderer(
             if (visible != null)
               visibility.setValue((ex) => ({
                 visible,
-                showing: ex?.showing ?? false,
+                showing: ex ? ex.showing : visible,
               }));
           },
         );
@@ -221,11 +215,19 @@ export function useControlRenderer(
           groupContext,
         );
         useControlEffect(
-          () => [visibility.value, defaultValueControl.value, control],
-          ([vc, dv, cd]) => {
+          () => [
+            visibility.value,
+            defaultValueControl.value,
+            control,
+            parentControl.isNull,
+          ],
+          ([vc, dv, cd, pn]) => {
+            if (pn) {
+              parentControl.value = {};
+            }
             if (vc && cd && vc.visible === vc.showing) {
               if (!vc.visible) {
-                cd.value = undefined;
+                if (options.clearHidden) cd.value = undefined;
               } else if (cd.value == null) {
                 cd.value = dv;
               }
@@ -243,6 +245,7 @@ export function useControlRenderer(
           c.children?.map((cd) =>
             useControlRenderer(cd, childContext.fields, renderer, myOptions),
           ) ?? [];
+        if (parentControl.isNull) return <></>;
         const adornments =
           definition.adornments?.map((x) =>
             renderer.renderAdornment({ adornment: x }),
@@ -289,12 +292,15 @@ export function getControlData(
   parentContext: ControlGroupContext,
 ): [Control<any> | undefined, ControlGroupContext] {
   const childControl: Control<any> | undefined = schemaField
-    ? parentContext.groupControl.fields[schemaField.field]
+    ? parentContext.groupControl.fields?.[schemaField.field] ?? newControl({})
     : undefined;
   return [
     childControl,
     schemaField && isCompoundField(schemaField)
-      ? { groupControl: childControl!, fields: schemaField.children }
+      ? {
+          groupControl: childControl!,
+          fields: schemaField.children,
+        }
       : parentContext,
   ];
 }
@@ -303,12 +309,14 @@ function renderArray(
   renderer: FormRenderer,
   noun: string,
   field: SchemaField,
+  required: boolean,
   controlArray: Control<any[] | undefined | null>,
   renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
 ) {
   const elems = controlArray.elements ?? [];
   return renderer.renderArray({
     childCount: elems.length,
+    required,
     addAction: {
       actionId: "add",
       actionText: "Add " + noun,
@@ -409,7 +417,7 @@ export function renderControlLayout(
     };
   }
   if (isDisplayControlsDefinition(c)) {
-    return { children: renderer.renderDisplay({ data: c.displayData }) };
+    return { children: renderer.renderDisplay({ data: c.displayData ?? {} }) };
   }
   return {};
 
@@ -429,6 +437,7 @@ export function renderControlLayout(
             renderer,
             controlTitle(c.title, schemaField),
             schemaField,
+            !!c.required,
             childControl!,
             compoundRenderer,
           ),
@@ -467,6 +476,7 @@ export function renderControlLayout(
                 renderer,
                 controlTitle(c.title, schemaField),
                 schemaField,
+                !!c.required,
                 childControl!,
                 scalarRenderer(props),
               )
