@@ -25,7 +25,7 @@ export function muiTextfieldRenderer(
             variant={variant}
             required={required}
             fullWidth
-            label={lc.labelText}
+            label={lc.label?.label}
             size="small"
             state={control}
           />
@@ -63,7 +63,7 @@ export function muiDateRenderer(
             variant={variant}
             required={required}
             fullWidth
-            label={lc.labelText}
+            label={lc.label?.label}
             size="small"
             state={control}
           />

@@ -1,6 +1,6 @@
 import { valMessage, compareJson } from "../lib";
 
-describe("Validation", () => {
+describe("Multi Validation", () => {
   it("Works", () => {
     cy.visit("/multiValidation");
     cy.contains("Multi Validation Example");

@@ -576,7 +576,7 @@ export function renderLayoutParts(
   const processed = props.processLayout?.(props) ?? props;
   const layout: RenderedLayout = { children: processed.children };
   (processed.adornments ?? [])
-    .toSorted((a, b) => a.priority - b.priority)
+    .sort((a, b) => a.priority - b.priority)
     .forEach((x) => x.apply(layout));
   const l = processed.label;
   layout.label =

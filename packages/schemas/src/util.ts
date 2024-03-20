@@ -69,19 +69,19 @@ export function defaultValueForField(
   sf: SchemaField,
   required?: boolean | null,
 ): any {
+  if (sf.defaultValue !== undefined) return sf.defaultValue;
   const isRequired = !!(required || sf.required);
   if (isCompoundField(sf)) {
-    // if (sf.field === "options" && sf.collection) {
-    //   debugger;
-    // }
-    if (!isRequired)
-      return sf.notNullable ? (sf.collection ? [] : {}) : undefined;
-    const childValue = defaultValueForFields(sf.children);
-    return sf.collection ? [childValue] : childValue;
+    if (isRequired) {
+      const childValue = defaultValueForFields(sf.children);
+      return sf.collection ? [childValue] : childValue;
+    }
+    return sf.notNullable ? (sf.collection ? [] : {}) : undefined;
   }
-  if (sf.collection)
-    return isRequired ? [sf.defaultValue] : sf.notNullable ? [] : undefined;
-  return sf.defaultValue;
+  if (sf.collection) {
+    return isRequired ? [undefined] : [];
+  }
+  return undefined;
 }
 
 export function elementValueForField(sf: SchemaField): any {

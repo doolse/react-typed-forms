@@ -10,6 +10,7 @@ import {
   dataControl,
   DataRenderType,
   DateTimeRenderOptions,
+  defaultTailwindTheme,
   dynamicDefaultValue,
   fieldEqExpr,
   FieldType,
@@ -86,22 +87,7 @@ const withDefaults = applyDefaultValues({ date: "2024-10-12" }, nameFormSchema);
 
 const renderer = createFormRenderer(
   [muiTextfieldRenderer("outlined"), muiActionRenderer(), muiDateRenderer()],
-  createDefaultRenderers({
-    label: {
-      className: "flex flex-col",
-      requiredElement: <span className="text-red-500"> *</span>,
-    },
-    array: {
-      removableClass: "grid grid-cols-[1fr_auto] items-center gap-x-2",
-      childClass: "grow",
-    },
-    group: {
-      gridClassName: "gap-x-2 gap-y-4",
-    },
-    action: {
-      className: "bg-primary rounded-lg p-4 text-white",
-    },
-  }),
+  createDefaultRenderers(defaultTailwindTheme),
 );
 
 const definition = {
