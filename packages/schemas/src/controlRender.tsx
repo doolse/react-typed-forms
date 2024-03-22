@@ -88,6 +88,7 @@ export interface ArrayRendererProps {
   childCount: number;
   renderChild: (childIndex: number) => ReactNode;
   childKey: (childIndex: number) => Key;
+  arrayControl?: Control<any[] | undefined | null>;
 }
 export interface Visibility {
   visible: boolean;
@@ -310,23 +311,24 @@ function renderArray(
   noun: string,
   field: SchemaField,
   required: boolean,
-  controlArray: Control<any[] | undefined | null>,
+  arrayControl: Control<any[] | undefined | null>,
   renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
 ) {
-  const elems = controlArray.elements ?? [];
+  const elems = arrayControl.elements ?? [];
   return renderer.renderArray({
+    arrayControl,
     childCount: elems.length,
     required,
     addAction: {
       actionId: "add",
       actionText: "Add " + noun,
-      onClick: () => addElement(controlArray, elementValueForField(field)),
+      onClick: () => addElement(arrayControl, elementValueForField(field)),
     },
     childKey: (i) => elems[i].uniqueId,
     removeAction: (i: number) => ({
       actionId: "",
       actionText: "Remove",
-      onClick: () => removeElement(controlArray, i),
+      onClick: () => removeElement(arrayControl, i),
     }),
     renderChild: (i) => renderChild(i, elems[i]),
   });
