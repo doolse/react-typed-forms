@@ -79,7 +79,7 @@ export function defaultValueForField(
     return sf.notNullable ? (sf.collection ? [] : {}) : undefined;
   }
   if (sf.collection) {
-    return isRequired ? [undefined] : [];
+    return [];
   }
   return undefined;
 }
