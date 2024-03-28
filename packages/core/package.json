@@ -1,11 +1,12 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "3.0.0-dev.116",
+  "version": "3.0.0-dev.118",
   "description": "",
   "source": "src/index.ts",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "prepack": "npm run build",
     "build": "rimraf lib/ && microbundle -f cjs --raw --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "watch": "microbundle -w -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "update-readme": "md-magic --path README.md --path ../../README.md"

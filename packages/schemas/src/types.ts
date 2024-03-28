@@ -7,6 +7,7 @@ export interface SchemaField {
   collection?: boolean | null;
   onlyForTypes?: string[] | null;
   required?: boolean | null;
+  notNullable?: boolean | null;
   defaultValue?: any;
   isTypeField?: boolean | null;
   searchable?: boolean | null;
@@ -56,6 +57,7 @@ export interface ControlDefinition {
   title?: string | null;
   dynamic?: DynamicProperty[] | null;
   adornments?: ControlAdornment[] | null;
+  children?: ControlDefinition[] | null;
 }
 
 export enum ControlDefinitionType {
@@ -73,6 +75,8 @@ export interface DynamicProperty {
 export enum DynamicPropertyType {
   Visible = "Visible",
   DefaultValue = "DefaultValue",
+  Readonly = "Readonly",
+  Disabled = "Disabled",
 }
 
 export interface EntityExpression {
@@ -143,6 +147,7 @@ export interface DataControlDefinition extends ControlDefinition {
   defaultValue?: any;
   readonly?: boolean | null;
   validators?: SchemaValidator[] | null;
+  hideTitle?: boolean | null;
 }
 
 export interface RenderOptions {
@@ -219,9 +224,8 @@ export interface IconSelectionRenderOptions extends RenderOptions {
 
 export interface GroupedControlsDefinition extends ControlDefinition {
   type: ControlDefinitionType.Group;
-  children: ControlDefinition[];
   compoundField?: string | null;
-  groupOptions: GroupRenderOptions;
+  groupOptions?: GroupRenderOptions;
 }
 
 export interface GroupRenderOptions {

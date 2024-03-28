@@ -9,7 +9,8 @@ describe("Schemas Test", () => {
     cy.contains("div", "Last Name").type("Smoth");
     cy.contains("div", "Gender").find("select").select("Male");
     cy.contains("button", "Add Compound collection").click();
-    cy.contains("div.flex.flex-col", "Compound collection")
+    cy.contains("div label", "Compound collection")
+      .parent()
       .contains("div", "Nested")
       .type("Nested data");
     cy.get("pre").should(
@@ -23,6 +24,19 @@ describe("Schemas Test", () => {
         compoundCollection: [
           {
             nest: "Nested data",
+          },
+        ],
+        compoundCollectionWithDefault: [
+          {
+            nest: "wow",
+          },
+          {
+            nest: "wow2",
+          },
+        ],
+        compoundDynamic: [
+          {
+            nest: "DYNAMIC",
           },
         ],
       })

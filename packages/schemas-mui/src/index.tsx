@@ -1,13 +1,12 @@
+import { FDateField, FTextField } from "@react-typed-forms/mui";
+import Button, { ButtonProps } from "@mui/material/Button";
 import React from "react";
-
 import {
   ActionRendererRegistration,
   DataRendererRegistration,
   DataRenderType,
   FieldType,
 } from "@react-typed-forms/schemas";
-import { FDateField, FTextField } from "@react-typed-forms/mui";
-import Button, { ButtonProps } from "@mui/material/Button";
 
 export function muiTextfieldRenderer(
   variant?: "standard" | "outlined" | "filled",
@@ -16,58 +15,65 @@ export function muiTextfieldRenderer(
     type: "data",
     schemaType: FieldType.String,
     renderType: DataRenderType.Standard,
-    render: (r, makeLabel, { renderVisibility }) => {
-      const { title, required } = makeLabel();
-      return renderVisibility(
-        r.visible,
-        <FTextField
-          variant={variant}
-          required={required}
-          fullWidth
-          size="small"
-          state={r.control}
-          label={title}
-        />,
-      );
+    render: ({ control, required, id, readonly }) => {
+      return (lc) => ({
+        ...lc,
+        label: undefined,
+        errorControl: undefined,
+        children: (
+          <FTextField
+            id={id}
+            variant={variant}
+            required={required}
+            fullWidth
+            label={lc.label?.label}
+            size="small"
+            state={control}
+            InputProps={{ readOnly: readonly }}
+          />
+        ),
+      });
     },
   };
 }
-
 export function muiActionRenderer(
   variant: ButtonProps["variant"] = "contained",
 ): ActionRendererRegistration {
   return {
     type: "action",
-    render: (p, { renderVisibility }) =>
-      renderVisibility(
-        p.visible,
-        <Button variant={variant} onClick={p.onClick}>
-          {p.definition.title}
-        </Button>,
-      ),
+    render: (p) => (
+      <Button variant={variant} onClick={p.onClick}>
+        {p.actionText}
+      </Button>
+    ),
   };
 }
 
-export function muiDateRenderer(): DataRendererRegistration {
+export function muiDateRenderer(
+  variant?: "standard" | "outlined" | "filled",
+): DataRendererRegistration {
   return {
     type: "data",
     schemaType: FieldType.Date,
-    render: (
-      { control, required, visible },
-      defaultLabel,
-      { renderVisibility },
-    ) => {
-      const { title } = defaultLabel();
-      return renderVisibility(
-        visible,
-        <FDateField
-          label={title}
-          fullWidth
-          size="small"
-          state={control}
-          required={required}
-        />,
-      );
+    render: ({ control, required, id, readonly }) => {
+      console.log(readonly);
+      return (lc) => ({
+        ...lc,
+        label: undefined,
+        errorControl: undefined,
+        children: (
+          <FDateField
+            id={id}
+            variant={variant}
+            required={required}
+            fullWidth
+            label={lc.label?.label}
+            size="small"
+            state={control}
+            InputProps={{ readOnly: readonly }}
+          />
+        ),
+      });
     },
   };
 }

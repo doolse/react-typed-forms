@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/schemas",
-  "version": "1.0.0-dev.23",
+  "version": "5.0.3",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -24,13 +24,13 @@
     "material-ui"
   ],
   "dependencies": {
-    "@react-typed-forms/core": "workspace:^3.0.0-dev.116",
+    "@react-typed-forms/core": "workspace:^3.0.0-dev.117",
     "clsx": "^1 || ^2",
-    "jsonata": "^2.0.3",
+    "jsonata": "^2.0.4",
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@react-typed-forms/transform": "workspace:^0.2.0",
+    "@react-typed-forms/transform": "^0.2.0",
     "@types/react": "^18.2.28",
     "markdown-magic": "^2.6.1",
     "microbundle": "^0.15.1",
@@ -41,6 +41,7 @@
   },
   "gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
   "scripts": {
+    "prepack": "npm run build",
     "build": "rimraf ./lib/ && microbundle -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "watch": "microbundle -w -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "update-readme": "md-magic --path README.md",

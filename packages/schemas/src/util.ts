@@ -1,16 +1,26 @@
 import {
+  ActionControlDefinition,
   CompoundField,
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
   DataRenderType,
+  DisplayControlDefinition,
   FieldOption,
   FieldType,
   GridRenderer,
   GroupedControlsDefinition,
   GroupRenderType,
   SchemaField,
+  visitControlDefinition,
 } from "./types";
+import { MutableRefObject, useRef } from "react";
+import { Control } from "@react-typed-forms/core";
+
+export interface ControlGroupContext {
+  groupControl: Control<any>;
+  fields: SchemaField[];
+}
 
 export function applyDefaultValues(
   v: { [k: string]: any } | undefined,
@@ -55,16 +65,23 @@ export function defaultValueForFields(fields: SchemaField[]): any {
   );
 }
 
-export function defaultValueForField(sf: SchemaField): any {
+export function defaultValueForField(
+  sf: SchemaField,
+  required?: boolean | null,
+): any {
+  if (sf.defaultValue !== undefined) return sf.defaultValue;
+  const isRequired = !!(required || sf.required);
   if (isCompoundField(sf)) {
-    return sf.required
-      ? sf.collection
-        ? []
-        : defaultValueForFields(sf.children)
-      : undefined;
+    if (isRequired) {
+      const childValue = defaultValueForFields(sf.children);
+      return sf.collection ? [childValue] : childValue;
+    }
+    return sf.notNullable ? (sf.collection ? [] : {}) : undefined;
   }
-  if (sf.collection) return [];
-  return sf.defaultValue;
+  if (sf.collection) {
+    return [];
+  }
+  return undefined;
 }
 
 export function elementValueForField(sf: SchemaField): any {
@@ -163,7 +180,7 @@ function findReferencedControl(
   if (isGroupControl(control)) {
     if (control.compoundField)
       return field === control.compoundField ? control : undefined;
-    return findReferencedControlInArray(field, control.children);
+    return findReferencedControlInArray(field, control.children ?? []);
   }
   return undefined;
 }
@@ -200,7 +217,7 @@ export function addMissingControls(
       ...cf,
       children: addMissingControls(
         (ex.field as CompoundField).children,
-        cf.children,
+        cf.children ?? [],
       ),
     };
   });
@@ -209,4 +226,139 @@ export function addMissingControls(
       .filter((x) => !x.existing)
       .map((x) => defaultControlForField(x.field)),
   );
+}
+
+export function useUpdatedRef<A>(a: A): MutableRefObject<A> {
+  const r = useRef(a);
+  r.current = a;
+  return r;
+}
+
+export function isControlReadonly(c: ControlDefinition): boolean {
+  return isDataControl(c) && !!c.readonly;
+}
+
+export function getTypeField(
+  context: ControlGroupContext,
+): Control<string> | undefined {
+  const typeSchemaField = context.fields.find((x) => x.isTypeField);
+  return typeSchemaField
+    ? context.groupControl.fields?.[typeSchemaField.field]
+    : undefined;
+}
+
+export function visitControlDataArray<A>(
+  controls: ControlDefinition[] | undefined | null,
+  context: ControlGroupContext,
+  cb: (
+    definition: DataControlDefinition,
+    field: SchemaField,
+    control: Control<any>,
+    element: boolean,
+  ) => A | undefined,
+): A | undefined {
+  if (!controls) return undefined;
+  for (const c of controls) {
+    const r = visitControlData(c, context, cb);
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}
+
+export function visitControlData<A>(
+  definition: ControlDefinition,
+  ctx: ControlGroupContext,
+  cb: (
+    definition: DataControlDefinition,
+    field: SchemaField,
+    control: Control<any>,
+    element: boolean,
+  ) => A | undefined,
+): A | undefined {
+  return visitControlDefinition<A | undefined>(
+    definition,
+    {
+      data(def: DataControlDefinition) {
+        return processData(def, def.field, def.children);
+      },
+      group(d: GroupedControlsDefinition) {
+        return processData(undefined, d.compoundField, d.children);
+      },
+      action: () => undefined,
+      display: () => undefined,
+    },
+    () => undefined,
+  );
+
+  function processData(
+    def: DataControlDefinition | undefined,
+    fieldName: string | undefined | null,
+    children: ControlDefinition[] | null | undefined,
+  ) {
+    const fieldData = fieldName ? findField(ctx.fields, fieldName) : undefined;
+    if (!fieldData)
+      return !fieldName ? visitControlDataArray(children, ctx, cb) : undefined;
+
+    const control = ctx.groupControl.fields[fieldData.field];
+    const result = def ? cb(def, fieldData, control, false) : undefined;
+    if (result !== undefined) return result;
+    if (fieldData.collection) {
+      for (const c of control.elements ?? []) {
+        const elemResult = def ? cb(def, fieldData, c, true) : undefined;
+        if (elemResult !== undefined) return elemResult;
+        if (isCompoundField(fieldData)) {
+          const cfResult = visitControlDataArray(
+            children,
+            { fields: fieldData.children, groupControl: c },
+            cb,
+          );
+          if (cfResult !== undefined) return cfResult;
+        }
+      }
+    }
+  }
+}
+
+export function cleanDataForSchema(
+  v: { [k: string]: any } | undefined,
+  fields: SchemaField[],
+): any {
+  if (!v) return v;
+  const typeField = fields.find((x) => x.isTypeField);
+  if (!typeField) return v;
+  const typeValue = v[typeField.field];
+  const cleanableFields = fields.filter(
+    (x) => isCompoundField(x) || (x.onlyForTypes?.length ?? 0) > 0,
+  );
+  if (!cleanableFields.length) return v;
+  const out = { ...v };
+  cleanableFields.forEach((x) => {
+    const childValue = v[x.field];
+    if (
+      x.onlyForTypes?.includes(typeValue) === false ||
+      (!x.notNullable && canBeNull())
+    ) {
+      delete out[x.field];
+      return;
+    }
+    if (isCompoundField(x)) {
+      const childFields = x.treeChildren ? fields : x.children;
+      if (x.collection) {
+        if (Array.isArray(childValue)) {
+          out[x.field] = childValue.map((cv) =>
+            cleanDataForSchema(cv, childFields),
+          );
+        }
+      } else {
+        out[x.field] = cleanDataForSchema(childValue, childFields);
+      }
+    }
+    function canBeNull() {
+      return (
+        x.collection && Array.isArray(childValue) && !childValue.length
+        //|| (x.type === FieldType.Bool && childValue === false)
+      );
+    }
+  });
+  return out;
 }

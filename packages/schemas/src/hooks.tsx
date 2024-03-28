@@ -1,440 +1,216 @@
 import {
-  ActionControlDefinition,
   ControlDefinition,
-  ControlDefinitionType,
-  DataControlDefinition,
-  DataRenderType,
-  DateComparison,
-  DateValidator,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
-  FieldOption,
   FieldValueExpression,
-  GroupedControlsDefinition,
-  GroupRenderType,
+  isDataControlDefinition,
   JsonataExpression,
   SchemaField,
-  SchemaValidator,
-  ValidatorType,
 } from "./types";
+import { useCallback, useMemo } from "react";
 import {
-  ActionRendererProps,
-  ArrayRendererProps,
-  controlForField,
-  controlTitle,
-  DataRendererProps,
-  fieldForControl,
-  FormEditHooks,
-  FormEditState,
-  GroupRendererProps,
-  renderControl,
-  RenderControlOptions,
-  SchemaHooks,
-  Visibility,
-} from "./controlRender";
-import React, { Fragment, ReactElement, useEffect, useMemo } from "react";
-import {
-  addElement,
   Control,
-  ControlChange,
-  newControl,
-  removeElement,
   useComputed,
   useControl,
   useControlEffect,
-  useValidator,
 } from "@react-typed-forms/core";
-import jsonata from "jsonata";
+
 import {
-  addMissingControls,
-  elementValueForField,
-  findCompoundField,
+  ControlGroupContext,
+  defaultValueForField,
   findField,
-  isGroupControl,
-  isScalarField,
+  getTypeField,
+  isControlReadonly,
+  useUpdatedRef,
 } from "./util";
+import jsonata from "jsonata";
+import { useCalculatedControl } from "./internal";
 
-export function useDefaultValue(
-  definition: DataControlDefinition,
-  field: SchemaField,
-  formState: FormEditState,
-  hooks: SchemaHooks,
-) {
-  const valueExpression = definition.dynamic?.find(
-    (x) => x.type === DynamicPropertyType.DefaultValue,
-  );
-  if (valueExpression) {
-    return hooks.useExpression(valueExpression.expr, formState).value;
-  }
-  return field.defaultValue;
-}
+export type UseEvalExpressionHook = (
+  expr: EntityExpression | undefined,
+) => EvalExpressionHook | undefined;
 
-export function useIsControlVisible(
+export function useEvalVisibilityHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
   definition: ControlDefinition,
-  formState: FormEditState,
-  hooks: SchemaHooks,
-): Visibility {
-  const visibleExpression = definition.dynamic?.find(
-    (x) => x.type === DynamicPropertyType.Visible,
-  );
-  if (visibleExpression && visibleExpression.expr) {
-    const exprValue = hooks.useExpression(
-      visibleExpression.expr,
-      formState,
-    ).value;
-    return {
-      value: Boolean(exprValue),
-      canChange: true,
-    };
-  }
-  const schemaFields = formState.fields;
-
-  const { typeControl, compoundField } = useMemo(() => {
-    const typeField = schemaFields.find(
-      (x) => isScalarField(x) && x.isTypeField,
-    ) as SchemaField | undefined;
-
-    const typeControl = ((typeField &&
-      formState.data.fields?.[typeField.field]) ??
-      newControl(undefined)) as Control<string | undefined>;
-    const compoundField =
-      isGroupControl(definition) && definition.compoundField
-        ? formState.data.fields[definition.compoundField]
-        : undefined;
-    return { typeControl, compoundField };
-  }, [schemaFields, formState.data]);
-
-  const fieldName = fieldForControl(definition);
-  const onlyForTypes = (
-    fieldName ? findField(schemaFields, fieldName) : undefined
-  )?.onlyForTypes;
-  const canChange = Boolean(compoundField || (onlyForTypes?.length ?? 0) > 0);
-  const value =
-    (!compoundField || compoundField.value != null) &&
-    (!onlyForTypes ||
-      onlyForTypes.length === 0 ||
-      Boolean(typeControl.value && onlyForTypes.includes(typeControl.value)));
-  return { value, canChange };
-}
-
-export function getDefaultScalarControlProperties(
-  definition: DataControlDefinition,
-  field: SchemaField,
-  visible: Visibility,
-  defaultValue: any,
-  control: Control<any>,
-  formState: FormEditState,
-): DataRendererProps {
-  return {
+  schemaField?: SchemaField,
+): EvalExpressionHook<boolean> {
+  const dynamicVisibility = useEvalDynamicHook(
     definition,
-    field,
-    defaultValue,
-    options: getOptionsForScalarField(field),
-    renderOptions: definition.renderOptions ?? {
-      type: DataRenderType.Standard,
-    },
-    required: definition.required ?? false,
-    visible,
-    readonly: formState.readonly ?? definition.readonly ?? false,
-    control,
-    formState,
-  };
-}
-
-export function getOptionsForScalarField(
-  field: SchemaField,
-): FieldOption[] | undefined | null {
-  const opts = field.options;
-  if (opts?.length ?? 0 > 0) {
-    return opts;
-  }
-  return undefined;
-}
-
-export function createDefaultSchemaHooks(): SchemaHooks {
-  function useExpression(
-    expr: EntityExpression,
-    formState: FormEditState,
-  ): Control<any | undefined> {
-    switch (expr.type) {
-      case ExpressionType.Jsonata:
-        const jExpr = expr as JsonataExpression;
-        const compiledExpr = useMemo(
-          () => jsonata(jExpr.expression),
-          [jExpr.expression],
-        );
-        const control = useControl();
-        useControlEffect(
-          () => formState.data.value,
-          async (v) => {
-            control.value = await compiledExpr.evaluate(v);
-          },
-          true,
-        );
-        return control;
-      case ExpressionType.FieldValue:
-        const fvExpr = expr as FieldValueExpression;
-        return useComputed(() => {
-          const fv = controlForField(fvExpr.field, formState).value;
-          return Array.isArray(fv)
-            ? fv.includes(fvExpr.value)
-            : fv === fvExpr.value;
-        });
-      default:
-        return useControl(undefined);
-    }
-  }
-
-  function useValidators(
-    formState: FormEditState,
-    isVisible: boolean,
-    control: Control<any>,
-    required: boolean,
-    validators?: SchemaValidator[] | null,
-  ) {
-    if (required)
-      useValidator(
-        control,
-        (v) =>
-          isVisible && (v == null || v == "") ? "Please enter a value" : null,
-        "required",
-      );
-    validators?.forEach((v, i) => {
-      switch (v.type) {
-        case ValidatorType.Date:
-          processDateValidator(v as DateValidator);
-          break;
-        case ValidatorType.Jsonata:
-          const errorMsg = useExpression(
-            v satisfies EntityExpression,
-            formState,
-          );
-          useControlEffect(
-            () => [isVisible, errorMsg.value],
-            ([isVisible, msg]) =>
-              control.setError(v.type + i, isVisible ? msg : null),
-            true,
-          );
-          break;
-      }
-
-      function processDateValidator(dv: DateValidator) {
-        let comparisonDate: number;
-        if (dv.fixedDate) {
-          comparisonDate = Date.parse(dv.fixedDate);
-        } else {
-          const nowDate = new Date();
-          comparisonDate = Date.UTC(
-            nowDate.getFullYear(),
-            nowDate.getMonth(),
-            nowDate.getDate(),
-          );
-          if (dv.daysFromCurrent) {
-            comparisonDate += dv.daysFromCurrent * 86400000;
-          }
-        }
-        useValidator(
-          control,
-          (v) => {
-            if (v) {
-              const selDate = Date.parse(v);
-              const notAfter = dv.comparison === DateComparison.NotAfter;
-              if (
-                notAfter ? selDate > comparisonDate : selDate < comparisonDate
-              ) {
-                return `Date must not be ${
-                  notAfter ? "after" : "before"
-                } ${new Date(comparisonDate).toDateString()}`;
-              }
-            }
-            return null;
-          },
-          "date" + i,
-        );
-      }
-    });
-  }
-  return { useExpression, useValidators };
-}
-
-export const defaultFormEditHooks = createFormEditHooks(
-  createDefaultSchemaHooks(),
-);
-
-export function createFormEditHooks(schemaHooks: SchemaHooks): FormEditHooks {
-  return {
-    schemaHooks,
-    useDataProperties(formState, definition, field): DataRendererProps {
-      const visible = useIsControlVisible(definition, formState, schemaHooks);
-      const isVisible = visible.value && !formState.invisible;
-      const defaultValue = useDefaultValue(
-        definition,
-        field,
-        formState,
-        schemaHooks,
-      );
-      const scalarControl = formState.data.fields[field.field];
-
-      useEffect(() => {
-        if (!isVisible) scalarControl.value = null;
-        else if (scalarControl.current.value == null) {
-          scalarControl.value = defaultValue;
-        }
-      }, [isVisible, defaultValue]);
-
-      const dataProps = getDefaultScalarControlProperties(
-        definition,
-        field,
-        visible,
-        defaultValue,
-        scalarControl,
-        formState,
-      );
-
-      schemaHooks.useValidators(
-        formState,
-        isVisible,
-        scalarControl,
-        dataProps.required,
-        definition.validators,
-      );
-
-      useEffect(() => {
-        const subscription = scalarControl.subscribe(
-          (c) => (c.touched = true),
-          ControlChange.Validate,
-        );
-        return () => scalarControl.unsubscribe(subscription);
-      }, []);
-
-      if (!field.collection) return dataProps;
-      return {
-        ...dataProps,
-        array: defaultArrayRendererProps(
-          scalarControl,
-          field,
-          definition,
-          dataProps.readonly,
-          (c) => formState.renderer.renderData({ ...dataProps, control: c }),
-        ),
-      };
-    },
-    useDisplayProperties: (fs, definition) => {
-      const visible = useIsControlVisible(definition, fs, schemaHooks);
-      return { visible, definition };
-    },
-    useGroupProperties: (fs, definition) => {
-      const visible = useIsControlVisible(definition, fs, schemaHooks);
-      const field = definition.compoundField
-        ? findCompoundField(fs.fields, definition.compoundField)
-        : undefined;
-      const newFs: RenderControlOptions = {
-        ...fs,
-        fields: field ? field.children : fs.fields,
-        invisible: !visible.value || fs.invisible,
-      };
-      const data = field ? fs.data.fields[field.field] : fs.data;
-      const groupProps = {
-        visible,
-        hooks: fs.hooks,
-        hideTitle: definition.groupOptions.hideTitle ?? false,
-        childCount: definition.children.length,
-        renderChild: (i) =>
-          renderControl(definition.children[i], data, newFs, i),
-        definition,
-      } satisfies GroupRendererProps;
-      if (field?.collection) {
-        return {
-          ...groupProps,
-          array: defaultArrayRendererProps(
-            data,
-            field,
-            definition,
-            fs.readonly,
-            (e) =>
-              fs.renderer.renderGroup({
-                ...groupProps,
-                hideTitle: true,
-                renderChild: (i) =>
-                  renderControl(definition.children[i], e, newFs, i),
-              }),
-          ),
-        };
-      }
-      return groupProps;
-    },
-    useActionProperties(
-      formState: FormEditState,
-      definition: ActionControlDefinition,
-    ): ActionRendererProps {
-      const visible = useIsControlVisible(definition, formState, schemaHooks);
-      return {
-        visible,
-        onClick: () => {},
-        definition,
-      };
-    },
-  };
-}
-
-function defaultArrayRendererProps(
-  control: Control<any[]>,
-  field: SchemaField,
-  definition: DataControlDefinition | GroupedControlsDefinition,
-  readonly: boolean | undefined | null,
-  renderElem: (c: Control<any>) => ReactElement,
-): ArrayRendererProps {
-  return {
-    control,
-    childCount: control.elements?.length ?? 0,
-    field,
-    definition,
-    addAction: !readonly
-      ? {
-          definition: {
-            title: "Add " + controlTitle(definition.title, field),
-            type: ControlDefinitionType.Action,
-            actionId: "addElement",
-          },
-          visible: { value: true, canChange: false },
-          onClick: () => addElement(control, elementValueForField(field)),
-        }
-      : undefined,
-    removeAction: !readonly
-      ? (i) => ({
-          definition: {
-            title: "Remove",
-            type: ControlDefinitionType.Action,
-            actionId: "removeElement",
-          },
-          visible: { value: true, canChange: false },
-          onClick: () => removeElement(control, control.elements[i]),
-        })
-      : undefined,
-    childKey: (i) => control.elements[i].uniqueId,
-    renderChild: (i) => {
-      const c = control.elements[i];
-      return <Fragment key={c.uniqueId}>{renderElem(c)}</Fragment>;
-    },
-  };
-}
-
-export const emptyGroupDefinition: GroupedControlsDefinition = {
-  type: ControlDefinitionType.Group,
-  children: [],
-  groupOptions: { type: GroupRenderType.Standard, hideTitle: true },
-};
-
-export function useControlDefinitionForSchema(
-  sf: SchemaField[],
-  definition: GroupedControlsDefinition = emptyGroupDefinition,
-): GroupedControlsDefinition {
-  return useMemo<GroupedControlsDefinition>(
-    () => ({
-      ...definition,
-      children: addMissingControls(sf, definition.children),
-    }),
-    [sf, definition],
+    DynamicPropertyType.Visible,
+    useEvalExpressionHook,
   );
+  const r = useUpdatedRef(schemaField);
+  return useCallback(
+    (ctx) => {
+      const schemaField = r.current;
+      return (
+        dynamicVisibility?.(ctx) ??
+        useComputed(() => matchesType(ctx, schemaField?.onlyForTypes))
+      );
+    },
+    [dynamicVisibility, r],
+  );
+}
+
+export function useEvalReadonlyHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
+  definition: ControlDefinition,
+): EvalExpressionHook<boolean> {
+  const dynamicReadonly = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.Readonly,
+    useEvalExpressionHook,
+  );
+  const r = useUpdatedRef(definition);
+  return useCallback(
+    (ctx) => {
+      if (dynamicReadonly) return dynamicReadonly(ctx);
+      return useCalculatedControl(() => isControlReadonly(r.current));
+    },
+    [dynamicReadonly, r],
+  );
+}
+
+export function useEvalDisabledHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
+  definition: ControlDefinition,
+): EvalExpressionHook<boolean> {
+  const dynamicDisabled = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.Disabled,
+    useEvalExpressionHook,
+  );
+  return useCallback(
+    (ctx) => {
+      if (dynamicDisabled) return dynamicDisabled(ctx);
+      return useControl(false);
+    },
+    [dynamicDisabled],
+  );
+}
+
+export function useEvalDefaultValueHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
+  definition: ControlDefinition,
+  schemaField?: SchemaField,
+): EvalExpressionHook {
+  const dynamicValue = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.DefaultValue,
+    useEvalExpressionHook,
+  );
+  const r = useUpdatedRef({ definition, schemaField });
+  return useCallback(
+    (ctx) => {
+      const { definition, schemaField } = r.current;
+      return dynamicValue?.(ctx) ?? useComputed(calcDefault);
+      function calcDefault() {
+        const [required, dcv] = isDataControlDefinition(definition)
+          ? [definition.required, definition.defaultValue]
+          : [false, undefined];
+        return (
+          dcv ??
+          (schemaField
+            ? defaultValueForField(schemaField, required)
+            : undefined)
+        );
+      }
+    },
+    [dynamicValue, r],
+  );
+}
+
+export type EvalExpressionHook<A = any> = (
+  groupContext: ControlGroupContext,
+) => Control<A | undefined>;
+
+function useFieldValueExpression(
+  fvExpr: FieldValueExpression,
+  fields: SchemaField[],
+  data: Control<any>,
+) {
+  const refField = findField(fields, fvExpr.field);
+  const otherField = refField ? data.fields[refField.field] : undefined;
+  return useComputed(() => {
+    const fv = otherField?.value;
+    return Array.isArray(fv) ? fv.includes(fvExpr.value) : fv === fvExpr.value;
+  });
+}
+
+export function defaultEvalHooks(
+  expr: EntityExpression,
+  context: ControlGroupContext,
+) {
+  switch (expr.type) {
+    case ExpressionType.Jsonata:
+      return useJsonataExpression(
+        (expr as JsonataExpression).expression,
+        context.groupControl,
+      );
+    case ExpressionType.FieldValue:
+      return useFieldValueExpression(
+        expr as FieldValueExpression,
+        context.fields,
+        context.groupControl,
+      );
+    default:
+      return useControl(undefined);
+  }
+}
+
+export const defaultUseEvalExpressionHook =
+  makeEvalExpressionHook(defaultEvalHooks);
+
+export function makeEvalExpressionHook(
+  f: (expr: EntityExpression, context: ControlGroupContext) => Control<any>,
+): (expr: EntityExpression | undefined) => EvalExpressionHook | undefined {
+  return (expr) => {
+    const r = useUpdatedRef(expr);
+    const cb = useCallback(
+      (ctx: ControlGroupContext) => {
+        const expr = r.current!;
+        return f(expr, ctx);
+      },
+      [expr?.type, r],
+    );
+    return expr ? cb : undefined;
+  };
+}
+
+export function useEvalDynamicHook(
+  definition: ControlDefinition,
+  type: DynamicPropertyType,
+  useEvalExpressionHook: (
+    expr: EntityExpression | undefined,
+  ) => EvalExpressionHook | undefined,
+): EvalExpressionHook | undefined {
+  const expression = definition.dynamic?.find((x) => x.type === type);
+  return useEvalExpressionHook(expression?.expr);
+}
+
+export function matchesType(
+  context: ControlGroupContext,
+  types?: string[] | null,
+) {
+  if (types == null || types.length === 0) return true;
+  const typeField = getTypeField(context);
+  return typeField && types.includes(typeField.value);
+}
+
+export function useJsonataExpression(
+  jExpr: string,
+  data: Control<any>,
+): Control<any> {
+  const compiledExpr = useMemo(() => jsonata(jExpr), [jExpr]);
+  const control = useControl();
+  useControlEffect(
+    () => data.value,
+    async (v) => {
+      control.value = await compiledExpr.evaluate(v);
+    },
+    true,
+  );
+  return control;
 }

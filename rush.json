@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=12.13.0 <13.0.0 || >=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.9.0 <19.0.0",
+  "nodeSupportedVersionRange": ">=12.13.0 <13.0.0 || >=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.9.0 <19.0.0 || >=20",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -399,12 +399,12 @@
     {
       "packageName": "@react-typed-forms/core",
       "projectFolder": "packages/core",
-      "versionPolicyName": "publicRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/mui",
       "projectFolder": "packages/mui",
-      "versionPolicyName": "muiRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/example",
@@ -417,17 +417,17 @@
     {
       "packageName": "@react-typed-forms/schemas",
       "projectFolder": "packages/schemas",
-      "versionPolicyName": "schemasRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/schemas-mui",
       "projectFolder": "packages/schemas-mui",
-      "versionPolicyName": "muiRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/transform",
       "projectFolder": "packages/transform",
-      "versionPolicyName": "transformRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/storybook",

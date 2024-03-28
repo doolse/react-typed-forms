@@ -2,51 +2,49 @@
 import {
   applyDefaultValues,
   buildSchema,
+  compoundControl,
   compoundField,
   ControlDefinitionType,
   createDefaultRenderers,
-  createFormEditHooks,
   createFormRenderer,
   dataControl,
   DataRenderType,
   DateTimeRenderOptions,
-  FieldType,
+  defaultTailwindTheme,
+  dynamicDefaultValue,
+  dynamicDisabled,
+  dynamicReadonly,
+  dynamicVisibility,
   fieldEqExpr,
+  FieldType,
   GroupRenderType,
+  jsonataExpr,
   makeScalarField,
-  renderControl,
   stringField,
   stringOptionsField,
-  visibility,
+  useControlRenderer,
 } from "@react-typed-forms/schemas";
-import {
-  Control,
-  Finput,
-  RenderControl,
-  useControl,
-} from "@react-typed-forms/core";
+import { RenderControl, useControl } from "@react-typed-forms/core";
 import {
   muiActionRenderer,
   muiDateRenderer,
   muiTextfieldRenderer,
 } from "@react-typed-forms/schemas-mui";
-import { defaultFormEditHooks } from "@react-typed-forms/schemas/lib";
 
+interface Nested {
+  nest: string;
+}
 interface NameForm {
   first: string;
   middle: string;
   last: string;
   gender: string;
   date: string;
-  compoundOptional: {
-    nest: string;
-  }[];
-  compound: {
-    nest: string;
-  };
-  compoundCollection: {
-    nest: string;
-  }[];
+  compoundOptional: Nested[];
+  compound: Nested;
+  compoundCollection: Nested[];
+  compoundCollectionWithDefault: Nested[];
+  compoundDynamic: Nested[];
 }
 
 const nestSchema = buildSchema<{ nest: string }>({
@@ -72,139 +70,143 @@ const nameFormSchema = buildSchema<NameForm>({
   compoundCollection: compoundField("Compound Collection", nestSchema, {
     collection: true,
   }),
+  compoundCollectionWithDefault: compoundField(
+    "Compound with default",
+    nestSchema,
+    {
+      collection: true,
+      required: false,
+      defaultValue: [{ nest: "wow" }, { nest: "wow2" }],
+    },
+  ),
+  compoundDynamic: compoundField("Compound with dynamic", nestSchema, {
+    collection: true,
+    required: false,
+  }),
 });
 
 const withDefaults = applyDefaultValues({ date: "2024-10-12" }, nameFormSchema);
 
-const hooks = defaultFormEditHooks;
-
 const renderer = createFormRenderer(
   [muiTextfieldRenderer("outlined"), muiActionRenderer(), muiDateRenderer()],
-  createDefaultRenderers({
-    label: {
-      className: "flex flex-col",
-      requiredElement: <span className="text-red-500"> *</span>,
-    },
-    array: {
-      removableClass: "grid grid-cols-[1fr_auto] items-center gap-x-2",
-      childClass: "grow",
-    },
-    group: {
-      gridClassName: "gap-x-2 gap-y-4",
-    },
-    action: {
-      className: "bg-primary rounded-lg p-4 text-white",
-    },
-  }),
+  createDefaultRenderers(defaultTailwindTheme),
 );
 
+const definition = {
+  type: ControlDefinitionType.Group,
+  groupOptions: { type: GroupRenderType.Grid, hideTitle: true },
+  children: [
+    {
+      required: true,
+      title: undefined,
+      type: ControlDefinitionType.Data,
+      field: "first",
+    },
+    dataControl("middle", undefined, {
+      dynamic: [dynamicVisibility(fieldEqExpr("first", "Jolse"))],
+    }),
+    {
+      renderOptions: { type: DataRenderType.Standard },
+      required: true,
+      title: undefined,
+      type: ControlDefinitionType.Data,
+      field: "last",
+      dynamic: [dynamicDisabled(fieldEqExpr("first", "Smoth"))],
+    },
+    {
+      renderOptions: { type: DataRenderType.Standard },
+      required: true,
+      title: undefined,
+      type: ControlDefinitionType.Data,
+      field: "gender",
+    },
+    {
+      renderOptions: {
+        type: DataRenderType.DateTime,
+        format: "dd/MM/yyyy",
+      } as DateTimeRenderOptions,
+      title: "Date",
+      type: ControlDefinitionType.Data,
+      field: "date",
+      dynamic: [dynamicReadonly(fieldEqExpr("gender", "O"))],
+    },
+    {
+      title: "Required compound",
+      type: ControlDefinitionType.Group,
+      compoundField: "compound",
+      groupOptions: {
+        type: GroupRenderType.Standard,
+        hideTitle: true,
+      },
+      children: [
+        {
+          renderOptions: { type: DataRenderType.Standard },
+          required: true,
+          title: undefined,
+          type: ControlDefinitionType.Data,
+          field: "nest",
+        },
+      ],
+    },
+    {
+      title: "Optional compound",
+      type: ControlDefinitionType.Group,
+      compoundField: "compoundOptional",
+      groupOptions: {
+        type: GroupRenderType.Standard,
+        hideTitle: false,
+      },
+      children: [
+        {
+          renderOptions: { type: DataRenderType.Standard },
+          required: true,
+          title: undefined,
+          type: ControlDefinitionType.Data,
+          field: "nest",
+        },
+      ],
+    },
+    {
+      title: "Compound collection",
+      type: ControlDefinitionType.Group,
+      compoundField: "compoundCollection",
+      groupOptions: {
+        type: GroupRenderType.Standard,
+        hideTitle: false,
+      },
+      children: [
+        {
+          renderOptions: { type: DataRenderType.Standard },
+          required: true,
+          title: undefined,
+          type: ControlDefinitionType.Data,
+          field: "nest",
+        },
+      ],
+    },
+    compoundControl(
+      "compoundCollectionWithDefault",
+      "Compound collection with default",
+      [dataControl("nest", null, { required: true })],
+    ),
+    compoundControl(
+      "compoundDynamic",
+      "Compound dynamic",
+      [dataControl("nest")],
+      {
+        dynamic: [dynamicDefaultValue(jsonataExpr('[{"nest": "DYNAMIC"}]'))],
+      },
+    ),
+  ],
+};
 export default function RenderAForm() {
   const form = useControl<NameForm>(withDefaults);
+  const RenderForm = useControlRenderer(definition, nameFormSchema, renderer);
 
   return (
     <div className="container">
       <h1>Simple Schema Test</h1>
-      {renderControl(
-        {
-          type: ControlDefinitionType.Group,
-          groupOptions: { type: GroupRenderType.Grid, hideTitle: true },
-          children: [
-            {
-              required: true,
-              title: undefined,
-              type: ControlDefinitionType.Data,
-              field: "first",
-            },
-            dataControl("middle", "middle", {
-              dynamic: [visibility(fieldEqExpr("first", "Jolse"))],
-            }),
-            {
-              renderOptions: { type: DataRenderType.Standard },
-              required: true,
-              title: undefined,
-              type: ControlDefinitionType.Data,
-              field: "last",
-            },
-            {
-              renderOptions: { type: DataRenderType.Standard },
-              required: true,
-              title: undefined,
-              type: ControlDefinitionType.Data,
-              field: "gender",
-            },
-            {
-              renderOptions: {
-                type: DataRenderType.DateTime,
-                format: "dd/MM/yyyy",
-              } as DateTimeRenderOptions,
-              readonly: true,
-              title: "Date",
-              type: ControlDefinitionType.Data,
-              field: "date",
-            },
-            {
-              title: "Required compound",
-              type: ControlDefinitionType.Group,
-              compoundField: "compound",
-              groupOptions: {
-                type: GroupRenderType.Standard,
-                hideTitle: true,
-              },
-              children: [
-                {
-                  renderOptions: { type: DataRenderType.Standard },
-                  required: true,
-                  title: undefined,
-                  type: ControlDefinitionType.Data,
-                  field: "nest",
-                },
-              ],
-            },
-            {
-              title: "Optional compound",
-              type: ControlDefinitionType.Group,
-              compoundField: "compoundOptional",
-              groupOptions: {
-                type: GroupRenderType.Standard,
-                hideTitle: false,
-              },
-              children: [
-                {
-                  renderOptions: { type: DataRenderType.Standard },
-                  required: true,
-                  title: undefined,
-                  type: ControlDefinitionType.Data,
-                  field: "nest",
-                },
-              ],
-            },
-            {
-              title: "Compound collection",
-              type: ControlDefinitionType.Group,
-              compoundField: "compoundCollection",
-              groupOptions: {
-                type: GroupRenderType.Standard,
-                hideTitle: false,
-              },
-              children: [
-                {
-                  renderOptions: { type: DataRenderType.Standard },
-                  required: true,
-                  title: undefined,
-                  type: ControlDefinitionType.Data,
-                  field: "nest",
-                },
-              ],
-            },
-          ],
-        },
-        form,
-        {
-          fields: nameFormSchema,
-          renderer,
-          hooks,
-        },
-      )}
+      <RenderForm control={form} />
       <button onClick={() => (form.fields.compoundOptional.value = [])}>
         Enable optional part
       </button>

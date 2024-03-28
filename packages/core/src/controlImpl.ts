@@ -154,6 +154,18 @@ class ControlImpl<V> implements Control<V> {
     this.runChange(this.updateError(key, error));
   }
 
+  setErrors(errors: { [k: string]: string | null | undefined }) {
+    const realErrors = Object.entries(errors).filter((x) => !!x[1]);
+    const exactErrors = realErrors.length
+      ? (Object.fromEntries(realErrors) as Record<string, string>)
+      : null;
+    if (!basicShallowEquals(exactErrors, this._errors)) {
+      this._errors = exactErrors;
+      this._childSync |= ChildSyncFlags.Valid;
+      this.runChange(ControlChange.Error);
+    }
+  }
+
   get errors() {
     collectChange(this, ControlChange.Error);
     return this._errors ?? {};
@@ -833,11 +845,11 @@ export function findElement<T>(
 }
 
 export function updateElements<V>(
-  control: Control<V[]>,
+  control: Control<V[] | null | undefined>,
   cb: (elems: Control<V>[]) => Control<V>[],
 ): void {
   const c = control as unknown as ControlImpl<V[]>;
-  const e = control.current.elements;
+  const e = control.current.elements ?? [];
   const newElems = cb(e);
   if (!basicShallowEquals(e, newElems)) {
     ensureArrayAttachment(c, newElems, e);
@@ -1218,4 +1230,27 @@ export class SubscriptionTracker {
     this.subscribed.forEach((x) => x[0].unsubscribe(this._listener));
     this.subscribed = [];
   }
+}
+
+const restoreControlSymbol = Symbol("restoreControl");
+export function trackedValue<A>(c: Control<A>): A {
+  const cv: any = c.current.value;
+  if (cv == null) return cv;
+  if (typeof cv !== "object") return c.value;
+  return new Proxy(cv, {
+    get(target: object, p: string | symbol, receiver: any): any {
+      if (p === restoreControlSymbol) return c;
+      if (Array.isArray(cv)) {
+        if (p === "length" || p === "toJSON") return Reflect.get(cv, p);
+        const nc = (c.elements as any)[p];
+        if (typeof nc === "function") return nc;
+        return trackedValue(nc);
+      }
+      return trackedValue((c.fields as any)[p]);
+    },
+  }) as A;
+}
+
+export function unsafeRestoreControl<A>(v: A): Control<A> {
+  return (v as any)[restoreControlSymbol];
 }

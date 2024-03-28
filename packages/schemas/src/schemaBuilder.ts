@@ -23,20 +23,20 @@ type AllowedSchema<T> = T extends string
   : SchemaField & { type: FieldType.Any };
 
 type AllowedField<T, K> = (
-  name: string
+  name: string,
 ) => (SchemaField & { type: K }) | AllowedSchema<T>;
 
 export function buildSchema<T, Custom = "">(def: {
   [K in keyof T]-?: AllowedField<T[K], Custom>;
 }): SchemaField[] {
   return Object.entries(def).map((x) =>
-    (x[1] as (n: string) => SchemaField)(x[0])
+    (x[1] as (n: string) => SchemaField)(x[0]),
   );
 }
 
 export function stringField(
   displayName: string,
-  options?: Partial<Omit<SchemaField, "type">>
+  options?: Partial<Omit<SchemaField, "type">>,
 ) {
   return makeScalarField({
     type: FieldType.String as const,
@@ -58,19 +58,19 @@ export function stringOptionsField(
 
 export function withScalarOptions<S extends SchemaField>(
   options: Partial<SchemaField>,
-  v: (name: string) => S
+  v: (name: string) => S,
 ): (name: string) => S {
   return (n) => ({ ...v(n), ...options });
 }
 
 export function makeScalarField<S extends Partial<SchemaField>>(
-  options: S
+  options: S,
 ): (name: string) => SchemaField & S {
   return (n) => ({ ...defaultScalarField(n, n), ...options });
 }
 
 export function makeCompoundField<S extends Partial<CompoundField>>(
-  options: S
+  options: S,
 ): (name: string) => CompoundField & {
   type: FieldType.Compound;
 } & S {
@@ -79,7 +79,7 @@ export function makeCompoundField<S extends Partial<CompoundField>>(
 
 export function intField(
   displayName: string,
-  options?: Partial<Omit<SchemaField, "type">>
+  options?: Partial<Omit<SchemaField, "type">>,
 ) {
   return makeScalarField({
     type: FieldType.Int as const,
@@ -90,7 +90,7 @@ export function intField(
 
 export function boolField(
   displayName: string,
-  options?: Partial<Omit<SchemaField, "type">>
+  options?: Partial<Omit<SchemaField, "type">>,
 ) {
   return makeScalarField({
     type: FieldType.Bool as const,
@@ -100,11 +100,11 @@ export function boolField(
 }
 
 export function compoundField<
-  Other extends Partial<Omit<CompoundField, "type" | "schemaType">>
+  Other extends Partial<Omit<CompoundField, "type" | "schemaType">>,
 >(
   displayName: string,
   fields: SchemaField[],
-  other: Other
+  other: Other,
 ): (name: string) => CompoundField & {
   collection: Other["collection"];
 } {
@@ -113,12 +113,12 @@ export function compoundField<
       ...defaultCompoundField(field, displayName, false),
       ...other,
       children: fields,
-    } as any);
+    }) as any;
 }
 
 export function defaultScalarField(
   field: string,
-  displayName: string
+  displayName: string,
 ): Omit<SchemaField, "type"> & {
   type: FieldType.String;
 } {
@@ -132,20 +132,15 @@ export function defaultScalarField(
 export function defaultCompoundField(
   field: string,
   displayName: string,
-  collection: boolean
+  collection: boolean,
 ): CompoundField & {
   type: FieldType.Compound;
 } {
   return {
-    tags: [],
     field,
     displayName,
     type: FieldType.Compound,
     collection,
-    system: false,
-    treeChildren: false,
     children: [],
-    onlyForTypes: [],
-    required: true,
   };
 }
