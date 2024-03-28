@@ -163,7 +163,7 @@ function defaultEvalHooks(
 export const defaultUseEvalExpressionHook =
   makeEvalExpressionHook(defaultEvalHooks);
 
-function makeEvalExpressionHook(
+export function makeEvalExpressionHook(
   f: (expr: EntityExpression, context: ControlGroupContext) => Control<any>,
 ): (expr: EntityExpression | undefined) => EvalExpressionHook | undefined {
   return (expr) => {
