@@ -25,11 +25,11 @@ const meta: Meta<{}> = {
   title: "React typed forms/formControlProps",
   component: undefined,
   parameters: {
-    docs: {
-      description: {
-        component: formControlPropsDescription,
-      },
-    },
+    // docs: {
+    //   description: {
+    //     component: formControlPropsDescription,
+    //   },
+    // },
   },
 };
 
