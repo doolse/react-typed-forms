@@ -139,7 +139,7 @@ function useFieldValueExpression(
   });
 }
 
-function defaultEvalHooks(
+export function defaultEvalHooks(
   expr: EntityExpression,
   context: ControlGroupContext,
 ) {
