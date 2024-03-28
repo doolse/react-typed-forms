@@ -564,7 +564,6 @@ function createDefaultLayoutRenderer(
   return createLayoutRenderer((props, renderers) => {
     return (
       <DefaultLayout
-        errorControl={props.errorControl}
         layout={renderLayoutParts(props, renderers)}
         {...options}
       />
@@ -820,10 +819,8 @@ export function DefaultVisibility({
 export function DefaultLayout({
   className,
   errorClass,
-  errorControl,
-  layout: { controlEnd, controlStart, label, children },
+  layout: { controlEnd, controlStart, label, children, errorControl },
 }: DefaultLayoutRendererOptions & {
-  errorControl?: Control<any>;
   layout: RenderedLayout;
 }) {
   const ec = errorControl;

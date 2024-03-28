@@ -4,7 +4,7 @@ import React, {
   Key,
   ReactNode,
   useCallback,
-  useRef,
+  useEffect,
 } from "react";
 import {
   addElement,
@@ -12,7 +12,6 @@ import {
   newControl,
   removeElement,
   useComponentTracking,
-  useComputed,
   useControl,
   useControlEffect,
 } from "@react-typed-forms/core";
@@ -40,8 +39,16 @@ import {
   useUpdatedRef,
 } from "./util";
 import { dataControl } from "./controlBuilder";
-import { useEvalDefaultValueHook, useEvalVisibilityHook } from "./hooks";
+import {
+  defaultUseEvalExpressionHook,
+  useEvalDefaultValueHook,
+  useEvalDisabledHook,
+  UseEvalExpressionHook,
+  useEvalReadonlyHook,
+  useEvalVisibilityHook,
+} from "./hooks";
 import { useValidationHook } from "./validators";
+import { useCalculatedControl } from "./internal";
 
 export interface FormRenderer {
   renderData: (
@@ -102,6 +109,7 @@ export interface RenderedLayout {
   controlEnd?: ReactNode;
   label?: ReactNode;
   children?: ReactNode;
+  errorControl?: Control<any>;
 }
 
 export interface ControlLayoutProps {
@@ -152,7 +160,8 @@ export interface ControlRenderProps {
 
 export interface FormContextOptions {
   readonly?: boolean | null;
-  hidden?: boolean;
+  hidden?: boolean | null;
+  disabled?: boolean | null;
 }
 
 export type CreateDataProps = (
@@ -164,6 +173,7 @@ export type CreateDataProps = (
 ) => DataRendererProps;
 export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
+  useEvalExpressionHook?: UseEvalExpressionHook;
   clearHidden?: boolean;
 }
 export function useControlRenderer(
@@ -173,10 +183,17 @@ export function useControlRenderer(
   options: ControlRenderOptions = {},
 ): FC<ControlRenderProps> {
   const dataProps = options.useDataHook?.(definition) ?? defaultDataProps;
+  const useExpr = options.useEvalExpressionHook ?? defaultUseEvalExpressionHook;
 
   const schemaField = lookupSchemaField(definition, fields);
-  const useDefaultValue = useEvalDefaultValueHook(definition, schemaField);
-  const useIsVisible = useEvalVisibilityHook(definition, schemaField);
+  const useDefaultValue = useEvalDefaultValueHook(
+    useExpr,
+    definition,
+    schemaField,
+  );
+  const useIsVisible = useEvalVisibilityHook(useExpr, definition, schemaField);
+  const useIsReadonly = useEvalReadonlyHook(useExpr, definition);
+  const useIsDisabled = useEvalDisabledHook(useExpr, definition);
   const useValidation = useValidationHook(definition);
   const r = useUpdatedRef({ options, definition, fields, schemaField });
 
@@ -189,6 +206,8 @@ export function useControlRenderer(
           groupControl: parentControl,
           fields,
         };
+        const readonlyControl = useIsReadonly(groupContext);
+        const disabledControl = useIsDisabled(groupContext);
         const visibleControl = useIsVisible(groupContext);
         const visible = visibleControl.current.value;
         const visibility = useControl<Visibility | undefined>(() =>
@@ -236,16 +255,23 @@ export function useControlRenderer(
           },
           true,
         );
-        const hidden = useComputed(
-          () => options.hidden || !visibility.fields?.showing.value,
-        ).value;
-        useValidation(control!, hidden, groupContext);
-        const myOptions =
-          options.hidden !== hidden ? { ...options, hidden } : options;
+        const myOptions = useCalculatedControl<FormContextOptions>(() => ({
+          hidden: options.hidden || !visibility.fields?.showing.value,
+          readonly: options.readonly || readonlyControl.value,
+          disabled: options.disabled || disabledControl.value,
+        })).value;
+        useValidation(control!, !!myOptions.hidden, groupContext);
         const childRenderers: FC<ControlRenderProps>[] =
           c.children?.map((cd) =>
-            useControlRenderer(cd, childContext.fields, renderer, myOptions),
+            useControlRenderer(cd, childContext.fields, renderer, {
+              ...options,
+              ...myOptions,
+            }),
           ) ?? [];
+        useEffect(() => {
+          if (control && typeof myOptions.disabled === "boolean")
+            control.disabled = myOptions.disabled;
+        }, [control, myOptions.disabled]);
         if (parentControl.isNull) return <></>;
         const adornments =
           definition.adornments?.map((x) =>
@@ -272,7 +298,16 @@ export function useControlRenderer(
         stopTracking();
       }
     },
-    [r, dataProps, useIsVisible, useDefaultValue, useValidation, renderer],
+    [
+      r,
+      dataProps,
+      useIsVisible,
+      useDefaultValue,
+      useIsReadonly,
+      useIsDisabled,
+      useValidation,
+      renderer,
+    ],
   );
   (Component as any).displayName = "RenderControl";
   return Component;
@@ -358,7 +393,7 @@ export const defaultDataProps: CreateDataProps = (
     field,
     id: "c" + control.uniqueId,
     options: (field.options?.length ?? 0) === 0 ? null : field.options,
-    readonly: options.readonly || !!definition.readonly,
+    readonly: !!options.readonly,
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required: !!definition.required,
     hidden: !!options.hidden,
@@ -523,7 +558,7 @@ export function renderControlLayout(
 }
 
 export function appendMarkup(
-  k: keyof RenderedLayout,
+  k: keyof Omit<RenderedLayout, "errorControl">,
   markup: ReactNode,
 ): (layout: RenderedLayout) => void {
   return (layout) =>
@@ -536,7 +571,7 @@ export function appendMarkup(
 }
 
 export function wrapMarkup(
-  k: keyof RenderedLayout,
+  k: keyof Omit<RenderedLayout, "errorControl">,
   wrap: (ex: ReactNode) => ReactNode,
 ): (layout: RenderedLayout) => void {
   return (layout) => (layout[k] = wrap(layout[k]));
@@ -544,7 +579,7 @@ export function wrapMarkup(
 
 export function layoutKeyForPlacement(
   pos: AdornmentPlacement,
-): keyof RenderedLayout {
+): keyof Omit<RenderedLayout, "errorControl"> {
   switch (pos) {
     case AdornmentPlacement.ControlEnd:
       return "controlEnd";
@@ -576,7 +611,10 @@ export function renderLayoutParts(
   renderer: FormRenderer,
 ): RenderedLayout {
   const processed = props.processLayout?.(props) ?? props;
-  const layout: RenderedLayout = { children: processed.children };
+  const layout: RenderedLayout = {
+    children: processed.children,
+    errorControl: processed.errorControl,
+  };
   (processed.adornments ?? [])
     .sort((a, b) => a.priority - b.priority)
     .forEach((x) => x.apply(layout));

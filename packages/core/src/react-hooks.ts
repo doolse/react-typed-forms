@@ -1,11 +1,7 @@
-import React, {
+import {
   ChangeEvent,
   DependencyList,
-  FC,
   MutableRefObject,
-  ReactElement,
-  ReactNode,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -13,24 +9,16 @@ import React, {
   useSyncExternalStore,
 } from "react";
 import {
-  addAfterChangesCallback,
+  basicShallowEquals,
   controlGroup,
   newControl,
   newElement,
   setFields,
-  basicShallowEquals,
+  SubscriptionTracker,
   trackControlChange,
   updateElements,
-  ValueAndDeps,
-  SubscriptionTracker,
 } from "./controlImpl";
-import {
-  ChangeListenerFunc,
-  Control,
-  ControlChange,
-  ControlSetup,
-  ControlValue,
-} from "./types";
+import { Control, ControlChange, ControlSetup, ControlValue } from "./types";
 
 class EffectSubscription<V> extends SubscriptionTracker {
   currentValue: V;
@@ -413,8 +401,7 @@ class ComputeTracker<V> extends SubscriptionTracker {
   constructor(public compute: () => V) {
     super();
     this.run(() => {
-      const v = compute();
-      this.control = newControl(v);
+      this.control = newControl(compute());
     });
     this.listener = () => {
       this.run(() => {
@@ -424,6 +411,24 @@ class ComputeTracker<V> extends SubscriptionTracker {
   }
 }
 
+/**
+ * Computer a `Control` value based on other `Control` properties and other dependencies.
+ * Similar to `useComputed()` except that the `calculate` callback will execute on each render, so can depend on other dependencies besides controls.
+ * @param calculate The function to compute the value based on other `Control`s and other dependencies
+ */
+export function useCalculatedControl<V>(calculate: () => V): Control<V> {
+  const c = useControl(calculate);
+  useControlEffect(calculate, (v) => (c.value = v));
+  return c;
+}
+
+/**
+ * Computer a `Control` value based on other `Control` properties.
+ *
+ * **NOTE**: The value will only be recalculated if a dependent Control changes.
+ * If you need to depend on other values, use `useCalculatedControl()`
+ * @param compute The function to compute the value based on other `Control`s
+ */
 export function useComputed<V>(compute: () => V): Control<V> {
   const [trackerRef, initial] = useRefState<ComputeTracker<V>>(
     () => new ComputeTracker<V>(compute),

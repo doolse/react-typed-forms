@@ -15,10 +15,11 @@ export function muiTextfieldRenderer(
     type: "data",
     schemaType: FieldType.String,
     renderType: DataRenderType.Standard,
-    render: ({ control, required, id }) => {
+    render: ({ control, required, id, readonly }) => {
       return (lc) => ({
         ...lc,
         label: undefined,
+        errorControl: undefined,
         children: (
           <FTextField
             id={id}
@@ -28,6 +29,7 @@ export function muiTextfieldRenderer(
             label={lc.label?.label}
             size="small"
             state={control}
+            InputProps={{ readOnly: readonly }}
           />
         ),
       });
@@ -53,10 +55,12 @@ export function muiDateRenderer(
   return {
     type: "data",
     schemaType: FieldType.Date,
-    render: ({ control, required, id }) => {
+    render: ({ control, required, id, readonly }) => {
+      console.log(readonly);
       return (lc) => ({
         ...lc,
         label: undefined,
+        errorControl: undefined,
         children: (
           <FDateField
             id={id}
@@ -66,6 +70,7 @@ export function muiDateRenderer(
             label={lc.label?.label}
             size="small"
             state={control}
+            InputProps={{ readOnly: readonly }}
           />
         ),
       });

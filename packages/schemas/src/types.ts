@@ -75,6 +75,8 @@ export interface DynamicProperty {
 export enum DynamicPropertyType {
   Visible = "Visible",
   DefaultValue = "DefaultValue",
+  Readonly = "Readonly",
+  Disabled = "Disabled",
 }
 
 export interface EntityExpression {

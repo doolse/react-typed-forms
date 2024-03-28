@@ -12,6 +12,9 @@ import {
   DateTimeRenderOptions,
   defaultTailwindTheme,
   dynamicDefaultValue,
+  dynamicDisabled,
+  dynamicReadonly,
+  dynamicVisibility,
   fieldEqExpr,
   FieldType,
   GroupRenderType,
@@ -20,7 +23,6 @@ import {
   stringField,
   stringOptionsField,
   useControlRenderer,
-  visibility,
 } from "@react-typed-forms/schemas";
 import { RenderControl, useControl } from "@react-typed-forms/core";
 import {
@@ -101,7 +103,7 @@ const definition = {
       field: "first",
     },
     dataControl("middle", undefined, {
-      dynamic: [visibility(fieldEqExpr("first", "Jolse"))],
+      dynamic: [dynamicVisibility(fieldEqExpr("first", "Jolse"))],
     }),
     {
       renderOptions: { type: DataRenderType.Standard },
@@ -109,6 +111,7 @@ const definition = {
       title: undefined,
       type: ControlDefinitionType.Data,
       field: "last",
+      dynamic: [dynamicDisabled(fieldEqExpr("first", "Smoth"))],
     },
     {
       renderOptions: { type: DataRenderType.Standard },
@@ -122,10 +125,10 @@ const definition = {
         type: DataRenderType.DateTime,
         format: "dd/MM/yyyy",
       } as DateTimeRenderOptions,
-      readonly: true,
       title: "Date",
       type: ControlDefinitionType.Data,
       field: "date",
+      dynamic: [dynamicReadonly(fieldEqExpr("gender", "O"))],
     },
     {
       title: "Required compound",

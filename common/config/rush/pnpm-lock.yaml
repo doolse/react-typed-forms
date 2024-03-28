@@ -51,7 +51,7 @@ importers:
       '@next/mdx': ^13.5.5
       '@react-typed-forms/core': workspace:^3.0.0-dev.117
       '@react-typed-forms/mui': workspace:^3.0.1-dev.1
-      '@react-typed-forms/schemas': workspace:^1.0.0-dev.24
+      '@react-typed-forms/schemas': workspace:^5.0.0
       '@react-typed-forms/schemas-mui': workspace:^3.0.1-dev.1
       '@react-typed-forms/transform': workspace:^0.2.0
       '@tailwindcss/forms': ^0.5.6
@@ -163,7 +163,7 @@ importers:
       '@mui/material': ^5.14.13
       '@react-typed-forms/core': workspace:^3.0.0-dev.117
       '@react-typed-forms/mui': workspace:^3.0.1-dev.1
-      '@react-typed-forms/schemas': workspace:^1.0.0-dev.24
+      '@react-typed-forms/schemas': workspace:^5.0.0
       '@react-typed-forms/transform': workspace:^0.2.0
       '@types/react': ^18.2.28
       date-fns: ^2.29.3
@@ -212,7 +212,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.2
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3
       path: 0.12.7
 
 packages:
@@ -5201,7 +5201,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.3:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:

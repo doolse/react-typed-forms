@@ -404,7 +404,7 @@
     {
       "packageName": "@react-typed-forms/mui",
       "projectFolder": "packages/mui",
-      "versionPolicyName": "muiRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/example",
@@ -422,7 +422,7 @@
     {
       "packageName": "@react-typed-forms/schemas-mui",
       "projectFolder": "packages/schemas-mui",
-      "versionPolicyName": "muiRelease"
+      "shouldPublish": true
     },
     {
       "packageName": "@react-typed-forms/transform",

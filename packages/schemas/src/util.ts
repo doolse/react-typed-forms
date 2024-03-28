@@ -234,6 +234,10 @@ export function useUpdatedRef<A>(a: A): MutableRefObject<A> {
   return r;
 }
 
+export function isControlReadonly(c: ControlDefinition): boolean {
+  return isDataControl(c) && !!c.readonly;
+}
+
 export function getTypeField(
   context: ControlGroupContext,
 ): Control<string> | undefined {

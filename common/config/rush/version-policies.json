@@ -99,11 +99,4 @@
   // 
   //   // "includeEmailInChangeFile": true
   // }
-  {
-    "policyName": "muiRelease",
-    "definitionName": "lockStepVersion",
-    "version": "3.0.1-dev.1",
-    "nextBump": "prerelease",
-    "mainProject": "@react-typed-forms/mui"
-  }
 ]

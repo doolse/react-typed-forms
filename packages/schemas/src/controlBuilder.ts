@@ -53,8 +53,17 @@ export function htmlDisplayControl(
 export function dynamicDefaultValue(expr: EntityExpression): DynamicProperty {
   return { type: DynamicPropertyType.DefaultValue, expr };
 }
-export function visibility(expr: EntityExpression): DynamicProperty {
+
+export function dynamicReadonly(expr: EntityExpression): DynamicProperty {
+  return { type: DynamicPropertyType.Readonly, expr };
+}
+
+export function dynamicVisibility(expr: EntityExpression): DynamicProperty {
   return { type: DynamicPropertyType.Visible, expr };
+}
+
+export function dynamicDisabled(expr: EntityExpression): DynamicProperty {
+  return { type: DynamicPropertyType.Disabled, expr };
 }
 
 export function fieldEqExpr(field: string, value: any): FieldValueExpression {
