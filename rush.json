@@ -428,6 +428,10 @@
       "packageName": "@react-typed-forms/transform",
       "projectFolder": "packages/transform",
       "shouldPublish": true
+    },
+    {
+      "packageName": "@react-typed-forms/storybook",
+      "projectFolder": "packages/storybook"
     }
 
 
