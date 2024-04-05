@@ -396,7 +396,7 @@ export function createDefaultGroupRenderer(
       ? gridStyles(renderOptions)
       : ({ className: standardClassName } as StyleProps);
     return (
-      <div className={clsx(className, gcn)} style={style}>
+      <div className={clsx(props.styleClass, className, gcn)} style={style}>
         {Array.from({ length: childCount }, (_, x) => renderChild(x))}
       </div>
     );
@@ -412,18 +412,18 @@ export function createDefaultDisplayRenderer(
   options: DefaultDisplayRendererOptions = {},
 ): DisplayRendererRegistration {
   return {
-    render: ({ data }) => {
+    render: ({ data, styleClass }) => {
       switch (data.type) {
         case DisplayDataType.Text:
           return (
-            <div className={options.textClassName}>
+            <div className={clsx(styleClass, options.textClassName)}>
               {(data as TextDisplay).text}
             </div>
           );
         case DisplayDataType.Html:
           return (
             <div
-              className={options.htmlClassName}
+              className={clsx(styleClass, options.htmlClassName)}
               dangerouslySetInnerHTML={{
                 __html: (data as HtmlDisplay).html,
               }}
@@ -479,10 +479,10 @@ export function createDefaultDataRenderer(
         return selectRenderer.render(props, undefined, renderers);
     }
     return renderType === DataRenderType.Checkbox ? (
-      <Fcheckbox control={props.control} />
+      <Fcheckbox className={clsx(props.styleClass)} control={props.control} />
     ) : (
       <ControlInput
-        className={inputClass}
+        className={clsx(props.styleClass, inputClass)}
         id={props.id}
         readOnly={props.readonly}
         control={props.control}

@@ -55,6 +55,7 @@ export type AnyControlDefinition =
 export interface ControlDefinition {
   type: string;
   title?: string | null;
+  styleClass?: string | null;
   dynamic?: DynamicProperty[] | null;
   adornments?: ControlAdornment[] | null;
   children?: ControlDefinition[] | null;

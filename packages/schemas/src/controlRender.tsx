@@ -72,9 +72,6 @@ export interface FormRenderer {
   ) => ReactNode;
 }
 
-export interface DisplayRendererProps {
-  data: DisplayData;
-}
 export interface AdornmentProps {
   adornment: ControlAdornment;
 }
@@ -96,6 +93,7 @@ export interface ArrayRendererProps {
   renderChild: (childIndex: number) => ReactNode;
   childKey: (childIndex: number) => Key;
   arrayControl?: Control<any[] | undefined | null>;
+  styleClass?: string | null;
 }
 export interface Visibility {
   visible: boolean;
@@ -130,11 +128,18 @@ export interface LabelRendererProps {
   label: ReactNode;
   required?: boolean | null;
   forId?: string;
+  styleClass?: string | null;
 }
+export interface DisplayRendererProps {
+  data: DisplayData;
+  styleClass?: string | null;
+}
+
 export interface GroupRendererProps {
   renderOptions: GroupRenderOptions;
   childCount: number;
   renderChild: (child: number) => ReactNode;
+  styleClass?: string | null;
 }
 
 export interface DataRendererProps {
@@ -146,12 +151,14 @@ export interface DataRendererProps {
   required: boolean;
   options: FieldOption[] | undefined | null;
   hidden: boolean;
+  styleClass?: string | null;
 }
 
 export interface ActionRendererProps {
   actionId: string;
   actionText: string;
   onClick: () => void;
+  styleClass?: string | null;
 }
 
 export interface ControlRenderProps {
@@ -319,8 +326,8 @@ export function lookupSchemaField(
   const fieldName = isGroupControlsDefinition(c)
     ? c.compoundField
     : isDataControlDefinition(c)
-    ? c.field
-    : undefined;
+      ? c.field
+      : undefined;
   return fieldName ? findField(fields, fieldName) : undefined;
 }
 export function getControlData(
@@ -348,6 +355,7 @@ function renderArray(
   required: boolean,
   arrayControl: Control<any[] | undefined | null>,
   renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
+  styleClass: string | null | undefined,
 ) {
   const elems = arrayControl.elements ?? [];
   return renderer.renderArray({
@@ -366,6 +374,7 @@ function renderArray(
       onClick: () => removeElement(arrayControl, i),
     }),
     renderChild: (i) => renderChild(i, elems[i]),
+    styleClass,
   });
 }
 function groupProps(
@@ -373,11 +382,13 @@ function groupProps(
   childCount: number,
   renderChild: ChildRenderer,
   control: Control<any>,
+  styleClass: string | null | undefined,
 ): GroupRendererProps {
   return {
     childCount,
     renderChild: (i) => renderChild(i, i, { control }),
     renderOptions,
+    styleClass,
   };
 }
 
@@ -397,6 +408,7 @@ export const defaultDataProps: CreateDataProps = (
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required: !!definition.required,
     hidden: !!options.hidden,
+    styleClass: definition.styleClass,
   };
 };
 
@@ -435,6 +447,7 @@ export function renderControlLayout(
           childCount,
           childRenderer,
           groupContext.groupControl,
+          c.styleClass,
         ),
       ),
       label: {
@@ -449,12 +462,18 @@ export function renderControlLayout(
       children: renderer.renderAction({
         actionText: c.title ?? c.actionId,
         actionId: c.actionId,
+        styleClass: c.styleClass,
         onClick: () => {},
       }),
     };
   }
   if (isDisplayControlsDefinition(c)) {
-    return { children: renderer.renderDisplay({ data: c.displayData ?? {} }) };
+    return {
+      children: renderer.renderDisplay({
+        data: c.displayData ?? {},
+        styleClass: c.styleClass,
+      }),
+    };
   }
   return {};
 
@@ -477,6 +496,7 @@ export function renderControlLayout(
             !!c.required,
             childControl!,
             compoundRenderer,
+            c.styleClass,
           ),
           errorControl: childControl,
         };
@@ -488,6 +508,7 @@ export function renderControlLayout(
             childCount,
             childRenderer,
             childControl!,
+            c.styleClass,
           ),
         ),
         label,
@@ -516,6 +537,7 @@ export function renderControlLayout(
                 !!c.required,
                 childControl!,
                 scalarRenderer(props),
+                c.styleClass,
               )
           : undefined,
       ),
