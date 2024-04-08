@@ -49,13 +49,16 @@ import {
 } from "./hooks";
 import { useValidationHook } from "./validators";
 import { useCalculatedControl } from "./internal";
+import clsx from "clsx";
 
 export interface FormRenderer {
   renderData: (
     props: DataRendererProps,
     asArray: (() => ReactNode) | undefined,
   ) => (layout: ControlLayoutProps) => ControlLayoutProps;
-  renderGroup: (props: GroupRendererProps) => ReactNode;
+  renderGroup: (
+    props: GroupRendererProps,
+  ) => (layout: ControlLayoutProps) => ControlLayoutProps;
   renderDisplay: (props: DisplayRendererProps) => ReactNode;
   renderAction: (props: ActionRendererProps) => ReactNode;
   renderArray: (props: ArrayRendererProps) => ReactNode;
@@ -65,11 +68,8 @@ export interface FormRenderer {
     labelStart: ReactNode,
     labelEnd: ReactNode,
   ) => ReactNode;
-  renderLayout: (props: ControlLayoutProps) => ReactNode;
-  renderVisibility: (
-    control: Control<Visibility | undefined>,
-    children: () => ReactNode,
-  ) => ReactNode;
+  renderLayout: (props: ControlLayoutProps) => RenderedControl;
+  renderVisibility: (props: VisibilityRendererProps) => ReactNode;
 }
 
 export interface AdornmentProps {
@@ -108,6 +108,19 @@ export interface RenderedLayout {
   label?: ReactNode;
   children?: ReactNode;
   errorControl?: Control<any>;
+  className?: string | null;
+  style?: React.CSSProperties;
+}
+
+export interface RenderedControl {
+  children: ReactNode;
+  className?: string | null;
+  style?: React.CSSProperties;
+  divRef?: (cb: HTMLElement | null) => void;
+}
+
+export interface VisibilityRendererProps extends RenderedControl {
+  visibility: Control<Visibility | undefined>;
 }
 
 export interface ControlLayoutProps {
@@ -116,6 +129,8 @@ export interface ControlLayoutProps {
   adornments?: AdornmentRenderer[];
   children?: ReactNode;
   processLayout?: (props: ControlLayoutProps) => ControlLayoutProps;
+  className?: string | null;
+  style?: React.CSSProperties;
 }
 
 export enum LabelType {
@@ -128,18 +143,15 @@ export interface LabelRendererProps {
   label: ReactNode;
   required?: boolean | null;
   forId?: string;
-  styleClass?: string | null;
 }
 export interface DisplayRendererProps {
   data: DisplayData;
-  styleClass?: string | null;
 }
 
 export interface GroupRendererProps {
   renderOptions: GroupRenderOptions;
   childCount: number;
   renderChild: (child: number) => ReactNode;
-  styleClass?: string | null;
 }
 
 export interface DataRendererProps {
@@ -151,14 +163,12 @@ export interface DataRendererProps {
   required: boolean;
   options: FieldOption[] | undefined | null;
   hidden: boolean;
-  styleClass?: string | null;
 }
 
 export interface ActionRendererProps {
   actionId: string;
   actionText: string;
   onClick: () => void;
-  styleClass?: string | null;
 }
 
 export interface ControlRenderProps {
@@ -298,9 +308,12 @@ export function useControlRenderer(
           control,
           schemaField,
         );
-        return renderer.renderVisibility(visibility, () =>
-          renderer.renderLayout({ ...labelAndChildren, adornments }),
-        );
+        const renderedControl = renderer.renderLayout({
+          ...labelAndChildren,
+          adornments,
+          className: c.styleClass,
+        });
+        return renderer.renderVisibility({ visibility, ...renderedControl });
       } finally {
         stopTracking();
       }
@@ -355,7 +368,6 @@ function renderArray(
   required: boolean,
   arrayControl: Control<any[] | undefined | null>,
   renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
-  styleClass: string | null | undefined,
 ) {
   const elems = arrayControl.elements ?? [];
   return renderer.renderArray({
@@ -374,7 +386,6 @@ function renderArray(
       onClick: () => removeElement(arrayControl, i),
     }),
     renderChild: (i) => renderChild(i, elems[i]),
-    styleClass,
   });
 }
 function groupProps(
@@ -382,13 +393,11 @@ function groupProps(
   childCount: number,
   renderChild: ChildRenderer,
   control: Control<any>,
-  styleClass: string | null | undefined,
 ): GroupRendererProps {
   return {
     childCount,
     renderChild: (i) => renderChild(i, i, { control }),
     renderOptions,
-    styleClass,
   };
 }
 
@@ -441,13 +450,12 @@ export function renderControlLayout(
       );
     }
     return {
-      children: renderer.renderGroup(
+      processLayout: renderer.renderGroup(
         groupProps(
           c.groupOptions,
           childCount,
           childRenderer,
           groupContext.groupControl,
-          c.styleClass,
         ),
       ),
       label: {
@@ -462,7 +470,6 @@ export function renderControlLayout(
       children: renderer.renderAction({
         actionText: c.title ?? c.actionId,
         actionId: c.actionId,
-        styleClass: c.styleClass,
         onClick: () => {},
       }),
     };
@@ -471,7 +478,6 @@ export function renderControlLayout(
     return {
       children: renderer.renderDisplay({
         data: c.displayData ?? {},
-        styleClass: c.styleClass,
       }),
     };
   }
@@ -496,19 +502,17 @@ export function renderControlLayout(
             !!c.required,
             childControl!,
             compoundRenderer,
-            c.styleClass,
           ),
           errorControl: childControl,
         };
       }
       return {
-        children: renderer.renderGroup(
+        processLayout: renderer.renderGroup(
           groupProps(
             { type: "Standard" },
             childCount,
             childRenderer,
             childControl!,
-            c.styleClass,
           ),
         ),
         label,
@@ -537,7 +541,6 @@ export function renderControlLayout(
                 !!c.required,
                 childControl!,
                 scalarRenderer(props),
-                c.styleClass,
               )
           : undefined,
       ),
@@ -553,14 +556,17 @@ export function renderControlLayout(
   }
 
   function compoundRenderer(i: number, control: Control<any>): ReactNode {
+    const { className, style, children } = renderer.renderLayout({
+      processLayout: renderer.renderGroup({
+        renderOptions: { type: "Standard", hideTitle: true },
+        childCount,
+        renderChild: (ci) => childRenderer(ci, ci, { control }),
+      }),
+    });
     return (
-      <Fragment key={control.uniqueId}>
-        {renderer.renderGroup({
-          renderOptions: { type: "Standard", hideTitle: true },
-          childCount,
-          renderChild: (ci) => childRenderer(ci, ci, { control }),
-        })}
-      </Fragment>
+      <div key={control.uniqueId} style={style} className={clsx(className)}>
+        {children}
+      </div>
     );
   }
   function scalarRenderer(
@@ -580,7 +586,7 @@ export function renderControlLayout(
 }
 
 export function appendMarkup(
-  k: keyof Omit<RenderedLayout, "errorControl">,
+  k: keyof Omit<RenderedLayout, "errorControl" | "style" | "className">,
   markup: ReactNode,
 ): (layout: RenderedLayout) => void {
   return (layout) =>
@@ -593,7 +599,7 @@ export function appendMarkup(
 }
 
 export function wrapMarkup(
-  k: keyof Omit<RenderedLayout, "errorControl">,
+  k: keyof Omit<RenderedLayout, "errorControl" | "style" | "className">,
   wrap: (ex: ReactNode) => ReactNode,
 ): (layout: RenderedLayout) => void {
   return (layout) => (layout[k] = wrap(layout[k]));
@@ -601,7 +607,7 @@ export function wrapMarkup(
 
 export function layoutKeyForPlacement(
   pos: AdornmentPlacement,
-): keyof Omit<RenderedLayout, "errorControl"> {
+): keyof Omit<RenderedLayout, "errorControl" | "style" | "className"> {
   switch (pos) {
     case AdornmentPlacement.ControlEnd:
       return "controlEnd";
@@ -632,18 +638,20 @@ export function renderLayoutParts(
   props: ControlLayoutProps,
   renderer: FormRenderer,
 ): RenderedLayout {
-  const processed = props.processLayout?.(props) ?? props;
+  const { className, children, style, errorControl, label, adornments } =
+    props.processLayout?.(props) ?? props;
   const layout: RenderedLayout = {
-    children: processed.children,
-    errorControl: processed.errorControl,
+    children,
+    errorControl,
+    style,
+    className,
   };
-  (processed.adornments ?? [])
+  (adornments ?? [])
     .sort((a, b) => a.priority - b.priority)
     .forEach((x) => x.apply(layout));
-  const l = processed.label;
   layout.label =
-    l && !l.hide
-      ? renderer.renderLabel(l, layout.labelStart, layout.labelEnd)
+    label && !label.hide
+      ? renderer.renderLabel(label, layout.labelStart, layout.labelEnd)
       : undefined;
   return layout;
 }

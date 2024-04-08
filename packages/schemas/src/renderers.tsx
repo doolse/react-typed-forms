@@ -22,9 +22,11 @@ import {
   GroupRendererProps,
   LabelRendererProps,
   LabelType,
+  RenderedControl,
   RenderedLayout,
   renderLayoutParts,
   Visibility,
+  VisibilityRendererProps,
 } from "./controlRender";
 import {
   DataRenderType,
@@ -53,7 +55,10 @@ export interface DefaultRenderers {
 export interface LayoutRendererRegistration {
   type: "layout";
   match?: (props: ControlLayoutProps) => boolean;
-  render: (props: ControlLayoutProps, renderers: FormRenderer) => ReactNode;
+  render: (
+    props: ControlLayoutProps,
+    renderers: FormRenderer,
+  ) => RenderedControl;
 }
 export interface DataRendererRegistration {
   type: "data";
@@ -94,7 +99,10 @@ export interface ArrayRendererRegistration {
 export interface GroupRendererRegistration {
   type: "group";
   renderType?: string | string[];
-  render: (props: GroupRendererProps, renderers: FormRenderer) => ReactElement;
+  render: (
+    props: GroupRendererProps,
+    renderers: FormRenderer,
+  ) => ReactElement | ((layout: ControlLayoutProps) => ControlLayoutProps);
 }
 
 export interface DisplayRendererRegistration {
@@ -114,10 +122,7 @@ export interface AdornmentRendererRegistration {
 
 export interface VisibilityRendererRegistration {
   type: "visibility";
-  render: (
-    visibility: Control<Visibility | undefined>,
-    children: () => ReactNode,
-  ) => ReactNode;
+  render: (props: VisibilityRendererProps) => ReactNode;
 }
 
 export type RendererRegistration =
@@ -219,12 +224,16 @@ export function createFormRenderer(
     return (l) => ({ ...l, children: result });
   }
 
-  function renderGroup(props: GroupRendererProps): ReactNode {
+  function renderGroup(
+    props: GroupRendererProps,
+  ): (layout: ControlLayoutProps) => ControlLayoutProps {
     const renderType = props.renderOptions.type;
     const renderer =
       groupRegistrations.find((x) => isOneOf(x.renderType, renderType)) ??
       defaultRenderers.group;
-    return renderer.render(props, formRenderers);
+    const result = renderer.render(props, formRenderers);
+    if (typeof result === "function") return result;
+    return (l) => ({ ...l, children: result });
   }
 
   function renderAction(props: ActionRendererProps) {
@@ -395,11 +404,17 @@ export function createDefaultGroupRenderer(
     const { style, className: gcn } = isGridRenderer(renderOptions)
       ? gridStyles(renderOptions)
       : ({ className: standardClassName } as StyleProps);
-    return (
-      <div className={clsx(props.styleClass, className, gcn)} style={style}>
-        {Array.from({ length: childCount }, (_, x) => renderChild(x))}
-      </div>
-    );
+
+    return (cp: ControlLayoutProps) => {
+      return {
+        ...cp,
+        children: (
+          <div className={clsx(className, gcn)} style={style}>
+            {Array.from({ length: childCount }, (_, x) => renderChild(x))}
+          </div>
+        ),
+      };
+    };
   }
   return { type: "group", render };
 }
@@ -412,18 +427,18 @@ export function createDefaultDisplayRenderer(
   options: DefaultDisplayRendererOptions = {},
 ): DisplayRendererRegistration {
   return {
-    render: ({ data, styleClass }) => {
+    render: ({ data }) => {
       switch (data.type) {
         case DisplayDataType.Text:
           return (
-            <div className={clsx(styleClass, options.textClassName)}>
+            <div className={options.textClassName}>
               {(data as TextDisplay).text}
             </div>
           );
         case DisplayDataType.Html:
           return (
             <div
-              className={clsx(styleClass, options.htmlClassName)}
+              className={options.htmlClassName}
               dangerouslySetInnerHTML={{
                 __html: (data as HtmlDisplay).html,
               }}
@@ -479,10 +494,10 @@ export function createDefaultDataRenderer(
         return selectRenderer.render(props, undefined, renderers);
     }
     return renderType === DataRenderType.Checkbox ? (
-      <Fcheckbox className={clsx(props.styleClass)} control={props.control} />
+      <Fcheckbox control={props.control} />
     ) : (
       <ControlInput
-        className={clsx(props.styleClass, inputClass)}
+        className={inputClass}
         id={props.id}
         readOnly={props.readonly}
         control={props.control}
@@ -562,12 +577,16 @@ function createDefaultLayoutRenderer(
   options: DefaultLayoutRendererOptions = {},
 ) {
   return createLayoutRenderer((props, renderers) => {
-    return (
-      <DefaultLayout
-        layout={renderLayoutParts(props, renderers)}
-        {...options}
-      />
-    );
+    const layout = renderLayoutParts(props, renderers);
+    return {
+      children: <DefaultLayout layout={layout} {...options} />,
+      className: clsx(layout.className),
+      style: layout.style,
+      divRef: (e) =>
+        e && props.errorControl
+          ? (props.errorControl.meta.scrollElement = e)
+          : undefined,
+    };
   });
 }
 
@@ -795,49 +814,54 @@ export function createInputConversion(ft: string): InputConversion {
 }
 
 export function createDefaultVisibilityRenderer() {
-  return createVisibilityRenderer((cv, ch) => (
-    <DefaultVisibility visibility={cv} children={ch} />
-  ));
+  return createVisibilityRenderer((props) => <DefaultVisibility {...props} />);
 }
 
 export function DefaultVisibility({
   visibility,
   children,
-}: {
-  visibility: Control<Visibility | undefined>;
-  children: () => ReactNode;
-}) {
+  className,
+  style,
+  divRef,
+}: VisibilityRendererProps) {
   const v = visibility.value;
   useEffect(() => {
     if (v) {
       visibility.setValue((ex) => ({ visible: v.visible, showing: v.visible }));
     }
   }, [v?.visible]);
-  return v?.visible ? children() : <></>;
+  return v?.visible ? (
+    <div className={clsx(className)} style={style} ref={divRef}>
+      {children}
+    </div>
+  ) : (
+    <></>
+  );
 }
 
 export function DefaultLayout({
-  className,
   errorClass,
+  className,
   layout: { controlEnd, controlStart, label, children, errorControl },
 }: DefaultLayoutRendererOptions & {
   layout: RenderedLayout;
 }) {
   const ec = errorControl;
   const errorText = ec && ec.touched ? ec.error : undefined;
-  const refCb = useCallback(
-    (e: HTMLDivElement | null) => {
-      if (ec) ec.meta.scrollElement = e;
-    },
-    [ec],
-  );
-  return (
-    <div className={className} ref={refCb}>
+  return label ? (
+    <div className={className}>
       {label}
       {controlStart}
       {children}
       {errorText && <div className={errorClass}>{errorText}</div>}
       {controlEnd}
     </div>
+  ) : (
+    <>
+      {controlStart}
+      {children}
+      {errorText && <div className={errorClass}>{errorText}</div>}
+      {controlEnd}
+    </>
   );
 }
