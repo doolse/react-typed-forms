@@ -3,7 +3,6 @@ import React, {
   Fragment,
   ReactElement,
   ReactNode,
-  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -14,6 +13,7 @@ import {
   ActionRendererProps,
   AdornmentProps,
   AdornmentRenderer,
+  appendMarkupAt,
   ArrayRendererProps,
   ControlLayoutProps,
   DataRendererProps,
@@ -25,16 +25,20 @@ import {
   RenderedControl,
   RenderedLayout,
   renderLayoutParts,
-  Visibility,
   VisibilityRendererProps,
 } from "./controlRender";
 import {
+  AdornmentPlacement,
+  ControlAdornment,
+  ControlAdornmentType,
   DataRenderType,
   DisplayDataType,
   FieldOption,
   FieldType,
   GridRenderer,
   HtmlDisplay,
+  IconAdornment,
+  isDisplayOnlyRenderer,
   isGridRenderer,
   TextDisplay,
 } from "./types";
@@ -409,7 +413,10 @@ export function createDefaultGroupRenderer(
       return {
         ...cp,
         children: (
-          <div className={clsx(className, gcn)} style={style}>
+          <div
+            className={props.className ? props.className : clsx(className, gcn)}
+            style={style}
+          >
             {Array.from({ length: childCount }, (_, x) => renderChild(x))}
           </div>
         ),
@@ -427,29 +434,36 @@ export function createDefaultDisplayRenderer(
   options: DefaultDisplayRendererOptions = {},
 ): DisplayRendererRegistration {
   return {
-    render: ({ data }) => {
-      switch (data.type) {
-        case DisplayDataType.Text:
-          return (
-            <div className={options.textClassName}>
-              {(data as TextDisplay).text}
-            </div>
-          );
-        case DisplayDataType.Html:
-          return (
-            <div
-              className={options.htmlClassName}
-              dangerouslySetInnerHTML={{
-                __html: (data as HtmlDisplay).html,
-              }}
-            />
-          );
-        default:
-          return <h1>Unknown display type: {data.type}</h1>;
-      }
-    },
+    render: (props) => <DefaultDisplay {...options} {...props} />,
     type: "display",
   };
+}
+
+export function DefaultDisplay({
+  data,
+  display,
+  className,
+  ...options
+}: DefaultDisplayRendererOptions & DisplayRendererProps) {
+  switch (data.type) {
+    case DisplayDataType.Text:
+      return (
+        <div className={clsx(className, options.textClassName)}>
+          {display ? display.value : (data as TextDisplay).text}
+        </div>
+      );
+    case DisplayDataType.Html:
+      return (
+        <div
+          className={clsx(className, options.htmlClassName)}
+          dangerouslySetInnerHTML={{
+            __html: display ? display.value ?? "" : (data as HtmlDisplay).html,
+          }}
+        />
+      );
+    default:
+      return <h1>Unknown display type: {data.type}</h1>;
+  }
 }
 
 export const DefaultBoolOptions: FieldOption[] = [
@@ -458,6 +472,7 @@ export const DefaultBoolOptions: FieldOption[] = [
 ];
 interface DefaultDataRendererOptions {
   inputClass?: string;
+  displayOnlyClass?: string;
   selectOptions?: SelectRendererOptions;
   booleanOptions?: FieldOption[];
   optionRenderer?: DataRendererRegistration;
@@ -467,7 +482,7 @@ export function createDefaultDataRenderer(
   options: DefaultDataRendererOptions = {},
 ): DataRendererRegistration {
   const selectRenderer = createSelectRenderer(options.selectOptions ?? {});
-  const { inputClass, booleanOptions, optionRenderer } = {
+  const { inputClass, booleanOptions, optionRenderer, displayOnlyClass } = {
     optionRenderer: selectRenderer,
     booleanOptions: DefaultBoolOptions,
     ...options,
@@ -476,9 +491,22 @@ export function createDefaultDataRenderer(
     if (asArray) {
       return asArray();
     }
-    let renderType = props.renderOptions.type;
+    const renderOptions = props.renderOptions;
+    let renderType = renderOptions.type;
     const fieldType = props.field.type;
     if (fieldType == FieldType.Any) return <>No control for Any</>;
+    if (isDisplayOnlyRenderer(renderOptions))
+      return (p) => ({
+        ...p,
+        className: displayOnlyClass,
+        children: (
+          <DefaultDisplayOnly
+            control={props.control}
+            className={props.className}
+            emptyText={renderOptions.emptyText}
+          />
+        ),
+      });
     const isBool = fieldType === FieldType.Bool;
     if (booleanOptions != null && isBool && props.options == null) {
       return renderers.renderData(
@@ -494,10 +522,10 @@ export function createDefaultDataRenderer(
         return selectRenderer.render(props, undefined, renderers);
     }
     return renderType === DataRenderType.Checkbox ? (
-      <Fcheckbox control={props.control} />
+      <Fcheckbox className={props.className} control={props.control} />
     ) : (
       <ControlInput
-        className={inputClass}
+        className={clsx(props.className, inputClass)}
         id={props.id}
         readOnly={props.readonly}
         control={props.control}
@@ -505,6 +533,21 @@ export function createDefaultDataRenderer(
       />
     );
   });
+}
+
+export function DefaultDisplayOnly({
+  control,
+  className,
+  emptyText,
+}: {
+  control: Control<any>;
+  className?: string;
+  emptyText?: string | null;
+}) {
+  const v = control.value;
+  return (
+    <div className={className}>{v == null || v === "" ? emptyText : v}</div>
+  );
 }
 
 export function ControlInput({
@@ -537,7 +580,18 @@ export function createDefaultAdornmentRenderer(
 ): AdornmentRendererRegistration {
   return {
     type: "adornment",
-    render: ({ adornment }) => ({ apply: () => {}, priority: 0, adornment }),
+    render: ({ adornment }) => ({
+      apply: (rl) => {
+        if (isIconAdornment(adornment)) {
+          return appendMarkupAt(
+            adornment.placement ?? AdornmentPlacement.ControlStart,
+            <i className={adornment.iconClass} />,
+          )(rl);
+        }
+      },
+      priority: 0,
+      adornment,
+    }),
   };
 }
 
@@ -577,10 +631,13 @@ function createDefaultLayoutRenderer(
   options: DefaultLayoutRendererOptions = {},
 ) {
   return createLayoutRenderer((props, renderers) => {
-    const layout = renderLayoutParts(props, renderers);
+    const layout = renderLayoutParts(
+      { ...props, className: clsx(props.className, options.className) },
+      renderers,
+    );
     return {
       children: <DefaultLayout layout={layout} {...options} />,
-      className: clsx(layout.className),
+      className: layout.className,
       style: layout.style,
       divRef: (e) =>
         e && props.errorControl
@@ -658,6 +715,10 @@ function isOneOf<A>(x: A | A[] | undefined, v: A) {
   return x == null ? true : Array.isArray(x) ? x.includes(v) : v === x;
 }
 
+export function isIconAdornment(a: ControlAdornment): a is IconAdornment {
+  return a.type === ControlAdornmentType.Icon;
+}
+
 export function createLayoutRenderer(
   render: LayoutRendererRegistration["render"],
   options?: Partial<LayoutRendererRegistration>,
@@ -710,7 +771,7 @@ export function createSelectRenderer(options: SelectRendererOptions = {}) {
   return createDataRenderer(
     (props, asArray) => (
       <SelectDataRenderer
-        className={options.className}
+        className={clsx(props.className, options.className)}
         state={props.control}
         id={props.id}
         options={props.options!}
@@ -848,16 +909,9 @@ export function DefaultLayout({
 }) {
   const ec = errorControl;
   const errorText = ec && ec.touched ? ec.error : undefined;
-  return label ? (
-    <div className={className}>
-      {label}
-      {controlStart}
-      {children}
-      {errorText && <div className={errorClass}>{errorText}</div>}
-      {controlEnd}
-    </div>
-  ) : (
+  return (
     <>
+      {label}
       {controlStart}
       {children}
       {errorText && <div className={errorClass}>{errorText}</div>}

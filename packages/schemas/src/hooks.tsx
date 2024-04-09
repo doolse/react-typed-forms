@@ -1,9 +1,10 @@
 import {
   ControlDefinition,
+  DataExpression,
+  DataMatchExpression,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
-  FieldValueExpression,
   isDataControlDefinition,
   JsonataExpression,
   SchemaField,
@@ -20,6 +21,7 @@ import {
   ControlGroupContext,
   defaultValueForField,
   findField,
+  getDisplayOnlyOptions,
   getTypeField,
   isControlReadonly,
   useUpdatedRef,
@@ -41,13 +43,17 @@ export function useEvalVisibilityHook(
     DynamicPropertyType.Visible,
     useEvalExpressionHook,
   );
-  const r = useUpdatedRef(schemaField);
+  const r = useUpdatedRef({ schemaField, definition });
   return useCallback(
     (ctx) => {
-      const schemaField = r.current;
+      const { schemaField, definition } = r.current;
       return (
         dynamicVisibility?.(ctx) ??
-        useComputed(() => matchesType(ctx, schemaField?.onlyForTypes))
+        useComputed(
+          () =>
+            matchesType(ctx, schemaField?.onlyForTypes) &&
+            (!schemaField || !hideDisplayOnly(ctx, schemaField, definition)),
+        )
       );
     },
     [dynamicVisibility, r],
@@ -91,6 +97,19 @@ export function useEvalDisabledHook(
   );
 }
 
+export function useEvalDisplayHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
+  definition: ControlDefinition,
+): (
+  groupContext: ControlGroupContext,
+) => Control<string | undefined> | undefined {
+  const dynamicDisplay = useEvalDynamicHook(
+    definition,
+    DynamicPropertyType.Display,
+    useEvalExpressionHook,
+  );
+  return useCallback((ctx) => dynamicDisplay?.(ctx), [dynamicDisplay]);
+}
 export function useEvalDefaultValueHook(
   useEvalExpressionHook: UseEvalExpressionHook,
   definition: ControlDefinition,
@@ -126,8 +145,18 @@ export type EvalExpressionHook<A = any> = (
   groupContext: ControlGroupContext,
 ) => Control<A | undefined>;
 
-function useFieldValueExpression(
-  fvExpr: FieldValueExpression,
+function useDataExpression(
+  fvExpr: DataExpression,
+  fields: SchemaField[],
+  data: Control<any>,
+) {
+  const refField = findField(fields, fvExpr.field);
+  const otherField = refField ? data.fields[refField.field] : undefined;
+  return useCalculatedControl(() => otherField?.value);
+}
+
+function useDataMatchExpression(
+  fvExpr: DataMatchExpression,
   fields: SchemaField[],
   data: Control<any>,
 ) {
@@ -149,9 +178,15 @@ export function defaultEvalHooks(
         (expr as JsonataExpression).expression,
         context.groupControl,
       );
-    case ExpressionType.FieldValue:
-      return useFieldValueExpression(
-        expr as FieldValueExpression,
+    case ExpressionType.Data:
+      return useDataExpression(
+        expr as DataExpression,
+        context.fields,
+        context.groupControl,
+      );
+    case ExpressionType.DataMatch:
+      return useDataMatchExpression(
+        expr as DataMatchExpression,
         context.fields,
         context.groupControl,
       );
@@ -197,6 +232,19 @@ export function matchesType(
   if (types == null || types.length === 0) return true;
   const typeField = getTypeField(context);
   return typeField && types.includes(typeField.value);
+}
+
+export function hideDisplayOnly(
+  context: ControlGroupContext,
+  field: SchemaField,
+  definition: ControlDefinition,
+) {
+  const displayOptions = getDisplayOnlyOptions(definition);
+  return (
+    displayOptions &&
+    !displayOptions.emptyText &&
+    !context.groupControl.fields[field.field].value
+  );
 }
 
 export function useJsonataExpression(

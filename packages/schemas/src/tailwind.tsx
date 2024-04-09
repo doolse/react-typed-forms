@@ -22,4 +22,7 @@ export const defaultTailwindTheme: DefaultRendererOptions = {
     className: "flex flex-col",
     errorClass: "text-sm text-danger-500",
   },
+  data: {
+    displayOnlyClass: "flex flex-row items-center gap-2",
+  },
 };

@@ -5,3 +5,7 @@ export function useCalculatedControl<V>(calculate: () => V): Control<V> {
   useControlEffect(calculate, (v) => (c.value = v));
   return c;
 }
+
+export function cc(n: string | null | undefined): string | undefined {
+  return n ? n : undefined;
+}

@@ -56,6 +56,7 @@ export interface ControlDefinition {
   type: string;
   title?: string | null;
   styleClass?: string | null;
+  layoutClass?: string | null;
   dynamic?: DynamicProperty[] | null;
   adornments?: ControlAdornment[] | null;
   children?: ControlDefinition[] | null;
@@ -78,6 +79,7 @@ export enum DynamicPropertyType {
   DefaultValue = "DefaultValue",
   Readonly = "Readonly",
   Disabled = "Disabled",
+  Display = "Display",
 }
 
 export interface EntityExpression {
@@ -86,7 +88,8 @@ export interface EntityExpression {
 
 export enum ExpressionType {
   Jsonata = "Jsonata",
-  FieldValue = "FieldValue",
+  Data = "Data",
+  DataMatch = "FieldValue",
   UserMatch = "UserMatch",
 }
 
@@ -95,8 +98,13 @@ export interface JsonataExpression extends EntityExpression {
   expression: string;
 }
 
-export interface FieldValueExpression extends EntityExpression {
-  type: ExpressionType.FieldValue;
+export interface DataExpression extends EntityExpression {
+  type: ExpressionType.Data;
+  field: string;
+}
+
+export interface DataMatchExpression extends EntityExpression {
+  type: ExpressionType.DataMatch;
   field: string;
   value: any;
 }
@@ -121,6 +129,13 @@ export enum ControlAdornmentType {
   Tooltip = "Tooltip",
   Accordion = "Accordion",
   HelpText = "HelpText",
+  Icon = "Icon",
+}
+
+export interface IconAdornment extends ControlAdornment {
+  type: ControlAdornmentType.Icon;
+  iconClass: string;
+  placement?: AdornmentPlacement | null;
 }
 
 export interface TooltipAdornment extends ControlAdornment {
@@ -137,7 +152,7 @@ export interface AccordionAdornment extends ControlAdornment {
 export interface HelpTextAdornment extends ControlAdornment {
   type: ControlAdornmentType.HelpText;
   helpText: string;
-  placement: AdornmentPlacement;
+  placement?: AdornmentPlacement | null;
 }
 
 export interface DataControlDefinition extends ControlDefinition {
@@ -167,6 +182,7 @@ export enum DataRenderType {
   DateTime = "DateTime",
   Checkbox = "Checkbox",
   Dropdown = "Dropdown",
+  DisplayOnly = "DisplayOnly",
 }
 
 export interface RadioButtonRenderOptions extends RenderOptions {
@@ -192,6 +208,11 @@ export interface IconListRenderOptions extends RenderOptions {
   iconMappings: IconMapping[];
 }
 
+export interface DisplayOnlyRenderOptions extends RenderOptions {
+  type: DataRenderType.DisplayOnly;
+  emptyText?: string | null;
+  sampleText?: string | null;
+}
 export interface IconMapping {
   value: string;
   materialIcon?: string | null;
@@ -267,7 +288,6 @@ export enum DisplayDataType {
   Text = "Text",
   Html = "Html",
 }
-
 export interface TextDisplay extends DisplayData {
   type: DisplayDataType.Text;
   text: string;
@@ -361,4 +381,10 @@ export function isGridRenderer(
   options: GroupRenderOptions,
 ): options is GridRenderer {
   return options.type === GroupRenderType.Grid;
+}
+
+export function isDisplayOnlyRenderer(
+  options: RenderOptions,
+): options is DisplayOnlyRenderOptions {
+  return options.type === DataRenderType.DisplayOnly;
 }

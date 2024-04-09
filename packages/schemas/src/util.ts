@@ -1,16 +1,17 @@
 import {
-  ActionControlDefinition,
   CompoundField,
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
   DataRenderType,
-  DisplayControlDefinition,
+  DisplayOnlyRenderOptions,
   FieldOption,
   FieldType,
   GridRenderer,
   GroupedControlsDefinition,
   GroupRenderType,
+  isDataControlDefinition,
+  isDisplayOnlyRenderer,
   SchemaField,
   visitControlDefinition,
 } from "./types";
@@ -236,6 +237,16 @@ export function useUpdatedRef<A>(a: A): MutableRefObject<A> {
 
 export function isControlReadonly(c: ControlDefinition): boolean {
   return isDataControl(c) && !!c.readonly;
+}
+
+export function getDisplayOnlyOptions(
+  d: ControlDefinition,
+): DisplayOnlyRenderOptions | undefined {
+  return isDataControlDefinition(d) &&
+    d.renderOptions &&
+    isDisplayOnlyRenderer(d.renderOptions)
+    ? d.renderOptions
+    : undefined;
 }
 
 export function getTypeField(

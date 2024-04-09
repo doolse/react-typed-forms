@@ -35,6 +35,7 @@ import {
   elementValueForField,
   fieldDisplayName,
   findField,
+  getDisplayOnlyOptions,
   isCompoundField,
   useUpdatedRef,
 } from "./util";
@@ -43,13 +44,13 @@ import {
   defaultUseEvalExpressionHook,
   useEvalDefaultValueHook,
   useEvalDisabledHook,
+  useEvalDisplayHook,
   UseEvalExpressionHook,
   useEvalReadonlyHook,
   useEvalVisibilityHook,
 } from "./hooks";
 import { useValidationHook } from "./validators";
-import { useCalculatedControl } from "./internal";
-import clsx from "clsx";
+import { cc, useCalculatedControl } from "./internal";
 
 export interface FormRenderer {
   renderData: (
@@ -93,7 +94,7 @@ export interface ArrayRendererProps {
   renderChild: (childIndex: number) => ReactNode;
   childKey: (childIndex: number) => Key;
   arrayControl?: Control<any[] | undefined | null>;
-  styleClass?: string | null;
+  className?: string;
 }
 export interface Visibility {
   visible: boolean;
@@ -108,13 +109,13 @@ export interface RenderedLayout {
   label?: ReactNode;
   children?: ReactNode;
   errorControl?: Control<any>;
-  className?: string | null;
+  className?: string;
   style?: React.CSSProperties;
 }
 
 export interface RenderedControl {
   children: ReactNode;
-  className?: string | null;
+  className?: string;
   style?: React.CSSProperties;
   divRef?: (cb: HTMLElement | null) => void;
 }
@@ -146,12 +147,15 @@ export interface LabelRendererProps {
 }
 export interface DisplayRendererProps {
   data: DisplayData;
+  display?: Control<string | undefined>;
+  className?: string;
 }
 
 export interface GroupRendererProps {
   renderOptions: GroupRenderOptions;
   childCount: number;
   renderChild: (child: number) => ReactNode;
+  className?: string;
 }
 
 export interface DataRendererProps {
@@ -163,12 +167,14 @@ export interface DataRendererProps {
   required: boolean;
   options: FieldOption[] | undefined | null;
   hidden: boolean;
+  className?: string;
 }
 
 export interface ActionRendererProps {
   actionId: string;
   actionText: string;
   onClick: () => void;
+  className?: string;
 }
 
 export interface ControlRenderProps {
@@ -211,6 +217,7 @@ export function useControlRenderer(
   const useIsVisible = useEvalVisibilityHook(useExpr, definition, schemaField);
   const useIsReadonly = useEvalReadonlyHook(useExpr, definition);
   const useIsDisabled = useEvalDisabledHook(useExpr, definition);
+  const useDynamicDisplay = useEvalDisplayHook(useExpr, definition);
   const useValidation = useValidationHook(definition);
   const r = useUpdatedRef({ options, definition, fields, schemaField });
 
@@ -226,6 +233,7 @@ export function useControlRenderer(
         const readonlyControl = useIsReadonly(groupContext);
         const disabledControl = useIsDisabled(groupContext);
         const visibleControl = useIsVisible(groupContext);
+        const displayControl = useDynamicDisplay(groupContext);
         const visible = visibleControl.current.value;
         const visibility = useControl<Visibility | undefined>(() =>
           visible != null
@@ -294,24 +302,25 @@ export function useControlRenderer(
           definition.adornments?.map((x) =>
             renderer.renderAdornment({ adornment: x }),
           ) ?? [];
-        const labelAndChildren = renderControlLayout(
-          c,
+        const labelAndChildren = renderControlLayout({
+          definition: c,
           renderer,
-          childRenderers.length,
-          (k, i, props) => {
+          childCount: childRenderers.length,
+          renderChild: (k, i, props) => {
             const RenderChild = childRenderers[i];
             return <RenderChild key={k} {...props} />;
           },
-          dataProps,
-          myOptions,
+          createDataProps: dataProps,
+          formOptions: myOptions,
           groupContext,
-          control,
+          control: displayControl ?? control,
           schemaField,
-        );
+          displayControl,
+        });
         const renderedControl = renderer.renderLayout({
           ...labelAndChildren,
           adornments,
-          className: c.styleClass,
+          className: c.layoutClass,
         });
         return renderer.renderVisibility({ visibility, ...renderedControl });
       } finally {
@@ -325,6 +334,7 @@ export function useControlRenderer(
       useDefaultValue,
       useIsReadonly,
       useIsDisabled,
+      useDynamicDisplay,
       useValidation,
       renderer,
     ],
@@ -368,6 +378,7 @@ function renderArray(
   required: boolean,
   arrayControl: Control<any[] | undefined | null>,
   renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
+  className: string | null | undefined,
 ) {
   const elems = arrayControl.elements ?? [];
   return renderer.renderArray({
@@ -386,6 +397,7 @@ function renderArray(
       onClick: () => removeElement(arrayControl, i),
     }),
     renderChild: (i) => renderChild(i, elems[i]),
+    className: cc(className),
   });
 }
 function groupProps(
@@ -393,11 +405,13 @@ function groupProps(
   childCount: number,
   renderChild: ChildRenderer,
   control: Control<any>,
+  className: string | null | undefined,
 ): GroupRendererProps {
   return {
     childCount,
     renderChild: (i) => renderChild(i, i, { control }),
     renderOptions,
+    className: cc(className),
   };
 }
 
@@ -407,7 +421,7 @@ export const defaultDataProps: CreateDataProps = (
   groupContext,
   control,
   options,
-) => {
+): DataRendererProps => {
   return {
     control,
     field,
@@ -417,7 +431,7 @@ export const defaultDataProps: CreateDataProps = (
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required: !!definition.required,
     hidden: !!options.hidden,
-    styleClass: definition.styleClass,
+    className: cc(definition.styleClass),
   };
 };
 
@@ -426,17 +440,31 @@ export type ChildRenderer = (
   childIndex: number,
   props: ControlRenderProps,
 ) => ReactNode;
-export function renderControlLayout(
-  c: ControlDefinition,
-  renderer: FormRenderer,
-  childCount: number,
-  childRenderer: ChildRenderer,
-  dataProps: CreateDataProps,
-  dataOptions: FormContextOptions,
-  groupContext: ControlGroupContext,
-  childControl?: Control<any>,
-  schemaField?: SchemaField,
-): ControlLayoutProps {
+
+export interface RenderControlProps {
+  definition: ControlDefinition;
+  renderer: FormRenderer;
+  childCount: number;
+  renderChild: ChildRenderer;
+  createDataProps: CreateDataProps;
+  formOptions: FormContextOptions;
+  groupContext: ControlGroupContext;
+  control?: Control<any>;
+  schemaField?: SchemaField;
+  displayControl?: Control<string | undefined>;
+}
+export function renderControlLayout({
+  definition: c,
+  renderer,
+  childCount,
+  renderChild: childRenderer,
+  control: childControl,
+  schemaField,
+  groupContext,
+  formOptions: dataOptions,
+  createDataProps: dataProps,
+  displayControl,
+}: RenderControlProps): ControlLayoutProps {
   if (isDataControlDefinition(c)) {
     return renderData(c);
   }
@@ -456,6 +484,7 @@ export function renderControlLayout(
           childCount,
           childRenderer,
           groupContext.groupControl,
+          c.styleClass,
         ),
       ),
       label: {
@@ -471,6 +500,7 @@ export function renderControlLayout(
         actionText: c.title ?? c.actionId,
         actionId: c.actionId,
         onClick: () => {},
+        className: cc(c.styleClass),
       }),
     };
   }
@@ -478,6 +508,8 @@ export function renderControlLayout(
     return {
       children: renderer.renderDisplay({
         data: c.displayData ?? {},
+        className: cc(c.styleClass),
+        display: displayControl,
       }),
     };
   }
@@ -502,6 +534,7 @@ export function renderControlLayout(
             !!c.required,
             childControl!,
             compoundRenderer,
+            c.styleClass,
           ),
           errorControl: childControl,
         };
@@ -513,6 +546,7 @@ export function renderControlLayout(
             childCount,
             childRenderer,
             childControl!,
+            c.styleClass,
           ),
         ),
         label,
@@ -541,6 +575,7 @@ export function renderControlLayout(
                 !!c.required,
                 childControl!,
                 scalarRenderer(props),
+                c.styleClass,
               )
           : undefined,
       ),
@@ -564,7 +599,7 @@ export function renderControlLayout(
       }),
     });
     return (
-      <div key={control.uniqueId} style={style} className={clsx(className)}>
+      <div key={control.uniqueId} style={style} className={cc(className)}>
         {children}
       </div>
     );
@@ -644,7 +679,7 @@ export function renderLayoutParts(
     children,
     errorControl,
     style,
-    className,
+    className: cc(className),
   };
   (adornments ?? [])
     .sort((a, b) => a.priority - b.priority)
