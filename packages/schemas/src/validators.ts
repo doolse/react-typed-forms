@@ -14,7 +14,7 @@ import {
   useValueChangeEffect,
 } from "@react-typed-forms/core";
 import { useCallback } from "react";
-import { ControlGroupContext, useUpdatedRef } from "./util";
+import { ControlDataContext, useUpdatedRef } from "./util";
 import { useJsonataExpression } from "./hooks";
 
 export function useValidationHook(
@@ -22,7 +22,7 @@ export function useValidationHook(
 ): (
   control: Control<any>,
   hidden: boolean,
-  groupContext: ControlGroupContext,
+  groupContext: ControlDataContext,
 ) => void {
   const validatorTypes = isDataControlDefinition(definition)
     ? definition.validators?.map((x) => x.type) ?? []
@@ -65,7 +65,7 @@ export function useValidationHook(
 
 function useJsonataValidator(
   control: Control<any>,
-  context: ControlGroupContext,
+  context: ControlDataContext,
   expr: JsonataValidator,
   hidden: boolean,
   i: number,

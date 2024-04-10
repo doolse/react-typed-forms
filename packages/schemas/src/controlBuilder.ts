@@ -2,13 +2,13 @@ import {
   ControlDefinition,
   ControlDefinitionType,
   DataControlDefinition,
+  DataMatchExpression,
   DisplayControlDefinition,
   DisplayDataType,
   DynamicProperty,
   DynamicPropertyType,
   EntityExpression,
   ExpressionType,
-  FieldValueExpression,
   GroupedControlsDefinition,
   GroupRenderType,
   HtmlDisplay,
@@ -66,8 +66,8 @@ export function dynamicDisabled(expr: EntityExpression): DynamicProperty {
   return { type: DynamicPropertyType.Disabled, expr };
 }
 
-export function fieldEqExpr(field: string, value: any): FieldValueExpression {
-  return { type: ExpressionType.FieldValue, field, value };
+export function fieldEqExpr(field: string, value: any): DataMatchExpression {
+  return { type: ExpressionType.DataMatch, field, value };
 }
 export function jsonataExpr(expression: string): JsonataExpression {
   return { type: ExpressionType.Jsonata, expression };

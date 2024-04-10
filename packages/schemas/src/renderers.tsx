@@ -35,11 +35,16 @@ import {
   DisplayDataType,
   FieldOption,
   FieldType,
+  FlexGroupRenderer,
   GridRenderer,
   HtmlDisplay,
   IconAdornment,
+  IconDisplay,
   isDisplayOnlyRenderer,
+  isFlexRenderer,
   isGridRenderer,
+  SchemaField,
+  SchemaInterface,
   TextDisplay,
 } from "./types";
 import { hasOptions } from "./util";
@@ -377,6 +382,7 @@ interface DefaultGroupRendererOptions {
   gridStyles?: (columns: GridRenderer) => StyleProps;
   gridClassName?: string;
   defaultGridColumns?: number;
+  flexClassName?: string;
 }
 
 export function createDefaultGroupRenderer(
@@ -388,6 +394,7 @@ export function createDefaultGroupRenderer(
     defaultGridColumns = 2,
     gridClassName,
     standardClassName,
+    flexClassName,
   } = options ?? {};
 
   function defaultGridStyles({
@@ -402,21 +409,32 @@ export function createDefaultGroupRenderer(
     };
   }
 
+  function flexStyles(options: FlexGroupRenderer): StyleProps {
+    return {
+      className: flexClassName,
+      style: {
+        display: "flex",
+        flexDirection: options.direction
+          ? (options.direction as any)
+          : undefined,
+      },
+    };
+  }
+
   function render(props: GroupRendererProps) {
     const { childCount, renderChild, renderOptions } = props;
 
     const { style, className: gcn } = isGridRenderer(renderOptions)
       ? gridStyles(renderOptions)
-      : ({ className: standardClassName } as StyleProps);
+      : isFlexRenderer(renderOptions)
+        ? flexStyles(renderOptions)
+        : ({ className: standardClassName } as StyleProps);
 
     return (cp: ControlLayoutProps) => {
       return {
         ...cp,
         children: (
-          <div
-            className={props.className ? props.className : clsx(className, gcn)}
-            style={style}
-          >
+          <div className={clsx(props.className, className, gcn)} style={style}>
             {Array.from({ length: childCount }, (_, x) => renderChild(x))}
           </div>
         ),
@@ -446,6 +464,12 @@ export function DefaultDisplay({
   ...options
 }: DefaultDisplayRendererOptions & DisplayRendererProps) {
   switch (data.type) {
+    case DisplayDataType.Icon:
+      return (
+        <i
+          className={display ? display.value : (data as IconDisplay).iconClass}
+        />
+      );
     case DisplayDataType.Text:
       return (
         <div className={clsx(className, options.textClassName)}>
@@ -501,6 +525,8 @@ export function createDefaultDataRenderer(
         className: displayOnlyClass,
         children: (
           <DefaultDisplayOnly
+            field={props.field}
+            schemaInterface={props.dataContext.schemaInterface}
             control={props.control}
             className={props.className}
             emptyText={renderOptions.emptyText}
@@ -539,15 +565,21 @@ export function DefaultDisplayOnly({
   control,
   className,
   emptyText,
+  schemaInterface,
+  field,
 }: {
   control: Control<any>;
+  field: SchemaField;
+  schemaInterface: SchemaInterface;
   className?: string;
   emptyText?: string | null;
 }) {
   const v = control.value;
-  return (
-    <div className={className}>{v == null || v === "" ? emptyText : v}</div>
-  );
+  const text =
+    (schemaInterface.isEmptyValue(field, v)
+      ? emptyText
+      : schemaInterface.textValue(field, v)) ?? "";
+  return <div className={className}>{text}</div>;
 }
 
 export function ControlInput({

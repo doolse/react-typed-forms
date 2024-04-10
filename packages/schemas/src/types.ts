@@ -52,6 +52,14 @@ export type AnyControlDefinition =
   | ActionControlDefinition
   | DisplayControlDefinition;
 
+export interface SchemaInterface {
+  isEmptyValue(field: SchemaField, value: any): boolean;
+  textValue(
+    field: SchemaField,
+    value: any,
+    element?: boolean,
+  ): string | undefined;
+}
 export interface ControlDefinition {
   type: string;
   title?: string | null;
@@ -259,10 +267,16 @@ export enum GroupRenderType {
   Standard = "Standard",
   Grid = "Grid",
   GroupElement = "GroupElement",
+  Flex = "Flex",
 }
 
 export interface StandardGroupRenderer extends GroupRenderOptions {
   type: GroupRenderType.Standard;
+}
+
+export interface FlexGroupRenderer extends GroupRenderOptions {
+  type: GroupRenderType.Flex;
+  direction?: string | null;
 }
 
 export interface GroupElementRenderer extends GroupRenderOptions {
@@ -287,10 +301,16 @@ export interface DisplayData {
 export enum DisplayDataType {
   Text = "Text",
   Html = "Html",
+  Icon = "Icon",
 }
 export interface TextDisplay extends DisplayData {
   type: DisplayDataType.Text;
   text: string;
+}
+
+export interface IconDisplay extends DisplayData {
+  type: DisplayDataType.Icon;
+  iconClass: string;
 }
 
 export interface HtmlDisplay extends DisplayData {
@@ -381,6 +401,12 @@ export function isGridRenderer(
   options: GroupRenderOptions,
 ): options is GridRenderer {
   return options.type === GroupRenderType.Grid;
+}
+
+export function isFlexRenderer(
+  options: GroupRenderOptions,
+): options is FlexGroupRenderer {
+  return options.type === GroupRenderType.Flex;
 }
 
 export function isDisplayOnlyRenderer(

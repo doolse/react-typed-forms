@@ -7,3 +7,4 @@ export * from "./renderers";
 export * from "./tailwind";
 export * from "./validators";
 export * from "./hooks";
+export * from "./schemaInterface";

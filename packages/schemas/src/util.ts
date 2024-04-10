@@ -13,16 +13,17 @@ import {
   isDataControlDefinition,
   isDisplayOnlyRenderer,
   SchemaField,
+  SchemaInterface,
   visitControlDefinition,
 } from "./types";
 import { MutableRefObject, useRef } from "react";
 import { Control } from "@react-typed-forms/core";
 
-export interface ControlGroupContext {
+export interface ControlDataContext {
   groupControl: Control<any>;
   fields: SchemaField[];
+  schemaInterface: SchemaInterface;
 }
-
 export function applyDefaultValues(
   v: { [k: string]: any } | undefined,
   fields: SchemaField[],
@@ -250,7 +251,7 @@ export function getDisplayOnlyOptions(
 }
 
 export function getTypeField(
-  context: ControlGroupContext,
+  context: ControlDataContext,
 ): Control<string> | undefined {
   const typeSchemaField = context.fields.find((x) => x.isTypeField);
   return typeSchemaField
@@ -260,7 +261,7 @@ export function getTypeField(
 
 export function visitControlDataArray<A>(
   controls: ControlDefinition[] | undefined | null,
-  context: ControlGroupContext,
+  context: ControlDataContext,
   cb: (
     definition: DataControlDefinition,
     field: SchemaField,
@@ -278,7 +279,7 @@ export function visitControlDataArray<A>(
 
 export function visitControlData<A>(
   definition: ControlDefinition,
-  ctx: ControlGroupContext,
+  ctx: ControlDataContext,
   cb: (
     definition: DataControlDefinition,
     field: SchemaField,
@@ -320,7 +321,11 @@ export function visitControlData<A>(
         if (isCompoundField(fieldData)) {
           const cfResult = visitControlDataArray(
             children,
-            { fields: fieldData.children, groupControl: c },
+            {
+              fields: fieldData.children,
+              groupControl: c,
+              schemaInterface: ctx.schemaInterface,
+            },
             cb,
           );
           if (cfResult !== undefined) return cfResult;

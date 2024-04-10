@@ -8,6 +8,7 @@ import {
   isDataControlDefinition,
   JsonataExpression,
   SchemaField,
+  SchemaInterface,
 } from "./types";
 import { useCallback, useMemo } from "react";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@react-typed-forms/core";
 
 import {
-  ControlGroupContext,
+  ControlDataContext,
   defaultValueForField,
   findField,
   getDisplayOnlyOptions,
@@ -52,7 +53,13 @@ export function useEvalVisibilityHook(
         useComputed(
           () =>
             matchesType(ctx, schemaField?.onlyForTypes) &&
-            (!schemaField || !hideDisplayOnly(ctx, schemaField, definition)),
+            (!schemaField ||
+              !hideDisplayOnly(
+                ctx,
+                schemaField,
+                definition,
+                ctx.schemaInterface,
+              )),
         )
       );
     },
@@ -101,7 +108,7 @@ export function useEvalDisplayHook(
   useEvalExpressionHook: UseEvalExpressionHook,
   definition: ControlDefinition,
 ): (
-  groupContext: ControlGroupContext,
+  groupContext: ControlDataContext,
 ) => Control<string | undefined> | undefined {
   const dynamicDisplay = useEvalDynamicHook(
     definition,
@@ -142,7 +149,7 @@ export function useEvalDefaultValueHook(
 }
 
 export type EvalExpressionHook<A = any> = (
-  groupContext: ControlGroupContext,
+  groupContext: ControlDataContext,
 ) => Control<A | undefined>;
 
 function useDataExpression(
@@ -170,7 +177,7 @@ function useDataMatchExpression(
 
 export function defaultEvalHooks(
   expr: EntityExpression,
-  context: ControlGroupContext,
+  context: ControlDataContext,
 ) {
   switch (expr.type) {
     case ExpressionType.Jsonata:
@@ -199,12 +206,12 @@ export const defaultUseEvalExpressionHook =
   makeEvalExpressionHook(defaultEvalHooks);
 
 export function makeEvalExpressionHook(
-  f: (expr: EntityExpression, context: ControlGroupContext) => Control<any>,
+  f: (expr: EntityExpression, context: ControlDataContext) => Control<any>,
 ): (expr: EntityExpression | undefined) => EvalExpressionHook | undefined {
   return (expr) => {
     const r = useUpdatedRef(expr);
     const cb = useCallback(
-      (ctx: ControlGroupContext) => {
+      (ctx: ControlDataContext) => {
         const expr = r.current!;
         return f(expr, ctx);
       },
@@ -226,7 +233,7 @@ export function useEvalDynamicHook(
 }
 
 export function matchesType(
-  context: ControlGroupContext,
+  context: ControlDataContext,
   types?: string[] | null,
 ) {
   if (types == null || types.length === 0) return true;
@@ -235,15 +242,19 @@ export function matchesType(
 }
 
 export function hideDisplayOnly(
-  context: ControlGroupContext,
+  context: ControlDataContext,
   field: SchemaField,
   definition: ControlDefinition,
+  schemaInterface: SchemaInterface,
 ) {
   const displayOptions = getDisplayOnlyOptions(definition);
   return (
     displayOptions &&
     !displayOptions.emptyText &&
-    !context.groupControl.fields[field.field].value
+    schemaInterface.isEmptyValue(
+      field,
+      context.groupControl.fields[field.field].value,
+    )
   );
 }
 

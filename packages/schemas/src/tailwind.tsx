@@ -12,8 +12,9 @@ export const defaultTailwindTheme: DefaultRendererOptions = {
     addActionClass: "my-2",
   },
   group: {
-    standardClassName: "space-y-4",
+    standardClassName: "flex flex-col gap-4",
     gridClassName: "gap-x-2 gap-y-4",
+    flexClassName: "gap-2",
   },
   action: {
     className: "bg-primary rounded-lg p-3 text-white",

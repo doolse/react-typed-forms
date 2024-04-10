@@ -29,9 +29,10 @@ import {
   isGroupControlsDefinition,
   RenderOptions,
   SchemaField,
+  SchemaInterface,
 } from "./types";
 import {
-  ControlGroupContext,
+  ControlDataContext,
   elementValueForField,
   fieldDisplayName,
   findField,
@@ -51,6 +52,7 @@ import {
 } from "./hooks";
 import { useValidationHook } from "./validators";
 import { cc, useCalculatedControl } from "./internal";
+import { defaultSchemaInterface } from "./schemaInterface";
 
 export interface FormRenderer {
   renderData: (
@@ -168,6 +170,7 @@ export interface DataRendererProps {
   options: FieldOption[] | undefined | null;
   hidden: boolean;
   className?: string;
+  dataContext: ControlDataContext;
 }
 
 export interface ActionRendererProps {
@@ -190,7 +193,7 @@ export interface FormContextOptions {
 export type CreateDataProps = (
   definition: DataControlDefinition,
   field: SchemaField,
-  groupContext: ControlGroupContext,
+  groupContext: ControlDataContext,
   control: Control<any>,
   options: FormContextOptions,
 ) => DataRendererProps;
@@ -198,6 +201,7 @@ export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
   useEvalExpressionHook?: UseEvalExpressionHook;
   clearHidden?: boolean;
+  schemaInterface?: SchemaInterface;
 }
 export function useControlRenderer(
   definition: ControlDefinition,
@@ -206,6 +210,7 @@ export function useControlRenderer(
   options: ControlRenderOptions = {},
 ): FC<ControlRenderProps> {
   const dataProps = options.useDataHook?.(definition) ?? defaultDataProps;
+  const schemaInterface = options.schemaInterface ?? defaultSchemaInterface;
   const useExpr = options.useEvalExpressionHook ?? defaultUseEvalExpressionHook;
 
   const schemaField = lookupSchemaField(definition, fields);
@@ -226,14 +231,15 @@ export function useControlRenderer(
       const stopTracking = useComponentTracking();
       try {
         const { definition: c, options, fields, schemaField } = r.current;
-        const groupContext: ControlGroupContext = {
+        const dataContext: ControlDataContext = {
           groupControl: parentControl,
           fields,
+          schemaInterface,
         };
-        const readonlyControl = useIsReadonly(groupContext);
-        const disabledControl = useIsDisabled(groupContext);
-        const visibleControl = useIsVisible(groupContext);
-        const displayControl = useDynamicDisplay(groupContext);
+        const readonlyControl = useIsReadonly(dataContext);
+        const disabledControl = useIsDisabled(dataContext);
+        const visibleControl = useIsVisible(dataContext);
+        const displayControl = useDynamicDisplay(dataContext);
         const visible = visibleControl.current.value;
         const visibility = useControl<Visibility | undefined>(() =>
           visible != null
@@ -254,10 +260,10 @@ export function useControlRenderer(
           },
         );
 
-        const defaultValueControl = useDefaultValue(groupContext);
+        const defaultValueControl = useDefaultValue(dataContext);
         const [control, childContext] = getControlData(
           schemaField,
-          groupContext,
+          dataContext,
         );
         useControlEffect(
           () => [
@@ -285,7 +291,7 @@ export function useControlRenderer(
           readonly: options.readonly || readonlyControl.value,
           disabled: options.disabled || disabledControl.value,
         })).value;
-        useValidation(control!, !!myOptions.hidden, groupContext);
+        useValidation(control!, !!myOptions.hidden, dataContext);
         const childRenderers: FC<ControlRenderProps>[] =
           c.children?.map((cd) =>
             useControlRenderer(cd, childContext.fields, renderer, {
@@ -312,7 +318,7 @@ export function useControlRenderer(
           },
           createDataProps: dataProps,
           formOptions: myOptions,
-          groupContext,
+          dataContext,
           control: displayControl ?? control,
           schemaField,
           displayControl,
@@ -337,6 +343,7 @@ export function useControlRenderer(
       useDynamicDisplay,
       useValidation,
       renderer,
+      schemaInterface,
     ],
   );
   (Component as any).displayName = "RenderControl";
@@ -355,8 +362,8 @@ export function lookupSchemaField(
 }
 export function getControlData(
   schemaField: SchemaField | undefined,
-  parentContext: ControlGroupContext,
-): [Control<any> | undefined, ControlGroupContext] {
+  parentContext: ControlDataContext,
+): [Control<any> | undefined, ControlDataContext] {
   const childControl: Control<any> | undefined = schemaField
     ? parentContext.groupControl.fields?.[schemaField.field] ?? newControl({})
     : undefined;
@@ -366,6 +373,7 @@ export function getControlData(
       ? {
           groupControl: childControl!,
           fields: schemaField.children,
+          schemaInterface: parentContext.schemaInterface,
         }
       : parentContext,
   ];
@@ -418,7 +426,7 @@ function groupProps(
 export const defaultDataProps: CreateDataProps = (
   definition,
   field,
-  groupContext,
+  dataContext,
   control,
   options,
 ): DataRendererProps => {
@@ -432,6 +440,7 @@ export const defaultDataProps: CreateDataProps = (
     required: !!definition.required,
     hidden: !!options.hidden,
     className: cc(definition.styleClass),
+    dataContext,
   };
 };
 
@@ -448,7 +457,7 @@ export interface RenderControlProps {
   renderChild: ChildRenderer;
   createDataProps: CreateDataProps;
   formOptions: FormContextOptions;
-  groupContext: ControlGroupContext;
+  dataContext: ControlDataContext;
   control?: Control<any>;
   schemaField?: SchemaField;
   displayControl?: Control<string | undefined>;
@@ -460,7 +469,7 @@ export function renderControlLayout({
   renderChild: childRenderer,
   control: childControl,
   schemaField,
-  groupContext,
+  dataContext,
   formOptions: dataOptions,
   createDataProps: dataProps,
   displayControl,
@@ -483,7 +492,7 @@ export function renderControlLayout({
           c.groupOptions,
           childCount,
           childRenderer,
-          groupContext.groupControl,
+          dataContext.groupControl,
           c.styleClass,
         ),
       ),
@@ -556,7 +565,7 @@ export function renderControlLayout({
     const props = dataProps(
       c,
       schemaField,
-      groupContext,
+      dataContext,
       childControl!,
       dataOptions,
     );
