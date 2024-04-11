@@ -35,7 +35,7 @@ import {
   DisplayDataType,
   FieldOption,
   FieldType,
-  FlexGroupRenderer,
+  FlexRenderer,
   GridRenderer,
   HtmlDisplay,
   IconAdornment,
@@ -409,7 +409,7 @@ export function createDefaultGroupRenderer(
     };
   }
 
-  function flexStyles(options: FlexGroupRenderer): StyleProps {
+  function flexStyles(options: FlexRenderer): StyleProps {
     return {
       className: flexClassName,
       style: {
@@ -467,7 +467,10 @@ export function DefaultDisplay({
     case DisplayDataType.Icon:
       return (
         <i
-          className={display ? display.value : (data as IconDisplay).iconClass}
+          className={clsx(
+            className,
+            display ? display.value : (data as IconDisplay).iconClass,
+          )}
         />
       );
     case DisplayDataType.Text:

@@ -266,15 +266,15 @@ export interface GroupRenderOptions {
 export enum GroupRenderType {
   Standard = "Standard",
   Grid = "Grid",
-  GroupElement = "GroupElement",
   Flex = "Flex",
+  GroupElement = "GroupElement",
 }
 
 export interface StandardGroupRenderer extends GroupRenderOptions {
   type: GroupRenderType.Standard;
 }
 
-export interface FlexGroupRenderer extends GroupRenderOptions {
+export interface FlexRenderer extends GroupRenderOptions {
   type: GroupRenderType.Flex;
   direction?: string | null;
 }
@@ -405,7 +405,7 @@ export function isGridRenderer(
 
 export function isFlexRenderer(
   options: GroupRenderOptions,
-): options is FlexGroupRenderer {
+): options is FlexRenderer {
   return options.type === GroupRenderType.Flex;
 }
 
