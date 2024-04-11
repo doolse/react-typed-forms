@@ -277,6 +277,7 @@ export interface StandardGroupRenderer extends GroupRenderOptions {
 export interface FlexRenderer extends GroupRenderOptions {
   type: GroupRenderType.Flex;
   direction?: string | null;
+  gap?: string | null;
 }
 
 export interface GroupElementRenderer extends GroupRenderOptions {

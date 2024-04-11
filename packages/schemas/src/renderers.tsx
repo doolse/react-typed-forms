@@ -383,6 +383,7 @@ interface DefaultGroupRendererOptions {
   gridClassName?: string;
   defaultGridColumns?: number;
   flexClassName?: string;
+  defaultFlexGap?: string;
 }
 
 export function createDefaultGroupRenderer(
@@ -395,6 +396,7 @@ export function createDefaultGroupRenderer(
     gridClassName,
     standardClassName,
     flexClassName,
+    defaultFlexGap,
   } = options ?? {};
 
   function defaultGridStyles({
@@ -414,6 +416,7 @@ export function createDefaultGroupRenderer(
       className: flexClassName,
       style: {
         display: "flex",
+        gap: options.gap ? options.gap : defaultFlexGap,
         flexDirection: options.direction
           ? (options.direction as any)
           : undefined,
