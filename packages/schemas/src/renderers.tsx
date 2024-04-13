@@ -464,12 +464,14 @@ export function DefaultDisplay({
   data,
   display,
   className,
+  style,
   ...options
 }: DefaultDisplayRendererOptions & DisplayRendererProps) {
   switch (data.type) {
     case DisplayDataType.Icon:
       return (
         <i
+          style={style}
           className={clsx(
             className,
             display ? display.value : (data as IconDisplay).iconClass,
@@ -478,13 +480,14 @@ export function DefaultDisplay({
       );
     case DisplayDataType.Text:
       return (
-        <div className={clsx(className, options.textClassName)}>
+        <div style={style} className={clsx(className, options.textClassName)}>
           {display ? display.value : (data as TextDisplay).text}
         </div>
       );
     case DisplayDataType.Html:
       return (
         <div
+          style={style}
           className={clsx(className, options.htmlClassName)}
           dangerouslySetInnerHTML={{
             __html: display ? display.value ?? "" : (data as HtmlDisplay).html,
@@ -535,6 +538,7 @@ export function createDefaultDataRenderer(
             schemaInterface={props.dataContext.schemaInterface}
             control={props.control}
             className={props.className}
+            style={props.style}
             emptyText={renderOptions.emptyText}
           />
         ),
@@ -554,10 +558,15 @@ export function createDefaultDataRenderer(
         return selectRenderer.render(props, undefined, renderers);
     }
     return renderType === DataRenderType.Checkbox ? (
-      <Fcheckbox className={props.className} control={props.control} />
+      <Fcheckbox
+        style={props.style}
+        className={props.className}
+        control={props.control}
+      />
     ) : (
       <ControlInput
         className={clsx(props.className, inputClass)}
+        style={props.style}
         id={props.id}
         readOnly={props.readonly}
         control={props.control}
@@ -573,11 +582,13 @@ export function DefaultDisplayOnly({
   emptyText,
   schemaInterface,
   field,
+  style,
 }: {
   control: Control<any>;
   field: SchemaField;
   schemaInterface: SchemaInterface;
   className?: string;
+  style?: React.CSSProperties;
   emptyText?: string | null;
 }) {
   const v = control.value;
@@ -585,7 +596,11 @@ export function DefaultDisplayOnly({
     (schemaInterface.isEmptyValue(field, v)
       ? emptyText
       : schemaInterface.textValue(field, v)) ?? "";
-  return <div className={className}>{text}</div>;
+  return (
+    <div style={style} className={className}>
+      {text}
+    </div>
+  );
 }
 
 export function ControlInput({

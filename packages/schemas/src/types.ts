@@ -88,6 +88,8 @@ export enum DynamicPropertyType {
   Readonly = "Readonly",
   Disabled = "Disabled",
   Display = "Display",
+  Style = "Style",
+  LayoutStyle = "LayoutStyle",
 }
 
 export interface EntityExpression {

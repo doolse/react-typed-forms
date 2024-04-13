@@ -86,6 +86,25 @@ export function useEvalReadonlyHook(
   );
 }
 
+export function useEvalStyleHook(
+  useEvalExpressionHook: UseEvalExpressionHook,
+  property: DynamicPropertyType,
+  definition: ControlDefinition,
+): EvalExpressionHook<React.CSSProperties> {
+  const dynamicStyle = useEvalDynamicHook(
+    definition,
+    property,
+    useEvalExpressionHook,
+  );
+  return useCallback(
+    (ctx) => {
+      if (dynamicStyle) return dynamicStyle(ctx);
+      return useControl(undefined);
+    },
+    [dynamicStyle],
+  );
+}
+
 export function useEvalDisabledHook(
   useEvalExpressionHook: UseEvalExpressionHook,
   definition: ControlDefinition,
@@ -262,7 +281,14 @@ export function useJsonataExpression(
   jExpr: string,
   data: Control<any>,
 ): Control<any> {
-  const compiledExpr = useMemo(() => jsonata(jExpr), [jExpr]);
+  const compiledExpr = useMemo(() => {
+    try {
+      return jsonata(jExpr);
+    } catch (e) {
+      console.error(e);
+      return jsonata("");
+    }
+  }, [jExpr]);
   const control = useControl();
   useControlEffect(
     () => data.value,
