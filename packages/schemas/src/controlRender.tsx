@@ -196,14 +196,18 @@ export interface FormContextOptions {
   disabled?: boolean | null;
 }
 
+export interface DataControlProps {
+  definition: DataControlDefinition;
+  field: SchemaField;
+  dataContext: ControlDataContext;
+  control: Control<any>;
+  options: FormContextOptions;
+  style: React.CSSProperties | undefined;
+}
 export type CreateDataProps = (
-  definition: DataControlDefinition,
-  field: SchemaField,
-  groupContext: ControlDataContext,
-  control: Control<any>,
-  options: FormContextOptions,
-  style: React.CSSProperties | undefined,
+  controlProps: DataControlProps,
 ) => DataRendererProps;
+
 export interface ControlRenderOptions extends FormContextOptions {
   useDataHook?: (c: ControlDefinition) => CreateDataProps;
   useEvalExpressionHook?: UseEvalExpressionHook;
@@ -450,14 +454,14 @@ function groupProps(
   };
 }
 
-export const defaultDataProps: CreateDataProps = (
+export function defaultDataProps({
   definition,
   field,
   dataContext,
   control,
   options,
   style,
-): DataRendererProps => {
+}: DataControlProps): DataRendererProps {
   return {
     control,
     field,
@@ -471,7 +475,7 @@ export const defaultDataProps: CreateDataProps = (
     style,
     dataContext,
   };
-};
+}
 
 export type ChildRenderer = (
   k: Key,
@@ -598,14 +602,14 @@ export function renderControlLayout({
         errorControl: childControl,
       };
     }
-    const props = dataProps(
-      c,
-      schemaField,
+    const props = dataProps({
+      definition: c,
+      field: schemaField,
       dataContext,
-      childControl!,
-      dataOptions,
+      control: childControl!,
+      options: dataOptions,
       style,
-    );
+    });
     const labelText = !c.hideTitle
       ? controlTitle(c.title, schemaField)
       : undefined;
