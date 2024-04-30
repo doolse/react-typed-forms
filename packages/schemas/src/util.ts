@@ -146,20 +146,15 @@ export function hasOptions(o: { options: FieldOption[] | undefined | null }) {
   return (o.options?.length ?? 0) > 0;
 }
 
-export function defaultControlForField(
-  sf: SchemaField,
-): DataControlDefinition | GroupedControlsDefinition {
+export function defaultControlForField(sf: SchemaField): DataControlDefinition {
   if (isCompoundField(sf)) {
     return {
-      type: ControlDefinitionType.Group,
+      type: ControlDefinitionType.Data,
       title: sf.displayName,
-      compoundField: sf.field,
-      groupOptions: {
-        type: GroupRenderType.Grid,
-        hideTitle: false,
-      } as GridRenderer,
+      field: sf.field,
+      required: sf.required,
       children: sf.children.map(defaultControlForField),
-    } satisfies GroupedControlsDefinition;
+    };
   } else if (isScalarField(sf)) {
     const htmlEditor = sf.tags?.includes("_HtmlEditor");
     return {
@@ -170,7 +165,7 @@ export function defaultControlForField(
       renderOptions: {
         type: htmlEditor ? DataRenderType.HtmlEditor : DataRenderType.Standard,
       },
-    } satisfies DataControlDefinition;
+    };
   }
   throw "Unknown schema field";
 }
