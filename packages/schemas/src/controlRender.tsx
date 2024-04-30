@@ -1,4 +1,5 @@
 import React, {
+  CSSProperties,
   FC,
   Fragment,
   Key,
@@ -58,7 +59,6 @@ import { defaultSchemaInterface } from "./schemaInterface";
 export interface FormRenderer {
   renderData: (
     props: DataRendererProps,
-    asArray: (() => ReactNode) | undefined,
   ) => (layout: ControlLayoutProps) => ControlLayoutProps;
   renderGroup: (
     props: GroupRendererProps,
@@ -176,6 +176,9 @@ export interface DataRendererProps {
   className?: string;
   style?: React.CSSProperties;
   dataContext: ControlDataContext;
+  childCount: number;
+  renderChild: ChildRenderer;
+  toArrayProps?: () => ArrayRendererProps;
 }
 
 export interface ActionRendererProps {
@@ -203,6 +206,9 @@ export interface DataControlProps {
   control: Control<any>;
   options: FormContextOptions;
   style: React.CSSProperties | undefined;
+  childCount: number;
+  renderChild: ChildRenderer;
+  elementRenderer?: (elemProps: Control<any>) => ReactNode;
 }
 export type CreateDataProps = (
   controlProps: DataControlProps,
@@ -406,37 +412,6 @@ export function getControlData(
   ];
 }
 
-function renderArray(
-  renderer: FormRenderer,
-  noun: string,
-  field: SchemaField,
-  required: boolean,
-  arrayControl: Control<any[] | undefined | null>,
-  renderChild: (elemIndex: number, control: Control<any>) => ReactNode,
-  className: string | null | undefined,
-  style: React.CSSProperties | undefined,
-) {
-  const elems = arrayControl.elements ?? [];
-  return renderer.renderArray({
-    arrayControl,
-    childCount: elems.length,
-    required,
-    addAction: {
-      actionId: "add",
-      actionText: "Add " + noun,
-      onClick: () => addElement(arrayControl, elementValueForField(field)),
-    },
-    childKey: (i) => elems[i].uniqueId,
-    removeAction: (i: number) => ({
-      actionId: "",
-      actionText: "Remove",
-      onClick: () => removeElement(arrayControl, i),
-    }),
-    renderChild: (i) => renderChild(i, elems[i]),
-    className: cc(className),
-    style,
-  });
-}
 function groupProps(
   renderOptions: GroupRenderOptions = { type: "Standard" },
   childCount: number,
@@ -457,11 +432,14 @@ function groupProps(
 export function defaultDataProps({
   definition,
   field,
-  dataContext,
   control,
   options,
+  elementRenderer,
   style,
+  ...props
 }: DataControlProps): DataRendererProps {
+  const className = cc(definition.styleClass);
+  const required = !!definition.required;
   return {
     control,
     field,
@@ -469,11 +447,53 @@ export function defaultDataProps({
     options: (field.options?.length ?? 0) === 0 ? null : field.options,
     readonly: !!options.readonly,
     renderOptions: definition.renderOptions ?? { type: "Standard" },
-    required: !!definition.required,
+    required,
     hidden: !!options.hidden,
-    className: cc(definition.styleClass),
+    className,
     style,
-    dataContext,
+    ...props,
+    toArrayProps: elementRenderer
+      ? () =>
+          defaultArrayProps(
+            control,
+            field,
+            required,
+            style,
+            className,
+            elementRenderer,
+          )
+      : undefined,
+  };
+}
+
+export function defaultArrayProps(
+  arrayControl: Control<any[] | undefined | null>,
+  field: SchemaField,
+  required: boolean,
+  style: CSSProperties | undefined,
+  className: string | undefined,
+  renderElement: (elemProps: Control<any>) => ReactNode,
+): ArrayRendererProps {
+  const noun = field.displayName ?? field.field;
+  const elems = arrayControl.elements ?? [];
+  return {
+    arrayControl,
+    childCount: elems.length,
+    required,
+    addAction: {
+      actionId: "add",
+      actionText: "Add " + noun,
+      onClick: () => addElement(arrayControl, elementValueForField(field)),
+    },
+    childKey: (i) => elems[i].uniqueId,
+    removeAction: (i: number) => ({
+      actionId: "",
+      actionText: "Remove",
+      onClick: () => removeElement(arrayControl, i),
+    }),
+    renderChild: (i) => renderElement(elems[i]),
+    className: cc(className),
+    style,
   };
 }
 
@@ -562,46 +582,8 @@ export function renderControlLayout({
   }
   return {};
 
-  function renderData(c: DataControlDefinition) {
+  function renderData(c: DataControlDefinition, elementControl?: Control<any>) {
     if (!schemaField) return { children: "No schema field for: " + c.field };
-    if (isCompoundField(schemaField)) {
-      const label: LabelRendererProps = {
-        hide: c.hideTitle,
-        label: controlTitle(c.title, schemaField),
-        type: schemaField.collection ? LabelType.Control : LabelType.Group,
-      };
-
-      if (schemaField.collection) {
-        return {
-          label,
-          children: renderArray(
-            renderer,
-            controlTitle(c.title, schemaField),
-            schemaField,
-            !!c.required,
-            childControl!,
-            compoundRenderer,
-            c.styleClass,
-            style,
-          ),
-          errorControl: childControl,
-        };
-      }
-      return {
-        processLayout: renderer.renderGroup(
-          groupProps(
-            { type: "Standard" },
-            childCount,
-            childRenderer,
-            childControl!,
-            c.styleClass,
-            style,
-          ),
-        ),
-        label,
-        errorControl: childControl,
-      };
-    }
     const props = dataProps({
       definition: c,
       field: schemaField,
@@ -609,27 +591,20 @@ export function renderControlLayout({
       control: childControl!,
       options: dataOptions,
       style,
+      childCount,
+      renderChild: childRenderer,
+      elementRenderer:
+        elementControl == null && schemaField.collection
+          ? (element) =>
+              renderLayoutParts(renderData(c, element), renderer).children
+          : undefined,
     });
+
     const labelText = !c.hideTitle
       ? controlTitle(c.title, schemaField)
       : undefined;
     return {
-      processLayout: renderer.renderData(
-        props,
-        schemaField.collection
-          ? () =>
-              renderArray(
-                renderer,
-                controlTitle(c.title, schemaField),
-                schemaField,
-                !!c.required,
-                childControl!,
-                scalarRenderer(props),
-                c.styleClass,
-                style,
-              )
-          : undefined,
-      ),
+      processLayout: renderer.renderData(props),
       label: {
         type: LabelType.Control,
         label: labelText,
@@ -661,10 +636,7 @@ export function renderControlLayout({
     return (i, control) => {
       return (
         <Fragment key={control.uniqueId}>
-          {
-            renderer.renderData({ ...dataProps, control }, undefined)({})
-              .children
-          }
+          {renderer.renderData({ ...dataProps, control })({}).children}
         </Fragment>
       );
     };

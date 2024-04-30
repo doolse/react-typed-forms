@@ -78,7 +78,6 @@ export interface DataRendererRegistration {
   match?: (props: DataRendererProps) => boolean;
   render: (
     props: DataRendererProps,
-    asArray: (() => ReactNode) | undefined,
     renderers: FormRenderer,
   ) => ReactNode | ((layout: ControlLayoutProps) => ControlLayoutProps);
 }
@@ -210,7 +209,6 @@ export function createFormRenderer(
 
   function renderData(
     props: DataRendererProps,
-    asArray: (() => ReactNode) | undefined,
   ): (layout: ControlLayoutProps) => ControlLayoutProps {
     const {
       renderOptions: { type: renderType },
@@ -228,7 +226,7 @@ export function createFormRenderer(
           (!x.match || x.match(props)),
       ) ?? defaultRenderers.data;
 
-    const result = renderer.render(props, asArray, formRenderers);
+    const result = renderer.render(props, formRenderers);
     if (typeof result === "function") return result;
     return (l) => ({ ...l, children: result });
   }
@@ -520,13 +518,25 @@ export function createDefaultDataRenderer(
     booleanOptions: DefaultBoolOptions,
     ...options,
   };
-  return createDataRenderer((props, asArray, renderers) => {
-    if (asArray) {
-      return asArray();
+  return createDataRenderer((props, renderers) => {
+    const fieldType = props.field.type;
+    if (props.toArrayProps) {
+      return (p) => ({
+        ...p,
+        children: renderers.renderArray(props.toArrayProps!()),
+      });
+    }
+    if (fieldType === FieldType.Compound) {
+      return renderers.renderGroup({
+        style: props.style,
+        className: props.className,
+        renderOptions: { type: "Standard", hideTitle: true },
+        renderChild: (i) => props.renderChild(i, i, { control: props.control }),
+        childCount: props.childCount,
+      });
     }
     const renderOptions = props.renderOptions;
     let renderType = renderOptions.type;
-    const fieldType = props.field.type;
     if (fieldType == FieldType.Any) return <>No control for Any</>;
     if (isDisplayOnlyRenderer(renderOptions))
       return (p) => ({
@@ -545,17 +555,14 @@ export function createDefaultDataRenderer(
       });
     const isBool = fieldType === FieldType.Bool;
     if (booleanOptions != null && isBool && props.options == null) {
-      return renderers.renderData(
-        { ...props, options: booleanOptions },
-        undefined,
-      );
+      return renderers.renderData({ ...props, options: booleanOptions });
     }
     if (renderType === DataRenderType.Standard && hasOptions(props)) {
-      return optionRenderer.render(props, undefined, renderers);
+      return optionRenderer.render(props, renderers);
     }
     switch (renderType) {
       case DataRenderType.Dropdown:
-        return selectRenderer.render(props, undefined, renderers);
+        return selectRenderer.render(props, renderers);
     }
     return renderType === DataRenderType.Checkbox ? (
       <Fcheckbox
