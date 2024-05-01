@@ -174,6 +174,7 @@ export interface DataControlDefinition extends ControlDefinition {
   readonly?: boolean | null;
   validators?: SchemaValidator[] | null;
   hideTitle?: boolean | null;
+  dontClearHidden?: boolean | null;
 }
 
 export interface RenderOptions {

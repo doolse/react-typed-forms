@@ -300,14 +300,15 @@ export function useControlRenderer(
             defaultValueControl.value,
             control,
             parentControl.isNull,
+            isDataControlDefinition(definition) && definition.dontClearHidden,
           ],
-          ([vc, dv, cd, pn]) => {
+          ([vc, dv, cd, pn, dontClear]) => {
             if (pn) {
               parentControl.value = {};
             }
             if (vc && cd && vc.visible === vc.showing) {
               if (!vc.visible) {
-                if (options.clearHidden) cd.value = undefined;
+                if (options.clearHidden && !dontClear) cd.value = undefined;
               } else if (cd.value == null) {
                 cd.value = dv;
               }
@@ -389,8 +390,8 @@ export function lookupSchemaField(
   const fieldName = isGroupControlsDefinition(c)
     ? c.compoundField
     : isDataControlDefinition(c)
-      ? c.field
-      : undefined;
+    ? c.field
+    : undefined;
   return fieldName ? findField(fields, fieldName) : undefined;
 }
 export function getControlData(
@@ -588,7 +589,7 @@ export function renderControlLayout({
       definition: c,
       field: schemaField,
       dataContext,
-      control: childControl!,
+      control: elementControl ?? childControl!,
       options: dataOptions,
       style,
       childCount,

@@ -18,6 +18,7 @@ import {
 } from "./types";
 import { MutableRefObject, useRef } from "react";
 import { Control } from "@react-typed-forms/core";
+import clsx from "clsx";
 
 export interface ControlDataContext {
   groupControl: Control<any>;
@@ -372,4 +373,13 @@ export function cleanDataForSchema(
     }
   });
   return out;
+}
+
+export function getAllReferencedClasses(c: ControlDefinition): string[] {
+  const childClasses = c.children?.flatMap(getAllReferencedClasses);
+  const tc = clsx(c.styleClass, c.layoutClass);
+  if (childClasses && !tc) return childClasses;
+  if (!tc) return [];
+  if (childClasses) return [tc, ...childClasses];
+  return [tc];
 }
