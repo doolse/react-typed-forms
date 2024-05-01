@@ -90,6 +90,7 @@ export enum DynamicPropertyType {
   Display = "Display",
   Style = "Style",
   LayoutStyle = "LayoutStyle",
+  AllowedOptions = "AllowedOptions"
 }
 
 export interface EntityExpression {

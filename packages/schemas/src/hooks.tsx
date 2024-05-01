@@ -105,6 +105,24 @@ export function useEvalStyleHook(
   );
 }
 
+export function useEvalAllowedOptionsHook(
+    useEvalExpressionHook: UseEvalExpressionHook,
+    definition: ControlDefinition,
+): EvalExpressionHook<any[]> {
+  const dynamicAllowed = useEvalDynamicHook(
+      definition,
+      DynamicPropertyType.AllowedOptions,
+      useEvalExpressionHook,
+  );
+  return useCallback(
+      (ctx) => {
+        if (dynamicAllowed) return dynamicAllowed(ctx);
+        return useControl([]);
+      },
+      [dynamicAllowed],
+  );
+}
+
 export function useEvalDisabledHook(
   useEvalExpressionHook: UseEvalExpressionHook,
   definition: ControlDefinition,

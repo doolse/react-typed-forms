@@ -44,6 +44,7 @@ import {
 import { dataControl } from "./controlBuilder";
 import {
   defaultUseEvalExpressionHook,
+  useEvalAllowedOptionsHook,
   useEvalDefaultValueHook,
   useEvalDisabledHook,
   useEvalDisplayHook,
@@ -208,6 +209,7 @@ export interface DataControlProps {
   style: React.CSSProperties | undefined;
   childCount: number;
   renderChild: ChildRenderer;
+  allowedOptions?: Control<any[] | undefined>;
   elementRenderer?: (elemProps: Control<any>) => ReactNode;
 }
 export type CreateDataProps = (
@@ -239,6 +241,7 @@ export function useControlRenderer(
   const useIsVisible = useEvalVisibilityHook(useExpr, definition, schemaField);
   const useIsReadonly = useEvalReadonlyHook(useExpr, definition);
   const useIsDisabled = useEvalDisabledHook(useExpr, definition);
+  const useAllowedOptions = useEvalAllowedOptionsHook(useExpr, definition);
   const useCustomStyle = useEvalStyleHook(
     useExpr,
     DynamicPropertyType.Style,
@@ -289,6 +292,7 @@ export function useControlRenderer(
           },
         );
 
+        const allowedOptions = useAllowedOptions(dataContext);
         const defaultValueControl = useDefaultValue(dataContext);
         const [control, childContext] = getControlData(
           schemaField,
@@ -353,6 +357,7 @@ export function useControlRenderer(
           schemaField,
           displayControl,
           style: customStyle,
+          allowedOptions,
         });
         const renderedControl = renderer.renderLayout({
           ...labelAndChildren,
@@ -374,6 +379,7 @@ export function useControlRenderer(
       useIsDisabled,
       useCustomStyle,
       useLayoutStyle,
+      useAllowedOptions,
       useDynamicDisplay,
       useValidation,
       renderer,
@@ -390,8 +396,8 @@ export function lookupSchemaField(
   const fieldName = isGroupControlsDefinition(c)
     ? c.compoundField
     : isDataControlDefinition(c)
-    ? c.field
-    : undefined;
+      ? c.field
+      : undefined;
   return fieldName ? findField(fields, fieldName) : undefined;
 }
 export function getControlData(
@@ -437,15 +443,22 @@ export function defaultDataProps({
   options,
   elementRenderer,
   style,
+  allowedOptions,
   ...props
 }: DataControlProps): DataRendererProps {
   const className = cc(definition.styleClass);
   const required = !!definition.required;
+  const fieldOptions =
+    (field.options?.length ?? 0) === 0 ? null : field.options;
+  const allowed = allowedOptions?.value ?? [];
   return {
     control,
     field,
     id: "c" + control.uniqueId,
-    options: (field.options?.length ?? 0) === 0 ? null : field.options,
+    options:
+      fieldOptions && allowed.length > 0
+        ? fieldOptions.filter((x) => allowed.includes(x.value))
+        : fieldOptions,
     readonly: !!options.readonly,
     renderOptions: definition.renderOptions ?? { type: "Standard" },
     required,
@@ -516,6 +529,7 @@ export interface RenderControlProps {
   schemaField?: SchemaField;
   displayControl?: Control<string | undefined>;
   style?: React.CSSProperties;
+  allowedOptions?: Control<any[] | undefined>;
 }
 export function renderControlLayout({
   definition: c,
@@ -529,6 +543,7 @@ export function renderControlLayout({
   createDataProps: dataProps,
   displayControl,
   style,
+  allowedOptions,
 }: RenderControlProps): ControlLayoutProps {
   if (isDataControlDefinition(c)) {
     return renderData(c);
@@ -593,6 +608,7 @@ export function renderControlLayout({
       options: dataOptions,
       style,
       childCount,
+      allowedOptions,
       renderChild: childRenderer,
       elementRenderer:
         elementControl == null && schemaField.collection
