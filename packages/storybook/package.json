@@ -12,9 +12,9 @@
     "react-dom": "^18.2.0",
     "clsx": "^2.0.0",
     "@tailwindcss/forms": "^0.5.7",
-    "@react-typed-forms/core": "^3.0.0-dev.117",
-    "@react-typed-forms/schemas": "^5.0.0",
-    "@react-typed-forms/mui": "^3.0.1-dev.1",
+    "@react-typed-forms/core": "workspace:*",
+    "@react-typed-forms/schemas": "workspace:*",
+    "@react-typed-forms/mui": "workspace:*",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "@astroapps/client": "^0.1.3"

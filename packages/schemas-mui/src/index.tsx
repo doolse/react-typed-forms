@@ -56,7 +56,6 @@ export function muiDateRenderer(
     type: "data",
     schemaType: FieldType.Date,
     render: ({ control, required, id, readonly }) => {
-      console.log(readonly);
       return (lc) => ({
         ...lc,
         label: undefined,

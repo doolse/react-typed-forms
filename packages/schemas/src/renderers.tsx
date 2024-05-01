@@ -330,32 +330,32 @@ export function createDefaultArrayRenderer(
   } = options ?? {};
   function render(
     {
-      childCount,
-      renderChild,
+      elementCount,
+      renderElement,
       addAction,
       removeAction,
-      childKey,
+      elementKey,
       required,
     }: ArrayRendererProps,
     { renderAction }: FormRenderer,
   ) {
-    const showRemove = !required || childCount > 1;
+    const showRemove = !required || elementCount > 1;
     return (
       <div>
         <div className={clsx(className, removeAction && removableClass)}>
-          {Array.from({ length: childCount }, (_, x) =>
+          {Array.from({ length: elementCount }, (_, x) =>
             removeAction ? (
-              <Fragment key={childKey(x)}>
+              <Fragment key={elementKey(x)}>
                 <div className={clsx(childClass, removableChildClass)}>
-                  {renderChild(x)}
+                  {renderElement(x)}
                 </div>
                 <div className={removeActionClass}>
                   {showRemove && renderAction(removeAction(x))}
                 </div>
               </Fragment>
             ) : (
-              <div key={childKey(x)} className={childClass}>
-                {renderChild(x)}
+              <div key={elementKey(x)} className={childClass}>
+                {renderElement(x)}
               </div>
             ),
           )}
@@ -428,8 +428,8 @@ export function createDefaultGroupRenderer(
     const { style, className: gcn } = isGridRenderer(renderOptions)
       ? gridStyles(renderOptions)
       : isFlexRenderer(renderOptions)
-        ? flexStyles(renderOptions)
-        : ({ className: standardClassName } as StyleProps);
+      ? flexStyles(renderOptions)
+      : ({ className: standardClassName } as StyleProps);
 
     return (cp: ControlLayoutProps) => {
       return {

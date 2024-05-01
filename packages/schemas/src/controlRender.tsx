@@ -92,10 +92,10 @@ export interface AdornmentRenderer {
 export interface ArrayRendererProps {
   addAction?: ActionRendererProps;
   required: boolean;
-  removeAction?: (childIndex: number) => ActionRendererProps;
-  childCount: number;
-  renderChild: (childIndex: number) => ReactNode;
-  childKey: (childIndex: number) => Key;
+  removeAction?: (elemIndex: number) => ActionRendererProps;
+  elementCount: number;
+  renderElement: (elemIndex: number) => ReactNode;
+  elementKey: (elemIndex: number) => Key;
   arrayControl?: Control<any[] | undefined | null>;
   className?: string;
   style?: React.CSSProperties;
@@ -479,20 +479,20 @@ export function defaultArrayProps(
   const elems = arrayControl.elements ?? [];
   return {
     arrayControl,
-    childCount: elems.length,
+    elementCount: elems.length,
     required,
     addAction: {
       actionId: "add",
       actionText: "Add " + noun,
       onClick: () => addElement(arrayControl, elementValueForField(field)),
     },
-    childKey: (i) => elems[i].uniqueId,
+    elementKey: (i) => elems[i].uniqueId,
     removeAction: (i: number) => ({
       actionId: "",
       actionText: "Remove",
       onClick: () => removeElement(arrayControl, i),
     }),
-    renderChild: (i) => renderElement(elems[i]),
+    renderElement: (i) => renderElement(elems[i]),
     className: cc(className),
     style,
   };

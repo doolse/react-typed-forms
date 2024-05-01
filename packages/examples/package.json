@@ -33,10 +33,10 @@
     "@emotion/react": "^11.11.1",
     "jsonata": "^2.0.4",
     "clsx": "^1 || ^2",
-    "@react-typed-forms/core": "workspace:^3.0.0-dev.117",
-    "@react-typed-forms/mui": "workspace:^3.0.1-dev.1",
-    "@react-typed-forms/schemas": "workspace:^5.0.0",
-    "@react-typed-forms/schemas-mui": "workspace:^3.0.1-dev.1"
+    "@react-typed-forms/core": "workspace:^3.0.0",
+    "@react-typed-forms/mui": "workspace:^3.0.2",
+    "@react-typed-forms/schemas": "workspace:^7.0.0",
+    "@react-typed-forms/schemas-mui": "workspace:^4.0.0"
   },
   "devDependencies": {
     "@react-typed-forms/transform": "workspace:^0.2.0",
