@@ -8,7 +8,7 @@ describe("Schemas Test", () => {
     cy.contains("div", "Middle Name").type("Voltron");
     cy.contains("div", "Last Name").type("Smoth");
     cy.contains("div", "Gender").find("select").select("Male");
-    cy.contains("button", "Add Compound collection").click();
+    cy.contains("button", "Add Compound Collection").click();
     cy.contains("div label", "Compound collection")
       .parent()
       .contains("div", "Nested")

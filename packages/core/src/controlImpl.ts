@@ -1182,19 +1182,16 @@ export class SubscriptionTracker {
     if (this.listener) this.listener(control, change);
   };
   listener?: ChangeListenerFunc<any>;
-  subscribed: [Control<any>, Subscription | undefined, ControlChange][] = [];
+  changeListener: [ChangeListenerFunc<any>, (destroy?: boolean) => void];
   previousTracker?: ChangeListenerFunc<any>;
+
+  constructor() {
+    this.changeListener = makeChangeTracker(this._listener);
+  }
 
   start() {
     this.previousTracker = collectChange;
-    collectChange = (c, change) => {
-      const existing = this.subscribed.find((x) => x[0] === c);
-      if (existing) {
-        existing[2] |= change;
-      } else {
-        this.subscribed.push([c, c.subscribe(this._listener, change), change]);
-      }
-    };
+    collectChange = this.changeListener[0];
   }
 
   run<V>(cb: () => V): V {
@@ -1208,27 +1205,11 @@ export class SubscriptionTracker {
 
   stop() {
     if (this.previousTracker) collectChange = this.previousTracker;
-    let removed = false;
-    this.subscribed.forEach((sub) => {
-      const [c, s, latest] = sub;
-      if (s && s[0] === latest) return;
-      if (s) {
-        if (!latest) {
-          removed = true;
-          c.unsubscribe(s);
-          sub[1] = undefined;
-        } else s[0] = latest;
-      } else {
-        sub[1] = c.subscribe(this._listener, latest);
-      }
-      sub[2] = 0;
-    });
-    if (removed) this.subscribed = this.subscribed.filter((x) => x[1]);
+    this.changeListener[1]();
   }
 
   destroy() {
-    this.subscribed.forEach((x) => x[0].unsubscribe(this._listener));
-    this.subscribed = [];
+    this.changeListener[1](true);
   }
 }
 
@@ -1253,4 +1234,63 @@ export function trackedValue<A>(c: Control<A>): A {
 
 export function unsafeRestoreControl<A>(v: A): Control<A> {
   return (v as any)[restoreControlSymbol];
+}
+
+type TrackedSubscription = [
+  Control<any>,
+  Subscription | undefined,
+  ControlChange,
+];
+
+export function makeChangeTracker(
+  listen: ChangeListenerFunc<any>,
+): [ChangeListenerFunc<any>, (destroy?: boolean) => void] {
+  let subscriptions: TrackedSubscription[] = [];
+  return [
+    (c, change) => {
+      const existing = subscriptions.find((x) => x[0] === c);
+      if (existing) {
+        existing[2] |= change;
+      } else {
+        subscriptions.push([c, c.subscribe(listen, change), change]);
+      }
+    },
+    (destroy) => {
+      if (destroy) {
+        subscriptions.forEach((x) => x[0].unsubscribe(listen));
+        subscriptions = [];
+        return;
+      }
+      let removed = false;
+      subscriptions.forEach((sub) => {
+        const [c, s, latest] = sub;
+        if (s) {
+          if (s[0] !== latest) {
+            if (!latest) {
+              removed = true;
+              c.unsubscribe(s);
+              sub[1] = undefined;
+            } else s[0] = latest;
+          }
+        } else {
+          sub[1] = c.subscribe(listen, latest);
+        }
+        sub[2] = 0;
+      });
+      if (removed) subscriptions = subscriptions.filter((x) => x[1]);
+    },
+  ];
+}
+
+export function collectChanges<A>(
+  listener: ChangeListenerFunc<any>,
+  run: () => A,
+): A {
+  const prevCollect = collectChange;
+  collectChange = listener;
+  try {
+    return run();
+  } finally {
+    collectChange = prevCollect;
+  }
 }
