@@ -1271,7 +1271,7 @@ export function makeChangeTracker(
               c.unsubscribe(s);
               sub[1] = undefined;
             } else s[0] = latest;
-          }
+          } else return;
         } else {
           sub[1] = c.subscribe(listen, latest);
         }
