@@ -1,7 +1,9 @@
 import {
   ChangeEvent,
   DependencyList,
+  FC,
   MutableRefObject,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -516,6 +518,17 @@ export function useComponentTracking(): () => void {
   return () => {
     tracker.stop();
   };
+}
+
+export function useTrackedComponent<A>(f: FC<A>, deps: any[]): FC<A> {
+  return useCallback((a) => {
+    const stop = useComponentTracking();
+    try {
+      return f(a);
+    } finally {
+      stop();
+    }
+  }, deps);
 }
 
 class ComponentTracker<V> extends SubscriptionTracker {
