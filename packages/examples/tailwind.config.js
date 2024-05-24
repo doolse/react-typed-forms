@@ -7,7 +7,7 @@ module.exports = {
   },
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "node_modules/@react-typed-forms/schemas/**/*.js",
+    "node_modules/@react-typed-forms/schemas/lib/*.js",
   ],
   theme: {
     container: {
