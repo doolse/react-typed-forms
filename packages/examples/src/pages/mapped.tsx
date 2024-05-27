@@ -16,7 +16,6 @@ interface FullGroup {
 }
 
 export default function MappedTest() {
-  console.log("Mapped Test");
   const formState = useControl<FullGroup>({
     age: 0,
     firstName: "",
@@ -30,7 +29,7 @@ export default function MappedTest() {
 
   const combined = useComputed(
     () =>
-      `${subForm.fields.firstName.value} is ${subForm.fields.age.value} years old`
+      `${subForm.fields.firstName.value} is ${subForm.fields.age.value} years old`,
   );
 
   const selected = useControl<Control<any>>(fields.firstName);
