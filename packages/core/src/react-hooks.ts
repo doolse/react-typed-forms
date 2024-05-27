@@ -11,8 +11,11 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
+  addAfterChangesCallback,
   basicShallowEquals,
+  collectChanges,
   controlGroup,
+  makeChangeTracker,
   newControl,
   newElement,
   setFields,
@@ -20,7 +23,13 @@ import {
   trackControlChange,
   updateElements,
 } from "./controlImpl";
-import { Control, ControlChange, ControlSetup, ControlValue } from "./types";
+import {
+  ChangeListenerFunc,
+  Control,
+  ControlChange,
+  ControlSetup,
+  ControlValue,
+} from "./types";
 
 class EffectSubscription<V> extends SubscriptionTracker {
   currentValue: V;
@@ -398,21 +407,6 @@ export function useControlValue<V>(
   return newValue;
 }
 
-class ComputeTracker<V> extends SubscriptionTracker {
-  control!: Control<V>;
-  constructor(public compute: () => V) {
-    super();
-    this.run(() => {
-      this.control = newControl(compute());
-    });
-    this.listener = () => {
-      this.run(() => {
-        this.control.value = this.compute();
-      });
-    };
-  }
-}
-
 /**
  * Computer a `Control` value based on other `Control` properties and other dependencies.
  * Similar to `useComputed()` except that the `calculate` callback will execute on each render, so can depend on other dependencies besides controls.
@@ -432,12 +426,58 @@ export function useCalculatedControl<V>(calculate: () => V): Control<V> {
  * @param compute The function to compute the value based on other `Control`s
  */
 export function useComputed<V>(compute: () => V): Control<V> {
-  const [trackerRef, initial] = useRefState<ComputeTracker<V>>(
-    () => new ComputeTracker<V>(compute),
-  );
-  let tracker = trackerRef.current;
-  tracker.compute = compute;
-  return tracker.control;
+  const [setEffect, tracker, update] = useAfterChangesTracker();
+  const c = useControl(() => {
+    try {
+      return collectChanges(tracker, compute);
+    } finally {
+      update();
+    }
+  });
+  setEffect(() => {
+    try {
+      c.value = collectChanges(tracker, compute);
+    } finally {
+      update();
+    }
+  });
+  useEffect(() => {
+    return () => update(true);
+  }, []);
+  return c;
+}
+
+export function useAfterChangesTracker(): [
+  (effect: () => void) => void,
+  ChangeListenerFunc<any>,
+  (destroy?: boolean) => void,
+] {
+  const ref =
+    useRef<
+      [
+        (() => void) | undefined,
+        ChangeListenerFunc<any>,
+        (destroy?: boolean) => void,
+      ]
+    >();
+  if (!ref.current) {
+    const ct = makeChangeTracker(() => {
+      const l = ref.current![0];
+      if (l) {
+        ref.current![0] = undefined;
+        addAfterChangesCallback(() => {
+          l();
+          ref.current![0] = l;
+        });
+      }
+    });
+    ref.current = [undefined, ct[0], ct[1]];
+  }
+  return [
+    (cb: () => void) => (ref.current![0] = cb),
+    ref.current![1],
+    ref.current![2],
+  ];
 }
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(

@@ -1215,6 +1215,7 @@ export class SubscriptionTracker {
 
 const restoreControlSymbol = Symbol("restoreControl");
 export function trackedValue<A>(c: Control<A>): A {
+  if (!c) debugger;
   const cv: any = c.current.value;
   if (cv == null) return cv;
   if (typeof cv !== "object") return c.value;
@@ -1222,12 +1223,16 @@ export function trackedValue<A>(c: Control<A>): A {
     get(target: object, p: string | symbol, receiver: any): any {
       if (p === restoreControlSymbol) return c;
       if (Array.isArray(cv)) {
-        if (p === "length" || p === "toJSON") return Reflect.get(cv, p);
+        if (p === "length" || p === "toJSON")
+          return Reflect.get(c.current.value!, p);
         const nc = (c.elements as any)[p];
         if (typeof nc === "function") return nc;
         return trackedValue(nc);
       }
       return trackedValue((c.fields as any)[p]);
+    },
+    ownKeys(target: object) {
+      return Reflect.ownKeys(c.current.value!);
     },
   }) as A;
 }
