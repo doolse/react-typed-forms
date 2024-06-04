@@ -427,20 +427,19 @@ export function useCalculatedControl<V>(calculate: () => V): Control<V> {
  */
 export function useComputed<V>(compute: () => V): Control<V> {
   const [setEffect, tracker, update] = useAfterChangesTracker();
-  const c = useControl(() => {
+  const runCompute = () => {
     try {
       return collectChanges(tracker, compute);
     } finally {
       update();
     }
-  });
-  setEffect(() => {
-    try {
-      c.value = collectChanges(tracker, compute);
-    } finally {
-      update();
-    }
-  });
+  };
+  const c = useControl(runCompute);
+  setEffect(() => (c.value = runCompute()));
+  const newValue = runCompute();
+  useEffect(() => {
+    c.value = newValue;
+  }, [c, newValue]);
   useEffect(() => {
     return () => update(true);
   }, []);
