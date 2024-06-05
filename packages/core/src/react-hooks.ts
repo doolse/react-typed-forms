@@ -44,13 +44,11 @@ class EffectSubscription<V> extends SubscriptionTracker {
     this.effect =
       typeof initial === "function" ? initial : initial ? onChange : undefined;
     this.listener = () => {
-      this.run(() => {
-        const newValue = this.compute();
-        if (!basicShallowEquals(this.currentValue, newValue)) {
-          this.currentValue = newValue;
-          if (!this.effect) this.onChange(newValue);
-        }
-      });
+      const newValue = this.run(() => this.compute());
+      if (!basicShallowEquals(this.currentValue, newValue)) {
+        this.currentValue = newValue;
+        if (!this.effect) this.onChange(newValue);
+      }
     };
   }
 }
