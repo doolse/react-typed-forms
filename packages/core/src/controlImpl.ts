@@ -316,11 +316,19 @@ class ControlImpl<V> implements Control<V> {
 
   doFieldsSync(v: V, setter: (c: Control<any>, v: any) => void) {
     const childFields = this._fields!;
+    const uf = getUndefinedFields(this);
     const keys = new Set<string>();
     for (const k in v) {
       const child = childFields[k];
       if (child) {
         setter(child, v[k]);
+      } else {
+        const undefChild = uf[k];
+        if (undefChild) {
+          delete uf[k];
+          childFields[k] = undefChild;
+          setter(undefChild, v[k]);
+        }
       }
       keys.add(k);
     }
@@ -1045,16 +1053,24 @@ class ControlStateImpl<V> implements ControlProperties<V> {
           p: string | symbol,
           receiver: any,
         ): any {
+          if (typeof p !== "string") return undefined;
           if (p in target) {
             return target[p];
           }
+          const uf = getUndefinedFields(c);
+          if (p in uf) {
+            const undef = uf[p];
+            delete uf[p];
+            target[p] = undef;
+            return undef;
+          }
           const thisInitial = c.current.initialValue;
-          const v = c.current.value[p as string];
-          const iv = thisInitial?.[p as string];
-          const newChild = newControl(v, c.setup.fields?.[p as string], iv);
+          const v = c.current.value[p];
+          const iv = thisInitial?.[p];
+          const newChild = newControl(v, c.setup.fields?.[p], iv);
           newChild.touched = false;
           newChild.disabled = c.current.disabled;
-          c.attachParentListener(newChild, p as string);
+          c.attachParentListener(newChild, p);
           target[p] = newChild;
           return newChild;
         },
@@ -1298,4 +1314,28 @@ export function collectChanges<A>(
   } finally {
     collectChange = prevCollect;
   }
+}
+
+function getUndefinedFields(
+  control: Control<any>,
+): Record<string, Control<any>> {
+  return control.meta["$_uf"] ?? {};
+}
+
+export function getFieldLazy(
+  control: Control<Record<string, any>>,
+  field: string,
+): Control<any> {
+  const attachedFields = (control as ControlImpl<any>)._fields;
+  if (attachedFields && field in attachedFields) {
+    return attachedFields[field];
+  }
+  const fields = getUndefinedFields(control);
+  const uf = fields[field];
+  if (uf) return uf;
+  const newControl = control.fields[field];
+  fields[field] = newControl;
+  delete (control as ControlImpl<any>)._fields![field];
+  control.meta["$_uf"] = fields;
+  return newControl;
 }
