@@ -434,10 +434,6 @@ export function useComputed<V>(compute: () => V): Control<V> {
   };
   const c = useControl(runCompute);
   setEffect(() => (c.value = runCompute()));
-  const newValue = runCompute();
-  useEffect(() => {
-    c.value = newValue;
-  }, [c, newValue]);
   useEffect(() => {
     return () => update(true);
   }, []);
