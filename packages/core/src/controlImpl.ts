@@ -22,6 +22,8 @@ enum ChildSyncFlags {
   ChildrenInitialValues = 128,
 }
 
+const UndefinedMeta = "$_uf";
+
 export type ValueAndDeps<V> = [V, (Control<any> | ControlChange)[]];
 
 let controlCount = 0;
@@ -314,27 +316,25 @@ class ControlImpl<V> implements Control<V> {
     }
   }
 
-  doFieldsSync(v: V, setter: (c: Control<any>, v: any) => void) {
+  doFieldsSync(
+    v: V,
+    setter: (c: Control<any>, v: any) => void,
+    undef: ChildSyncFlags,
+  ) {
     const childFields = this._fields!;
-    const uf = getUndefinedFields(this);
     const keys = new Set<string>();
     for (const k in v) {
       const child = childFields[k];
       if (child) {
         setter(child, v[k]);
-      } else {
-        const undefChild = uf[k];
-        if (undefChild) {
-          delete uf[k];
-          childFields[k] = undefChild;
-          setter(undefChild, v[k]);
-        }
       }
       keys.add(k);
     }
     for (const k in childFields) {
       if (!keys.has(k)) {
-        setter(childFields[k]!, undefined);
+        const um = (this.meta[UndefinedMeta] ??= {});
+        um[k] |= undef;
+        setter(childFields[k], undefined);
       }
     }
   }
@@ -413,10 +413,18 @@ class ControlImpl<V> implements Control<V> {
       return ControlChange.Structure;
     } else if (this._fields) {
       if (childSync & ChildSyncFlags.ChildrenValues) {
-        this.doFieldsSync(this._value, (x, v) => (x.value = v));
+        this.doFieldsSync(
+          this._value,
+          (x, v) => (x.value = v),
+          ChildSyncFlags.Value,
+        );
       }
       if (childSync & ChildSyncFlags.ChildrenInitialValues) {
-        this.doFieldsSync(this._initialValue, (x, v) => (x.initialValue = v));
+        this.doFieldsSync(
+          this._initialValue,
+          (x, v) => (x.initialValue = v),
+          ChildSyncFlags.InitialValue,
+        );
       }
     }
     return 0;
@@ -765,7 +773,12 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener {
     (child, change) => {
       let flags: ControlChange = change & ControlChange.Structure;
       const childKey = pc.getParentMeta(child)![0];
+      const um = pc.meta[UndefinedMeta];
+      const undefFlags: ChildSyncFlags =
+        typeof childKey === "string" && um ? um[childKey] ?? 0 : 0;
+      let newUndef = undefFlags;
       if (change & ControlChange.Value) {
+        newUndef &= ~ChildSyncFlags.Value;
         if (
           pc._childSync & ChildSyncFlags.Value ||
           (pc._value as any)[childKey] !== child.current.value
@@ -775,6 +788,7 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener {
         }
       }
       if (change & ControlChange.InitialValue) {
+        newUndef &= ~ChildSyncFlags.InitialValue;
         if (
           pc._childSync & ChildSyncFlags.InitialValue ||
           (pc._initialValue as any)[childKey] !== child.current.initialValue
@@ -791,6 +805,10 @@ function makeChildListener<V>(pc: ControlImpl<V>): ChangeListener {
       }
       if (change & ControlChange.Touched) {
         flags |= pc.updateTouched(child.current.touched || pc.current.touched);
+      }
+      if (undefFlags !== newUndef) {
+        if (newUndef) um[childKey] = newUndef;
+        else delete um[childKey];
       }
       pc.runChange(flags);
     },
@@ -1057,19 +1075,22 @@ class ControlStateImpl<V> implements ControlProperties<V> {
           if (p in target) {
             return target[p];
           }
-          const uf = getUndefinedFields(c);
-          if (p in uf) {
-            const undef = uf[p];
-            delete uf[p];
-            target[p] = undef;
-            return undef;
+          const cv = c.current;
+          const thisInitial = cv.initialValue;
+          const uFlags =
+            (p in cv.value ? 0 : ChildSyncFlags.Value) |
+            (thisInitial && p in thisInitial ? 0 : ChildSyncFlags.InitialValue);
+          if (uFlags) {
+            const m = (c.meta[UndefinedMeta] ??= {});
+            m[p] = uFlags;
           }
-          const thisInitial = c.current.initialValue;
-          const v = c.current.value[p];
-          const iv = thisInitial?.[p];
-          const newChild = newControl(v, c.setup.fields?.[p], iv);
+          const newChild = newControl(
+            cv.value[p],
+            c.setup.fields?.[p],
+            thisInitial?.[p],
+          );
           newChild.touched = false;
-          newChild.disabled = c.current.disabled;
+          newChild.disabled = cv.disabled;
           c.attachParentListener(newChild, p);
           target[p] = newChild;
           return newChild;
@@ -1092,8 +1113,12 @@ class ControlStateImpl<V> implements ControlProperties<V> {
     } else if (c._fields) {
       const fieldsToSync = c._fields;
       const newValue = { ...c._value };
+      const um = c.meta[UndefinedMeta];
       for (const k in fieldsToSync) {
-        newValue[k as keyof V] = fieldsToSync[k]!.current.value;
+        const fv = fieldsToSync[k]!.current.value;
+        if (um && fv === undefined && um[k] & ChildSyncFlags.Value) {
+          delete newValue[k as keyof V];
+        } else newValue[k as keyof V] = fv;
       }
       c._value = newValue;
     }
@@ -1114,8 +1139,12 @@ class ControlStateImpl<V> implements ControlProperties<V> {
     } else if (c._fields) {
       const fieldsToSync = c._fields;
       const newValue = { ...c._initialValue };
+      const um = c.meta[UndefinedMeta];
       for (const k in fieldsToSync) {
-        newValue[k as keyof V] = fieldsToSync[k].current.initialValue;
+        const fv = fieldsToSync[k].current.initialValue;
+        if (um && fv === undefined && um[k] & ChildSyncFlags.InitialValue)
+          delete newValue[k as keyof V];
+        else newValue[k as keyof V] = fv;
       }
       c._initialValue = newValue;
     }
@@ -1230,30 +1259,43 @@ export class SubscriptionTracker {
 }
 
 const restoreControlSymbol = Symbol("restoreControl");
-export function trackedValue<A>(c: Control<A>): A {
-  if (!c) debugger;
-  const cv: any = c.current.value;
-  if (cv == null) return cv;
-  if (typeof cv !== "object") return c.value;
+
+export function trackedValue<A>(
+  c: Control<A>,
+  tracker?: ChangeListenerFunc<any>,
+): A {
+  const cc = c.current;
+  const cv = cc.value;
+  if (cv == null) {
+    t(ControlChange.Structure);
+    return cv;
+  }
+  if (typeof cv !== "object") {
+    t(ControlChange.Value);
+    return cv;
+  }
   return new Proxy(cv, {
     get(target: object, p: string | symbol, receiver: any): any {
       if (p === restoreControlSymbol) return c;
       if (Array.isArray(cv)) {
-        if (p === "length" || p === "toJSON")
-          return Reflect.get(c.current.value!, p);
-        const nc = (c.elements as any)[p];
+        t(ControlChange.Structure);
+        if (typeof p === "symbol" || p[0] > "9" || p[0] < "0")
+          return Reflect.get(cv, p);
+        const nc = (cc.elements as any)[p];
         if (typeof nc === "function") return nc;
-        return trackedValue(nc);
+        if (nc == null) return null;
+        return trackedValue(nc, tracker);
       }
-      return trackedValue((c.fields as any)[p]);
-    },
-    ownKeys(target: object) {
-      return Reflect.ownKeys(c.current.value!);
+      return trackedValue((cc.fields as any)[p], tracker);
     },
   }) as A;
+
+  function t(cc: ControlChange) {
+    return (tracker ?? collectChange)(c, cc);
+  }
 }
 
-export function unsafeRestoreControl<A>(v: A): Control<A> {
+export function unsafeRestoreControl<A>(v: A): Control<A> | undefined {
   return (v as any)[restoreControlSymbol];
 }
 
@@ -1292,7 +1334,7 @@ export function makeChangeTracker(
               c.unsubscribe(s);
               sub[1] = undefined;
             } else s[0] = latest;
-          } else return;
+          }
         } else {
           sub[1] = c.subscribe(listen, latest);
         }
@@ -1314,28 +1356,4 @@ export function collectChanges<A>(
   } finally {
     collectChange = prevCollect;
   }
-}
-
-function getUndefinedFields(
-  control: Control<any>,
-): Record<string, Control<any>> {
-  return control.meta["$_uf"] ?? {};
-}
-
-export function getFieldLazy(
-  control: Control<Record<string, any>>,
-  field: string,
-): Control<any> {
-  const attachedFields = (control as ControlImpl<any>)._fields;
-  if (attachedFields && field in attachedFields) {
-    return attachedFields[field];
-  }
-  const fields = getUndefinedFields(control);
-  const uf = fields[field];
-  if (uf) return uf;
-  const newControl = control.fields[field];
-  fields[field] = newControl;
-  delete (control as ControlImpl<any>)._fields![field];
-  control.meta["$_uf"] = fields;
-  return newControl;
 }
