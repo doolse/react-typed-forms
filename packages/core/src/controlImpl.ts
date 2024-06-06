@@ -1274,11 +1274,11 @@ export function trackedValue<A>(
     t(ControlChange.Value);
     return cv;
   }
+  t(ControlChange.Structure);
   return new Proxy(cv, {
     get(target: object, p: string | symbol, receiver: any): any {
       if (p === restoreControlSymbol) return c;
       if (Array.isArray(cv)) {
-        t(ControlChange.Structure);
         if (typeof p === "symbol" || p[0] > "9" || p[0] < "0")
           return Reflect.get(cv, p);
         const nc = (cc.elements as any)[p];
