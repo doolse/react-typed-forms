@@ -140,14 +140,15 @@ export function useValidator<V>(
   validator: (value: V) => string | null | undefined,
   key: string = "default",
   noInitial?: boolean,
+  deps: any[] = [],
 ) {
   useControlEffect(
     () => {
       trackControlChange(control, ControlChange.Validate);
-      return validator(control.value);
+      return [control.value, ...deps];
     },
-    (msg) => {
-      control.setError(key, msg);
+    ([value]) => {
+      control.setError(key, validator(value));
     },
     !noInitial,
   );
