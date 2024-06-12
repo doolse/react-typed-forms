@@ -35,24 +35,27 @@ let runningListeners = 0;
 let nopCollectChange: ChangeListenerFunc<any> = () => {};
 let collectChange = nopCollectChange;
 
+export function unsafeFreezeCountEdit(change: number) {
+  freezeCount += change;
+}
+
 export function groupedChanges<A>(change: () => A) {
   freezeCount++;
   try {
     return change();
   } finally {
     freezeCount--;
-    checkChanges();
+    runPendingChanges();
   }
-
-  function checkChanges() {
-    if (freezeCount) return;
-    while (freezeCount === 0 && pendingChangeSet.size > 0) {
-      const firstValue = pendingChangeSet.values().next().value;
-      pendingChangeSet.delete(firstValue);
-      firstValue.applyChanges(firstValue.pendingChanges);
-    }
-    runAfterCallbacks();
+}
+export function runPendingChanges() {
+  if (freezeCount) return;
+  while (freezeCount === 0 && pendingChangeSet.size > 0) {
+    const firstValue = pendingChangeSet.values().next().value;
+    pendingChangeSet.delete(firstValue);
+    firstValue.applyChanges(firstValue.pendingChanges);
   }
+  runAfterCallbacks();
 }
 
 const afterChanges: (() => void)[] = [];

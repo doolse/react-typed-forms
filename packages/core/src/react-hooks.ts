@@ -18,9 +18,11 @@ import {
   makeChangeTracker,
   newControl,
   newElement,
+  runPendingChanges,
   setFields,
   SubscriptionTracker,
   trackControlChange,
+  unsafeFreezeCountEdit,
   updateElements,
 } from "./controlImpl";
 import {
@@ -433,7 +435,8 @@ export function useComputed<V>(compute: () => V): Control<V> {
       update();
     }
   };
-  const c = useControl(runCompute);
+  const c = useControl() as Control<V>;
+  c.value = runCompute();
   setEffect(() => (c.value = runCompute()));
   useEffect(() => {
     return () => update(true);
@@ -549,6 +552,9 @@ export function useComponentTracking(): () => void {
     tracker.getSnapshot,
     tracker.getServerSnapshot,
   );
+  useEffect(() => {
+    runPendingChanges();
+  });
   return () => {
     tracker.stop();
   };
@@ -573,6 +579,16 @@ class ComponentTracker<V> extends SubscriptionTracker {
     this.listener = (c, change) => {
       this.changeCount++;
     };
+  }
+
+  start() {
+    unsafeFreezeCountEdit(1);
+    super.start();
+  }
+
+  stop() {
+    super.stop();
+    unsafeFreezeCountEdit(-1);
   }
 
   getSnapshot: () => number = () => {
