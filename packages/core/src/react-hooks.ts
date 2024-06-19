@@ -169,6 +169,7 @@ export function useValidator<V>(
     }
   }, [control, ...deps]);
   useEffect(() => () => ref.current.tracker[1](true), []);
+  useEffect(() => () => control.setError(key, null), [control]);
 }
 
 export function useAsyncValidator<V>(
