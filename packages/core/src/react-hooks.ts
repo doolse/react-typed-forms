@@ -144,16 +144,31 @@ export function useValidator<V>(
   noInitial?: boolean,
   deps: any[] = [],
 ) {
-  useControlEffect(
-    () => {
-      trackControlChange(control, ControlChange.Validate);
-      return [control.value, ...deps];
-    },
-    ([value]) => {
-      control.setError(key, validator(value));
-    },
-    !noInitial,
-  );
+  const [ref, initial] = useRefState(() => {
+    const ref = { update: () => {} };
+    return { ref, tracker: makeChangeTracker(() => ref.update()) };
+  });
+
+  const {
+    tracker: [tracker, update],
+  } = ref.current;
+  function apply() {
+    try {
+      collectChanges(tracker, () => {
+        trackControlChange(control, ControlChange.Validate);
+        control.setError(key, validator(control.value));
+      });
+    } finally {
+      update();
+    }
+  }
+  ref.current.ref.update = apply;
+  useMemo(() => {
+    if (!initial || !noInitial) {
+      apply();
+    }
+  }, [control, ...deps]);
+  useEffect(() => () => ref.current.tracker[1](true), []);
 }
 
 export function useAsyncValidator<V>(
