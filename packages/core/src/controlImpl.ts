@@ -1282,6 +1282,7 @@ export function trackedValue<A>(
     get(target: object, p: string | symbol, receiver: any): any {
       if (p === restoreControlSymbol) return c;
       if (Array.isArray(cv)) {
+        if (p === "length") return (cc.elements as any).length;
         if (typeof p === "symbol" || p[0] > "9" || p[0] < "0")
           return Reflect.get(cv, p);
         const nc = (cc.elements as any)[p];
