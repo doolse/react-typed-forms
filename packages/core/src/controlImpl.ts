@@ -608,9 +608,6 @@ class ControlImpl<V> implements Control<V> {
   }
 
   set initialValue(v: V) {
-    if (this.isEqual(v, this.current.initialValue)) {
-      return;
-    }
     this._initialValue = v;
     const change = ControlChange.InitialValue;
     if (!this.hasChildren || v == null) {
