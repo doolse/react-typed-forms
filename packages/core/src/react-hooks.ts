@@ -32,6 +32,7 @@ import {
   ControlSetup,
   ControlValue,
 } from "./types";
+import { useDebounced } from "./util";
 
 class EffectSubscription<V> extends SubscriptionTracker {
   currentValue: V;
@@ -109,32 +110,33 @@ export function useControlEffect<V>(
 export function useValueChangeEffect<V>(
   control: Control<V>,
   changeEffect: (control: V) => void,
+  debounce: number,
+  runInitial?: boolean,
+): void;
+
+export function useValueChangeEffect<V>(
+  control: Control<V>,
+  changeEffect: (control: V) => void,
+): void;
+
+export function useValueChangeEffect<V>(
+  control: Control<V>,
+  changeEffect: (control: V) => void,
+  debounce: undefined,
+  runInitial?: boolean,
+): void;
+
+export function useValueChangeEffect<V>(
+  control: Control<V>,
+  changeEffect: (control: V) => void,
   debounce?: number,
   runInitial?: boolean,
 ) {
-  const effectRef = useRef<[(control: V) => void, any, number?]>([
-    changeEffect,
-    undefined,
-    debounce,
-  ]);
-  effectRef.current[0] = changeEffect;
-  effectRef.current[2] = debounce;
-  useEffect(() => {
-    const updater = (c: Control<V>) => {
-      const r = effectRef.current;
-      if (r[2]) {
-        if (r[1]) clearTimeout(r[1]);
-        r[1] = setTimeout(() => {
-          effectRef.current[0](c.current.value);
-        }, r[2]);
-      } else {
-        r[0](c.current.value);
-      }
-    };
-    runInitial ? updater(control) : undefined;
-    const s = control.subscribe(updater, ControlChange.Value);
-    return () => control.unsubscribe(s);
-  }, [control]);
+  const realFunc =
+    typeof debounce === "number"
+      ? useDebounced(changeEffect, debounce)
+      : changeEffect;
+  useControlEffect(() => control.value, realFunc, runInitial);
 }
 
 export function useValidator<V>(

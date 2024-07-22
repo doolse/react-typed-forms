@@ -35,8 +35,8 @@
     "clsx": "^1 || ^2",
     "@react-typed-forms/core": "workspace:^3.0.0",
     "@react-typed-forms/mui": "workspace:^3.0.2",
-    "@react-typed-forms/schemas": "^7.2.0",
-    "@react-typed-forms/schemas-mui": "^5.0.0"
+    "@react-typed-forms/schemas": "^11.11.1",
+    "@react-typed-forms/schemas-mui": "^6.1.1"
   },
   "devDependencies": {
     "@react-typed-forms/transform": "workspace:^0.2.0",
