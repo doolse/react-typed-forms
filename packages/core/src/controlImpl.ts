@@ -51,7 +51,7 @@ export function groupedChanges<A>(change: () => A) {
 export function runPendingChanges() {
   if (freezeCount) return;
   while (freezeCount === 0 && pendingChangeSet.size > 0) {
-    const firstValue = pendingChangeSet.values().next().value;
+    const firstValue = pendingChangeSet.values().next().value!;
     pendingChangeSet.delete(firstValue);
     firstValue.applyChanges(firstValue.pendingChanges);
   }
@@ -855,7 +855,7 @@ export function getFieldValues<
   V extends { [k: string]: any },
   K extends keyof V,
 >(c: Control<V>, ...keys: K[]): { [NK in K]: V[NK] } {
-  const fields = c.fields;
+  const fields = c.fields!;
   return Object.fromEntries(
     keys.map((k) => [k, fields[k as string].value]),
   ) as {
@@ -1316,6 +1316,10 @@ export function makeChangeTracker(
       if (existing) {
         existing[2] |= change;
       } else {
+        const ci = (c as ControlImpl<any>) 
+        if (ci.listeners.length > 100) {
+          console.log("Adding subscription to ", ci, ci.listeners.length);
+        }
         subscriptions.push([c, c.subscribe(listen, change), change]);
       }
     },
