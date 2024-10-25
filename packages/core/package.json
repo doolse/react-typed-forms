@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "description": "",
   "source": "src/index.ts",
   "main": "lib/index.js",
@@ -29,10 +29,11 @@
     "typescript",
     "forms"
   ],
-  "dependencies": {
-    "react": "^18.2.0"
+  "peerDependencies": {
+    "react": "^18"
   },
   "devDependencies": {
+    "react": "^18.2.0",
     "@react-typed-forms/transform": "workspace:^0.2.0",
     "@types/react": "^18.2.28",
     "markdown-magic": "^2.6.1",
