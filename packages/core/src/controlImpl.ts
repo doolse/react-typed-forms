@@ -7,7 +7,7 @@ import {
   ControlSetup,
   ControlValue,
   ElemType,
-  Subscription,
+  Subscription
 } from "./types";
 
 type ParentMeta = [string | number, Subscription | undefined];
@@ -51,7 +51,7 @@ export function groupedChanges<A>(change: () => A) {
 export function runPendingChanges() {
   if (freezeCount) return;
   while (freezeCount === 0 && pendingChangeSet.size > 0) {
-    const firstValue = pendingChangeSet.values().next().value;
+    const firstValue = pendingChangeSet.values().next().value!;
     pendingChangeSet.delete(firstValue);
     firstValue.applyChanges(firstValue.pendingChanges);
   }
@@ -99,6 +99,7 @@ class ControlImpl<V> implements Control<V> {
   ) {
     this.meta = { ...setup.meta };
     this.current = new ControlStateImpl(this);
+    this.flags |= this.isEqual(_value, _initialValue) ? ControlFlags.None : ControlFlags.Dirty;
     if (childSync !== undefined) {
       this._childSync = childSync;
       this.runChange(0);
@@ -126,6 +127,7 @@ class ControlImpl<V> implements Control<V> {
   }
 
   isEqual(a: V, b: V): boolean {
+    if (a === b) return true;
     if (this.setup.equals) return this.setup.equals(a, b);
     return basicShallowEquals(a, b);
   }
@@ -857,7 +859,7 @@ export function getFieldValues<
 >(c: Control<V>, ...keys: K[]): { [NK in K]: V[NK] } {
   const fields = c.fields;
   return Object.fromEntries(
-    keys.map((k) => [k, fields[k as string].value]),
+    keys.map((k) => [k, fields![k as string].value]),
   ) as {
     [NK in K]: V[NK];
   };
