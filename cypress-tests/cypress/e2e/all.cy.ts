@@ -8,3 +8,4 @@ import "./simple.cy";
 import "./validation.cy";
 import "./multiValidation.cy";
 import "./schemas.cy";
+import "./dirty.cy";

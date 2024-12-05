@@ -21,7 +21,7 @@
       "name": "cypress",
       "summary": "Run cypress test",
       safeForSimultaneousRushProcesses: true,
-      shellCommand: "(cd packages/examples ; rush build -T . && rushx dev) & (cd cypress-tests && rushx cypress)"
+      shellCommand: "cd cypress-tests && rushx cypress"
     },
     {
       "commandKind": "global",
@@ -40,7 +40,7 @@
       "commandKind": "global",
       "name": "start",
       "summary": "Start the docs/test site",
-      "shellCommand": "cd packages/examples ; rush build -T . && rushx dev",
+      "shellCommand": "cd packages/examples ; rushx dev",
       safeForSimultaneousRushProcesses: true
     },
     {
