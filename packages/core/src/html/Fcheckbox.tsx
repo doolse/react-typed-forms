@@ -1,6 +1,6 @@
 import React from "react";
 import { formControlProps, useControlEffect } from "../react-hooks";
-import { Control } from "../types";
+import {Control} from "@astroapps/controls";
 
 export type FcheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
   control: Control<boolean | undefined | null>;

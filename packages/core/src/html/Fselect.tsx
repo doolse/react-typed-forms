@@ -1,6 +1,6 @@
 import React from "react";
 import { formControlProps, useControlEffect } from "../react-hooks";
-import { Control } from "../types";
+import {Control} from "@astroapps/controls";
 
 // Only allow strings and numbers
 export type FselectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {

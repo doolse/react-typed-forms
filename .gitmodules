@@ -1,0 +1,3 @@
+[submodule "astrolabe-common"]
+	path = astrolabe-common
+	url = git@github.com:astrolabe-apps/astrolabe-common.git

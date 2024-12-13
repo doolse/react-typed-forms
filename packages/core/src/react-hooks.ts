@@ -10,29 +10,29 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useDebounced } from "./util";
+import {
+  collectChanges,
+  makeChangeTracker,
+  SubscriptionTracker,
+} from "./controlImpl";
 import {
   addAfterChangesCallback,
-  basicShallowEquals,
-  collectChanges,
+  ChangeListenerFunc,
+  Control,
+  ControlChange,
+  controlEquals,
   controlGroup,
-  makeChangeTracker,
+  ControlSetup,
+  ControlValue,
   newControl,
   newElement,
   runPendingChanges,
   setFields,
-  SubscriptionTracker,
   trackControlChange,
   unsafeFreezeCountEdit,
   updateElements,
-} from "./controlImpl";
-import {
-  ChangeListenerFunc,
-  Control,
-  ControlChange,
-  ControlSetup,
-  ControlValue,
-} from "./types";
-import { useDebounced } from "./util";
+} from "@astroapps/controls";
 
 class EffectSubscription<V> extends SubscriptionTracker {
   currentValue: V;
@@ -48,7 +48,7 @@ class EffectSubscription<V> extends SubscriptionTracker {
       typeof initial === "function" ? initial : initial ? onChange : undefined;
     this.listener = () => {
       const newValue = this.run(() => this.compute());
-      if (!basicShallowEquals(this.currentValue, newValue)) {
+      if (!controlEquals(this.currentValue, newValue)) {
         this.currentValue = newValue;
         if (!this.effect) this.onChange(newValue);
       }
@@ -86,7 +86,7 @@ export function useControlEffect<V>(
     effectState.onChange = onChange;
     effectState.run(() => {
       const newValue = compute();
-      if (!basicShallowEquals(effectState.currentValue, newValue)) {
+      if (!controlEquals(effectState.currentValue, newValue)) {
         effectState.currentValue = newValue;
         effectState.effect = onChange;
       }
@@ -254,7 +254,7 @@ export function formControlProps<V, E extends HTMLElement>(
  */
 export function useControl<V, M = any>(
   initialState: V | (() => V),
-  configure?: ControlSetup<V, M>,
+  configure?: ControlSetup<V, M> & { use?: Control<V> },
   afterInit?: (c: Control<V>) => void,
 ): Control<V>;
 
@@ -265,7 +265,7 @@ export function useControl<V = undefined>(): Control<V | undefined>;
 
 export function useControl(
   v?: any,
-  configure?: ControlSetup<any, any>,
+  configure?: ControlSetup<any, any> & { use?: Control<any> },
   afterInit?: (c: Control<any>) => void,
 ): Control<any> {
   const controlRef = useRefState(() => {
@@ -324,7 +324,7 @@ export function ensureSelectableValues<V>(
 
 export function useSelectableArray<V>(
   control: Control<V[]>,
-  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator,
+  groupSyncer: SelectionGroupSync<V> = defaultSelectionCreator as unknown as SelectionGroupSync<V>,
   setup?: ControlSetup<SelectionGroup<V>[]>,
   reset?: any,
 ): Control<SelectionGroup<V>[]> {

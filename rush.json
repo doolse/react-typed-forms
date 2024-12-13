@@ -315,6 +315,11 @@
    */
   "projects": [
     {
+      "packageName": "@astroapps/controls",
+      "projectFolder": "astrolabe-common/astrolabe-controls",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@react-typed-forms/core",
       "projectFolder": "packages/core",
       "shouldPublish": true

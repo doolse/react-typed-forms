@@ -6,12 +6,12 @@ import React, {
   ReactNode,
   useContext,
 } from "react";
-import { Control, ControlValue } from "./types";
 import {
   FormControlProps,
   formControlProps,
   useControlValue,
 } from "./react-hooks";
+import {Control, ControlValue} from "@astroapps/controls";
 
 let _NotDefinedContext: Context<ReactNode> | null = null;
 
@@ -78,7 +78,7 @@ export function RenderOptional<V>({
   return (
     <>
       {control && !control.isNull
-        ? children(control.as<V>())
+        ? children(control as Control<V>)
         : notDefined ?? ndc}
     </>
   );
