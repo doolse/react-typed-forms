@@ -10,7 +10,7 @@ import {
   FormControlProps,
   formControlProps,
   useControlValue,
-} from "./react-hooks";
+} from "./hooks";
 import {Control, ControlValue} from "@astroapps/controls";
 
 let _NotDefinedContext: Context<ReactNode> | null = null;

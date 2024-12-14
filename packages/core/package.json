@@ -1,14 +1,20 @@
 {
   "name": "@react-typed-forms/core",
-  "version": "4.0.0-dev-0",
+  "version": "3.7.0",
   "description": "",
-  "source": "src/index.ts",
-  "main": "lib/index.js",
+  "type": "module",
+  "main": "lib/index.cjs",
+  "module": "lib/index.js",
   "types": "lib/index.d.ts",
+  "exports": {
+    "types": "./lib/index.d.ts",
+    "require": "./lib/index.cjs",
+    "default": "./lib/index.js"
+  },
   "scripts": {
     "prepack": "npm run build",
-    "build": "rimraf lib/ && microbundle -f cjs --raw --no-compress --jsx React.createElement --jsxFragment React.Fragment",
-    "watch": "microbundle -w -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
+    "build": "rimraf ./lib/ && microbundle -f modern,cjs --jsx React.createElement --jsxFragment React.Fragment",
+    "watch": "microbundle -w -f modern,cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
     "test": "jest --coverage",
     "update-readme": "md-magic --path README.md --path ../../README.md"
   },

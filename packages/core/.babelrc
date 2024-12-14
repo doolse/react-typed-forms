@@ -1,5 +1,5 @@
 
 {
   "plugins": [
-    ["module:@react-typed-forms/transform", {"importSource": "@/react-hooks"}]]
+    ["module:@react-typed-forms/transform", {"importSource": "./hooks"}]]
 }

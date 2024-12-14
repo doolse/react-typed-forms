@@ -1,5 +1,5 @@
 import React from "react";
-import { formControlProps, useControlEffect } from "../react-hooks";
+import { formControlProps, useControlEffect } from "./hooks";
 import { Control } from "@astroapps/controls";
 
 // Only allow strings and numbers
