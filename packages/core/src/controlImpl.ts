@@ -64,7 +64,7 @@ export function makeChangeTracker(
     },
     (destroy) => {
       if (destroy) {
-        subscriptions.forEach((x) => x[0].unsubscribe(listen));
+        subscriptions.forEach((x) => x[1] && x[0].unsubscribe(x[1]));
         subscriptions = [];
         return;
       }
