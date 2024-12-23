@@ -73,11 +73,11 @@ export function makeChangeTracker(
         const [c, s, latest] = sub;
         if (s) {
           if (s.mask !== latest) {
+            c.unsubscribe(s);
             if (!latest) {
               removed = true;
-              c.unsubscribe(s);
               sub[1] = undefined;
-            } else s.mask = latest;
+            } else sub[1] = c.subscribe(listen, latest);
           }
         } else {
           sub[1] = c.subscribe(listen, latest);
