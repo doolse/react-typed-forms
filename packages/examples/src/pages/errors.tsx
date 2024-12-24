@@ -1,4 +1,4 @@
-import { useControl } from "@react-typed-forms/core/lib";
+import { useControl } from "@react-typed-forms/core";
 import { FormInput } from "../bootstrap";
 import React from "react";
 
