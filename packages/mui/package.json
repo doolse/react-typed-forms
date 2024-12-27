@@ -1,9 +1,16 @@
 {
 	"name": "@react-typed-forms/mui",
-	"version": "3.0.4",
+	"version": "3.0.5",
 	"description": "",
-	"main": "lib/index.js",
+	"type": "module",
+	"main": "lib/index.cjs",
+	"module": "lib/index.js",
 	"types": "lib/index.d.ts",
+	"exports": {
+		"types": "./lib/index.d.ts",
+		"require": "./lib/index.cjs",
+		"default": "./lib/index.js"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/doolse/react-typed-forms.git"
@@ -30,18 +37,21 @@
 	},
 	"devDependencies": {
 		"@mui/material": "^5.14.13",
-		"@react-typed-forms/core": "workspace:^3.0.0",
+		"@emotion/styled": "^11.11.0",
+		"@emotion/react": "^11.11.1",
+		"@react-typed-forms/core": "workspace:^*",
 		"@react-typed-forms/transform": "workspace:^0.2.0",
 		"@types/react": "^18.2.28",
 		"microbundle": "^0.15.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"rimraf": "^3.0.2",
-		"typescript": "5.2.2"
+		"typescript": "^5.2.2"
 	},
 	"gitHead": "698e16cd3ab31b7dd0528fc76536f4d3205ce8c6",
 	"scripts": {
-		"build": "rimraf ./lib/ && microbundle -f cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment",
-		"watch": "tsc -w"
+		"prepack": "npm run build",
+		"build": "rimraf ./lib/ && microbundle -f modern,cjs --jsx React.createElement --jsxFragment React.Fragment",
+		"watch": "microbundle -w -f modern,cjs --no-compress --jsx React.createElement --jsxFragment React.Fragment"
 	}
 }

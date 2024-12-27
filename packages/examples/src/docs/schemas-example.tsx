@@ -2,9 +2,7 @@ import { useControl } from "@react-typed-forms/core";
 import React from "react";
 import {
   buildSchema,
-  createDefaultRenderers,
   createFormRenderer,
-  defaultTailwindTheme,
   defaultValueForFields,
   FormRenderer,
   intField,
@@ -12,6 +10,10 @@ import {
   useControlDefinitionForSchema,
   useControlRenderer,
 } from "@react-typed-forms/schemas";
+import {
+  createDefaultRenderers,
+  defaultTailwindTheme,
+} from "@react-typed-forms/schemas-html";
 
 /** Define your form */
 interface SimpleForm {

@@ -115,6 +115,9 @@
   "globalOverrides": {
     "react-dnd": "16.0.1",
     "@react-typed-forms/core": "workspace:*",
+    "@react-typed-forms/mui": "workspace:*",
+    "@react-typed-forms/schemas": "^13.5.3",
+    "@react-typed-forms/schemas-mui": "workspace:*"
   },
   
   /**

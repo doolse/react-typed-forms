@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.109.1",
+  "rushVersion": "5.147.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "6.7.1",
+  "pnpmVersion": "7.33.7",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -68,7 +68,7 @@
    * version. In those cases, you will need to add an entry to the "allowedAlternativeVersions"
    * section of the common-versions.json.
    */
-  // "ensureConsistentVersions": true,
+   "ensureConsistentVersions": true,
 
   /**
    * Large monorepos can become intimidating for newcomers if project folder paths don't follow
@@ -317,7 +317,14 @@
     {
       "packageName": "@astroapps/controls",
       "projectFolder": "astrolabe-common/astrolabe-controls",
-      "shouldPublish": false
+      "shouldPublish": false,
+      "skipRushCheck": true
+    },
+    {
+      "packageName": "@react-typed-forms/schemas-mui",
+      "projectFolder": "astrolabe-common/schemas-mui",
+      "shouldPublish": false,
+      "skipRushCheck": true
     },
     {
       "packageName": "@react-typed-forms/core",

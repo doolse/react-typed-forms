@@ -5,12 +5,10 @@ import {
   compoundControl,
   compoundField,
   ControlDefinitionType,
-  createDefaultRenderers,
   createFormRenderer,
   dataControl,
   DataRenderType,
   DateTimeRenderOptions,
-  defaultTailwindTheme,
   dynamicDefaultValue,
   dynamicDisabled,
   dynamicReadonly,
@@ -24,6 +22,10 @@ import {
   stringOptionsField,
   useControlRenderer,
 } from "@react-typed-forms/schemas";
+import {
+  createDefaultRenderers,
+  defaultTailwindTheme,
+} from "@react-typed-forms/schemas-html";
 import { RenderControl, useControl } from "@react-typed-forms/core";
 import {
   muiActionRenderer,

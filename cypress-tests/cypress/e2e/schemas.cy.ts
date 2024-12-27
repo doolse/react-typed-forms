@@ -21,6 +21,7 @@ describe("Schemas Test", () => {
         last: "Smoth",
         gender: "M",
         compound: {},
+        compoundOptional: [],
         compoundCollection: [
           {
             nest: "Nested data",
@@ -39,7 +40,7 @@ describe("Schemas Test", () => {
             nest: "DYNAMIC",
           },
         ],
-      })
+      }),
     );
   });
 });
