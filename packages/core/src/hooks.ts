@@ -21,7 +21,7 @@ import {
   ChangeListenerFunc,
   Control,
   ControlChange,
-  controlEquals,
+  deepEquals,
   controlGroup,
   ControlSetup,
   ControlValue,
@@ -48,7 +48,7 @@ class EffectSubscription<V> extends SubscriptionTracker {
       typeof initial === "function" ? initial : initial ? onChange : undefined;
     this.listener = () => {
       const newValue = this.run(() => this.compute());
-      if (!controlEquals(this.currentValue, newValue)) {
+      if (!deepEquals(this.currentValue, newValue)) {
         this.currentValue = newValue;
         if (!this.effect) this.onChange(newValue);
       }
@@ -86,7 +86,7 @@ export function useControlEffect<V>(
     effectState.onChange = onChange;
     effectState.run(() => {
       const newValue = compute();
-      if (!controlEquals(effectState.currentValue, newValue)) {
+      if (!deepEquals(effectState.currentValue, newValue)) {
         effectState.currentValue = newValue;
         effectState.effect = onChange;
       }

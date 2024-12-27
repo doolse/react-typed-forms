@@ -40,14 +40,14 @@ export default function ArraySelectionsExample() {
           elems: { fields: { first: { validator: notEmpty("Please enter") } } },
         },
       },
-    }
+    },
   );
   const [reset, setReset] = useState(0);
   const formState = useSelectableArray(
     allFormState.fields.people,
     ensureSelectableValues(allDefaults, (x) => x.first),
     undefined,
-    reset
+    reset,
   );
   const [formData, setFormData] = useState<RowForm[]>();
   return (
@@ -93,7 +93,7 @@ export default function ArraySelectionsExample() {
           id="clean"
           className="btn btn-primary"
           onClick={() => {
-            formState.markAsClean();
+            allFormState.markAsClean();
           }}
         >
           Mark Clean

@@ -45,15 +45,15 @@ export default function ValidationExample() {
   useAsyncValidator(
     fields.async,
     (n, signal) =>
-      fetch(basePath + "/api/validate", {
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ value: n.current.value }),
-      }).then((resp) => {
-        return resp.json().then((r) => r.error);
+      new Promise<string>((resolve) => {
+        setTimeout(() => {
+          console.log("Asyncing");
+          resolve(
+            n.current.value != "OK"
+              ? `Error: "${n.current.value}" is not "OK"`
+              : "",
+          );
+        }, 1000);
       }),
     500,
   );
