@@ -4,7 +4,7 @@ overrides:
   react-dnd: 16.0.1
   '@react-typed-forms/core': workspace:*
   '@react-typed-forms/mui': workspace:*
-  '@react-typed-forms/schemas': ^13.5.3
+  '@react-typed-forms/schemas': workspace:^13.5.3
   '@react-typed-forms/schemas-mui': workspace:*
 
 importers:
@@ -24,7 +24,7 @@ importers:
       rimraf: ^3.0.2
       ts-jest: ^29.2.5
       tsx: ^4.19.1
-      typescript: ^5.6.2
+      typescript: ^5.7.2
     devDependencies:
       '@jest/globals': 29.7.0
       fast-check: 3.23.1
@@ -38,13 +38,48 @@ importers:
       tsx: 4.19.2
       typescript: 5.7.2
 
+  ../../astrolabe-common/schemas:
+    specifiers:
+      '@react-typed-forms/core': workspace:*
+      '@react-typed-forms/transform': ^0.2.0
+      '@types/react': ^18.2.28
+      '@types/uuid': ^10.0.0
+      clsx: ^1 || ^2
+      jsonata: ^2.0.4
+      markdown-magic: ^2.6.1
+      microbundle: ^0.15.1
+      nswag: ^13.18.2
+      prettier: ^3.0.3
+      react: ^18.2.0
+      rimraf: ^3.0.2
+      typedoc: ^0.27.2
+      typescript: ^5.6.2
+      uuid: ^10.0.0
+    dependencies:
+      clsx: 2.1.1
+      jsonata: 2.0.5
+      uuid: 10.0.0
+    devDependencies:
+      '@react-typed-forms/core': link:../../packages/core
+      '@react-typed-forms/transform': 0.2.0
+      '@types/react': 18.3.3
+      '@types/uuid': 10.0.0
+      markdown-magic: 2.6.1
+      microbundle: 0.15.1
+      nswag: 13.20.0
+      prettier: 3.3.3
+      react: 18.3.1
+      rimraf: 3.0.2
+      typedoc: 0.27.6_typescript@5.7.2
+      typescript: 5.7.2
+
   ../../astrolabe-common/schemas-mui:
     specifiers:
       '@mui/icons-material': ^5
       '@mui/material': ^5.14.13
       '@react-typed-forms/core': workspace:*
       '@react-typed-forms/mui': workspace:*
-      '@react-typed-forms/schemas': ^13.5.3
+      '@react-typed-forms/schemas': workspace:^13.5.3
       '@react-typed-forms/transform': ^0.2.0
       '@types/react': ^18.2.28
       date-fns: ^2.29.3
@@ -61,7 +96,7 @@ importers:
       '@mui/material': 5.16.4_3vdbhqr2ncalcx7opnshezpx3q
       '@react-typed-forms/core': link:../../packages/core
       '@react-typed-forms/mui': link:../../packages/mui
-      '@react-typed-forms/schemas': 13.5.3_wafpclkev4zes6iwx23tnzabu4
+      '@react-typed-forms/schemas': link:../schemas
       '@react-typed-forms/transform': 0.2.0
       '@types/react': 18.3.3
       microbundle: 0.15.1
@@ -127,7 +162,7 @@ importers:
       '@next/mdx': ^13.5.5
       '@react-typed-forms/core': workspace:*
       '@react-typed-forms/mui': workspace:*
-      '@react-typed-forms/schemas': ^13.5.3
+      '@react-typed-forms/schemas': workspace:^13.5.3
       '@react-typed-forms/schemas-html': ^1.4.2
       '@react-typed-forms/schemas-mui': workspace:*
       '@react-typed-forms/transform': workspace:^0.2.0
@@ -159,8 +194,8 @@ importers:
       '@next/mdx': 13.5.6_@mdx-js+loader@2.3.0
       '@react-typed-forms/core': link:../core
       '@react-typed-forms/mui': link:../mui
-      '@react-typed-forms/schemas': 13.5.3_wafpclkev4zes6iwx23tnzabu4
-      '@react-typed-forms/schemas-html': 1.4.2_vhfj4t247vte42haf6dv2dggju
+      '@react-typed-forms/schemas': link:../../astrolabe-common/schemas
+      '@react-typed-forms/schemas-html': 1.4.2_amkmnhnkgeo43pw6pfcavnduuu
       '@react-typed-forms/schemas-mui': link:../../astrolabe-common/schemas-mui
       clsx: 2.1.1
       jsonata: 2.0.5
@@ -216,7 +251,7 @@ importers:
       '@chromatic-com/storybook': ^1.1.6
       '@react-typed-forms/core': workspace:*
       '@react-typed-forms/mui': workspace:*
-      '@react-typed-forms/schemas': ^13.5.3
+      '@react-typed-forms/schemas': workspace:^13.5.3
       '@storybook/addon-essentials': ^8.0.5
       '@storybook/addon-interactions': ^8.0.5
       '@storybook/addon-links': ^8.0.5
@@ -250,7 +285,7 @@ importers:
       '@astroapps/client': 0.1.10_tntnhcpciyyaipt6qzg5cubmki
       '@react-typed-forms/core': link:../core
       '@react-typed-forms/mui': link:../mui
-      '@react-typed-forms/schemas': 13.5.3_wafpclkev4zes6iwx23tnzabu4
+      '@react-typed-forms/schemas': link:../../astrolabe-common/schemas
       '@tailwindcss/forms': 0.5.7_tailwindcss@3.4.6
       clsx: 2.1.1
       next: 14.2.5_nnrd3gsncyragczmpvfhocinkq
@@ -2392,6 +2427,14 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
+  /@gerrit0/mini-shiki/1.24.4:
+    resolution: {integrity: sha512-YEHW1QeAg6UmxEmswiQbOVEg1CW22b1XUD/lNTliOsu0LD0wqoyleFMnmbTp697QE0pcadQiR5cVtbbAPncvpw==}
+    dependencies:
+      '@shikijs/engine-oniguruma': 1.24.4
+      '@shikijs/types': 1.24.4
+      '@shikijs/vscode-textmate': 9.3.1
+    dev: true
+
   /@humanwhocodes/config-array/0.11.14:
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
     engines: {node: '>=10.10.0'}
@@ -3318,7 +3361,7 @@ packages:
     resolution: {integrity: sha512-/RVXdLvJxLg4QKvMoM5WlwNR9ViO9z8B/qPcc+C0Sa/teJY7QG7kJ441DwzOjMYEY7GmU4dj5EcGHIkKZiQZCA==}
     dev: false
 
-  /@react-typed-forms/schemas-html/1.4.2_vhfj4t247vte42haf6dv2dggju:
+  /@react-typed-forms/schemas-html/1.4.2_amkmnhnkgeo43pw6pfcavnduuu:
     resolution: {integrity: sha512-NVN8D7hF68fQ3cBpGue64oh5OfYBGxb5pw4OL3Ox/YFegJcrUO7OUJF2UJwNfhj94Fz6g/D3zvRPxlL/0SSQ+g==}
     peerDependencies:
       '@react-typed-forms/core': ^3.6.1
@@ -3326,23 +3369,11 @@ packages:
       react: ^18.2.0
     dependencies:
       '@react-typed-forms/core': link:../../packages/core
-      '@react-typed-forms/schemas': 13.5.3_wafpclkev4zes6iwx23tnzabu4
+      '@react-typed-forms/schemas': link:../../astrolabe-common/schemas
       clsx: 2.1.1
       jsonata: 2.0.5
       react: 18.3.1
     dev: false
-
-  /@react-typed-forms/schemas/13.5.3_wafpclkev4zes6iwx23tnzabu4:
-    resolution: {integrity: sha512-eu8fIcNpSC/s6PT6F9iF7HlOP6IrPZm7D8mgDSwQBysMXjWJ9U9ec/bVDCkVia9mQ/gVeQKZde8OChIH2xGMsg==}
-    peerDependencies:
-      '@react-typed-forms/core': ^3.6.1
-      react: ^18.2.0
-    dependencies:
-      '@react-typed-forms/core': link:../../packages/core
-      clsx: 2.1.1
-      jsonata: 2.0.5
-      react: 18.3.1
-      uuid: 10.0.0
 
   /@react-typed-forms/transform/0.2.0:
     resolution: {integrity: sha512-P8qYhc5b801cI8uJ8/5Ks8Ja2iJNADw+KiMw2t55Zb1y3RtbWxz7H9tXR2ZFdkf4J9CoAJ+At1XEqMkd0Z8ieQ==}
@@ -3465,6 +3496,24 @@ packages:
 
   /@rushstack/eslint-patch/1.10.3:
     resolution: {integrity: sha512-qC/xYId4NMebE6w/V33Fh9gWxLgURiNYgVNObbJl2LZv0GUUItCcCqC5axQSwRaAgaxl2mELq1rMzlswaQ0Zxg==}
+    dev: true
+
+  /@shikijs/engine-oniguruma/1.24.4:
+    resolution: {integrity: sha512-Do2ry6flp2HWdvpj2XOwwa0ljZBRy15HKZITzPcNIBOGSeprnA8gOooA/bLsSPuy8aJBa+Q/r34dMmC3KNL/zw==}
+    dependencies:
+      '@shikijs/types': 1.24.4
+      '@shikijs/vscode-textmate': 9.3.1
+    dev: true
+
+  /@shikijs/types/1.24.4:
+    resolution: {integrity: sha512-0r0XU7Eaow0PuDxuWC1bVqmWCgm3XqizIaT7SM42K03vc69LGooT0U8ccSR44xP/hGlNx4FKhtYpV+BU6aaKAA==}
+    dependencies:
+      '@shikijs/vscode-textmate': 9.3.1
+      '@types/hast': 3.0.4
+    dev: true
+
+  /@shikijs/vscode-textmate/9.3.1:
+    resolution: {integrity: sha512-79QfK1393x9Ho60QFyLti+QfdJzRQCVLFb97kOIV7Eo9vQU/roINgk7m24uv0a7AUvN//RDH36FLjjK48v0s9g==}
     dev: true
 
   /@sinclair/typebox/0.27.8:
@@ -4527,6 +4576,10 @@ packages:
 
   /@types/unist/3.0.2:
     resolution: {integrity: sha512-dqId9J8K/vGi5Zr7oo212BGii5m3q5Hxlkwy3WpYuKPklmBEvsbMYYyLxAQpSffdLl/gdW0XUpKWFvYmyoWCoQ==}
+    dev: true
+
+  /@types/uuid/10.0.0:
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
     dev: true
 
   /@types/uuid/9.0.8:
@@ -6863,6 +6916,11 @@ packages:
 
   /entities/2.2.0:
     resolution: {integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==}
+    dev: true
+
+  /entities/4.5.0:
+    resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
+    engines: {node: '>=0.12'}
     dev: true
 
   /env-paths/2.2.1:
@@ -9675,6 +9733,7 @@ packages:
   /jsonata/2.0.5:
     resolution: {integrity: sha512-wEse9+QLIIU5IaCgtJCPsFi/H4F3qcikWzF4bAELZiRz08ohfx3Q6CjDRf4ZPF5P/92RI3KIHtb7u3jqPaHXdQ==}
     engines: {node: '>= 8'}
+    dev: false
 
   /jsonc-parser/3.3.1:
     resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
@@ -9772,6 +9831,12 @@ packages:
 
   /lines-and-columns/1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+
+  /linkify-it/5.0.0:
+    resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
+    dependencies:
+      uc.micro: 2.1.0
+    dev: true
 
   /listr2/3.14.0_enquirer@2.4.1:
     resolution: {integrity: sha512-TyWI8G99GX9GjE54cJ+RrNMcIFBfwMPxc3XTFiAYGN4s10hWROGtOg7+O6u6LE3mNkyld7RSLE6nrKBvTfcs3g==}
@@ -9981,6 +10046,18 @@ packages:
     resolution: {integrity: sha512-WWC0ZuMzCyDHYCasEGs4IPvLyTGftYwh6wIEOULOF0HXcqZlhwRzrK0w2VUlxWA98xnvb/jszw4ZSkJ6ADpM6Q==}
     engines: {node: '>=0.10.0'}
     dev: false
+
+  /markdown-it/14.1.0:
+    resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
+    hasBin: true
+    dependencies:
+      argparse: 2.0.1
+      entities: 4.5.0
+      linkify-it: 5.0.0
+      mdurl: 2.0.0
+      punycode.js: 2.3.1
+      uc.micro: 2.1.0
+    dev: true
 
   /markdown-magic/2.6.1:
     resolution: {integrity: sha512-i+wPC9bAGzFVftF1P5ItooOCvX+TTD3v504WpupsJz+3B0wRZMuPxeFAE7uZXEZYjsiQYskoMgpypoJTWerpVA==}
@@ -10252,6 +10329,10 @@ packages:
 
   /mdn-data/2.0.14:
     resolution: {integrity: sha512-dn6wd0uw5GsdswPFfsgMp5NSB0/aDe6fK94YJV/AJDYXL6HVLWBsxeq7js7Ad+mU2K9LAlwpk6kN2D5mwCPVow==}
+    dev: true
+
+  /mdurl/2.0.0:
+    resolution: {integrity: sha512-Lf+9+2r+Tdp5wXDXC4PcIBjTDtq4UKjCPMQhKIuzpJNW0b96kVqSwW0bT7FhRSfmAiFYgP+SCRvdrDozfh0U5w==}
     dev: true
 
   /media-typer/0.3.0:
@@ -12121,6 +12202,11 @@ packages:
     dependencies:
       end-of-stream: 1.4.4
       once: 1.4.0
+    dev: true
+
+  /punycode.js/2.3.1:
+    resolution: {integrity: sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA==}
+    engines: {node: '>=6'}
     dev: true
 
   /punycode/1.4.1:
@@ -14088,6 +14174,21 @@ packages:
       typescript: 5.7.2
     dev: true
 
+  /typedoc/0.27.6_typescript@5.7.2:
+    resolution: {integrity: sha512-oBFRoh2Px6jFx366db0lLlihcalq/JzyCVp7Vaq1yphL/tbgx2e+bkpkCgJPunaPvPwoTOXSwasfklWHm7GfAw==}
+    engines: {node: '>= 18'}
+    hasBin: true
+    peerDependencies:
+      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x
+    dependencies:
+      '@gerrit0/mini-shiki': 1.24.4
+      lunr: 2.3.9
+      markdown-it: 14.1.0
+      minimatch: 9.0.5
+      typescript: 5.7.2
+      yaml: 2.6.1
+    dev: true
+
   /typescript/4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
@@ -14104,6 +14205,10 @@ packages:
     resolution: {integrity: sha512-i5t66RHxDvVN40HfDd1PsEThGNnlMCMT3jMUuoh9/0TaqWevNontacunWyN02LA9/fIbEWlcHZcgTKb9QoaLfg==}
     engines: {node: '>=14.17'}
     hasBin: true
+    dev: true
+
+  /uc.micro/2.1.0:
+    resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
     dev: true
 
   /ufo/1.5.4:
@@ -14370,6 +14475,7 @@ packages:
   /uuid/10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
+    dev: false
 
   /uuid/8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
@@ -14705,6 +14811,12 @@ packages:
     resolution: {integrity: sha512-aBx2bnqDzVOyNKfsysjA2ms5ZlnjSAW2eG3/L5G/CSujfjLJTJsEw1bGw8kCf04KodQWk1pxlGnZ56CRxiawmg==}
     engines: {node: '>= 14'}
     hasBin: true
+
+  /yaml/2.6.1:
+    resolution: {integrity: sha512-7r0XPzioN/Q9kXBro/XPnA6kznR73DHq+GXh5ON7ZozRO6aMjbmiBuKste2wslTFkC5d1dw0GooOCepZXJ2SAg==}
+    engines: {node: '>= 14'}
+    hasBin: true
+    dev: true
 
   /yargs-parser/21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}

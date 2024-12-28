@@ -321,6 +321,12 @@
       "skipRushCheck": true
     },
     {
+      "packageName": "@react-typed-forms/schemas",
+      "projectFolder": "astrolabe-common/schemas",
+      "shouldPublish": false,
+      "skipRushCheck": true
+    },
+    {
       "packageName": "@react-typed-forms/schemas-mui",
       "projectFolder": "astrolabe-common/schemas-mui",
       "shouldPublish": false,
