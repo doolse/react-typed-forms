@@ -6,17 +6,14 @@ import {
 } from "@react-typed-forms/core";
 
 function typeWithNull<A extends { id: string } | null>(c: Control<A>) {
-  // @ts-expect-error
   c.fields.id;
 }
 
 function typeWithUndefined<A extends { id: string } | undefined>(
   c: Control<A>,
-  k: keyof A
+  k: keyof A,
 ) {
-  // @ts-expect-error
   c.fields.id;
-  c.fields?.id;
   // @ts-expect-error
   c.elements?.map((x) => x.id);
 }
@@ -33,15 +30,12 @@ function nonArray(c: Control<string>) {
 }
 
 function takesArray<A extends { id: string } | undefined>(
-  c: Control<A[] | undefined>
+  c: Control<A[] | undefined>,
 ) {
-  // @ts-expect-error
-  c.elements[0];
-  c.elements?.[0];
+  c.elements[0].fields.id.value;
 }
 
 function takesArrayO<A extends { id: string }>(c: Control<A[] | undefined>) {
-  // @ts-expect-error
   c.elements[0];
   c.elements?.[0];
   c.elements?.map((x) => x.fields.id);
@@ -54,18 +48,18 @@ function takesArrayNO<A extends { id: string }>(c: Control<A[]>) {
 
 function anyControl(c: Control<any>) {
   c.fields[""];
-  addElement(c, {});
-  nonArray(c);
-  addElement(c.fields?.["id"], "");
+  addElement(c.as<any[]>(), {});
+  nonArray(c.as());
+  addElement(c.as<{ id: string[] }>().fields?.["id"], "");
   typeWithNull(c);
-  takesArray(c);
+  takesArray(c.as<{ id: string }[]>());
 }
 
 function someControls(
   a: Control<{ something: string }>,
   b: Control<string | undefined>,
   c: Control<number>,
-  d: Control<string>
+  d: Control<string>,
 ) {
   useControlEffect(controlValues({ c, d }), (a) => {});
   useControlEffect(controlValues(a, b, c, d), (v) => {
