@@ -11,11 +11,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useDebounced } from "./util";
-import {
-  collectChanges,
-  makeChangeTracker,
-  SubscriptionTracker,
-} from "./controlImpl";
+import { SubscriptionTracker } from "./controlImpl";
 import {
   addAfterChangesCallback,
   ChangeListenerFunc,
@@ -32,6 +28,8 @@ import {
   trackControlChange,
   unsafeFreezeCountEdit,
   updateElements,
+  makeChangeTracker,
+  collectChanges,
 } from "@astroapps/controls";
 
 class EffectSubscription<V> extends SubscriptionTracker {
