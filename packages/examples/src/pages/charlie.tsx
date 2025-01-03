@@ -3,7 +3,6 @@ import {
   notEmpty,
   RenderElements,
   useControl,
-  useControlValue,
 } from "@react-typed-forms/core";
 import { FTextField } from "@react-typed-forms/mui";
 import { Button } from "@mui/material";
@@ -25,7 +24,7 @@ export default function CharliePage() {
           elems: { validator: notEmpty("PLS"), meta: { shit: "" } },
         },
       },
-    }
+    },
   );
   const fields = fc.fields;
   const subFields = fields.subObject.fields;

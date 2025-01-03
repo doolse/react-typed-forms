@@ -3,13 +3,13 @@ import {
   Control,
   Finput,
   RenderControl,
-  RenderValue,
+  RenderElements,
   useComputed,
   useControl,
   useValueChangeEffect,
-  RenderElements,
 } from "@react-typed-forms/core";
 import React, { ReactElement } from "react";
+import { useRenderCount } from "../index";
 
 interface SubStructure {
   id: string;
@@ -30,12 +30,10 @@ export default function SimpleExample() {
   const mapped = useComputed(() => formState.value.stringChildren.join(","));
   useValueChangeEffect(formState, (v) => console.log(v));
   const fields = formState.fields;
+  const count = useRenderCount();
   return (
     <div>
-      <RenderValue
-        toValue={(v?: number) => (v ?? -1) + 1}
-        children={(count) => <h2>{count} notifications</h2>}
-      />
+      <h2>{count} notifications</h2>
       <RenderControl children={() => <div>{mapped.value}</div>} />
       <RenderElements control={fields.stringChildren}>
         {(x) => (
@@ -48,7 +46,7 @@ export default function SimpleExample() {
         onClick={() =>
           addElement(
             fields.stringChildren,
-            "child " + (fields.stringChildren.elements.length + 1)
+            "child " + (fields.stringChildren.elements.length + 1),
           )
         }
       >
