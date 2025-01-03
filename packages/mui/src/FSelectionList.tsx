@@ -1,22 +1,16 @@
 import {
-  Card,
-  CardHeader,
-  Checkbox,
-  Divider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
+    Card,
+    CardHeader,
+    Checkbox,
+    Divider,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
 } from "@mui/material";
-import {
-  Control,
-  groupedChanges,
-  RenderElements,
-  SelectionGroup,
-  useControlValue,
-} from "@react-typed-forms/core";
-import React, { CSSProperties } from "react";
+import {Control, groupedChanges, RenderElements, SelectionGroup,} from "@react-typed-forms/core";
+import React, {CSSProperties} from "react";
 
 export function FSelectionList<A>({
   control,
@@ -106,11 +100,9 @@ function SelectionEntry<A>({
   disabled: boolean;
 }) {
   const { selected, value } = control.fields;
-  const isSelected = useControlValue(selected);
-  const isEntrySelected = useControlValue(
-    () => entrySelected?.value === control
-  );
-  const name = useControlValue(() => entryName(value.value));
+  const isSelected = selected.value;
+  const isEntrySelected =  entrySelected?.value === control;
+  const name = entryName(value.value);
   return (
     <ListItemButton
       role="listitem"

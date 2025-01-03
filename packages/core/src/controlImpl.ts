@@ -2,46 +2,8 @@ import {
   ChangeListenerFunc,
   collectChange,
   Control,
-  ControlChange, makeChangeTracker,
-  setChangeCollector,
-  Subscription,
+  ControlChange,
 } from "@astroapps/controls";
-
-export class SubscriptionTracker {
-  private _listener: ChangeListenerFunc<any> = (control, change) => {
-    if (this.listener) this.listener(control, change);
-  };
-  listener?: ChangeListenerFunc<any>;
-  changeListener: [ChangeListenerFunc<any>, (destroy?: boolean) => void];
-  previousTracker?: ChangeListenerFunc<any>;
-
-  constructor() {
-    this.changeListener = makeChangeTracker(this._listener);
-  }
-
-  start() {
-    this.previousTracker = collectChange;
-    setChangeCollector(this.changeListener[0]);
-  }
-
-  run<V>(cb: () => V): V {
-    this.start();
-    try {
-      return cb();
-    } finally {
-      this.stop();
-    }
-  }
-
-  stop() {
-    if (this.previousTracker) setChangeCollector(this.previousTracker);
-    this.changeListener[1]();
-  }
-
-  destroy() {
-    this.changeListener[1](true);
-  }
-}
 
 const restoreControlSymbol = Symbol("restoreControl");
 

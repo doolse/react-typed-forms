@@ -8,10 +8,10 @@ import {
   RenderElements,
   SelectionGroup,
   useControl,
-  useControlValue,
   useSelectableArray,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
+import { useRenderCount } from "../index";
 
 interface FormData {
   people: RowForm[];
@@ -31,7 +31,7 @@ const allDefaults: RowForm[] = ["Jolse", "Thomas", "Nicholas"].map((x) => ({
 }));
 
 export default function ArraySelectionsExample() {
-  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
+  const renders = useRenderCount();
   const allFormState = useControl<FormData>(
     { other: "HI", people: selected },
     {

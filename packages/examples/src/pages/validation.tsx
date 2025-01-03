@@ -4,28 +4,29 @@ import {
   RenderElements,
   useAsyncValidator,
   useControl,
-  useControlValue,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
 import { FormInput } from "../bootstrap";
 import { useRouter } from "next/router";
+import { useRenderCount } from "../index";
+import { useValidator } from "@react-typed-forms/core";
 
 type ValidationForm = {
   email: string;
   async: string;
   array: { notBlank: string }[];
+  hook: string;
 };
 
 const emailRegExp =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 
 export default function ValidationExample() {
-  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
-
+  const renders = useRenderCount();
   const { basePath } = useRouter();
   const [formData, setFormData] = useState<ValidationForm>();
   const formState = useControl<ValidationForm>(
-    { email: "", async: "", array: [] },
+    { email: "", async: "", array: [], hook: "" },
     {
       fields: {
         email: {
@@ -40,7 +41,7 @@ export default function ValidationExample() {
     },
   );
   const fields = formState.fields;
-  const valid = useControlValue(() => formState.valid);
+  const valid = formState.valid;
 
   useAsyncValidator(
     fields.async,
@@ -57,10 +58,12 @@ export default function ValidationExample() {
       }),
     500,
   );
+  useValidator(fields.hook, notEmpty("Hook not empty"));
   return (
     <div className="container">
       <h2>Validation Example - {renders} render(s)</h2>
       <FormInput id="email" label="Email:" type="text" state={fields.email} />
+      <FormInput id="hook" label="Hook:" type="text" state={fields.hook} />
       <FormInput
         id="async"
         label="Async:"
@@ -101,6 +104,23 @@ export default function ValidationExample() {
           onClick={() => fields.email.setErrors({ default: "" })}
         >
           setErrors
+        </button>
+        <button
+          id="clearErrors"
+          className="btn btn-secondary"
+          onClick={() => formState.clearErrors()}
+        >
+          clearErrors()
+        </button>
+        <button
+          id="validate"
+          className="btn btn-secondary"
+          onClick={() => {
+            formState.touched = true;
+            formState.validate();
+          }}
+        >
+          validate()
         </button>
       </div>
       <span>

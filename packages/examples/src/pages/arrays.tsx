@@ -9,9 +9,9 @@ import {
   RenderElements,
   updateElements,
   useControl,
-  useControlValue,
 } from "@react-typed-forms/core";
 import React, { useState } from "react";
+import { useRenderCount } from "../index";
 
 type RowForm = {
   id: string;
@@ -36,13 +36,13 @@ const FormDef: ControlSetup<MainForm> = {
 };
 
 export default function ArraysExample() {
-  const renders = useControlValue<number>((p) => (p ?? 0) + 1);
+  const renders = useRenderCount();
   const formState = useControl(
     {
       strings: [""],
       structured: [{ id: "", name: "" }],
     },
-    FormDef
+    FormDef,
   );
   const fields = formState.fields;
   const [formData, setFormData] = useState<MainForm>();
@@ -54,9 +54,9 @@ export default function ArraysExample() {
           idx === index
             ? fields[idx - 1]
             : idx === index - 1
-            ? fields[index]
-            : f
-        )
+              ? fields[index]
+              : f,
+        ),
       );
   }
   function moveDown(fa: Control<any[]>, index: number) {
@@ -66,9 +66,9 @@ export default function ArraysExample() {
           idx === index
             ? fields[idx + 1]
             : idx === index + 1
-            ? fields[idx - 1]
-            : f
-        )
+              ? fields[idx - 1]
+              : f,
+        ),
       );
   }
   return (

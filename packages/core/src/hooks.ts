@@ -11,16 +11,20 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useDebounced } from "./util";
-import { SubscriptionTracker } from "./controlImpl";
 import {
-  addAfterChangesCallback,
   ChangeListenerFunc,
+  setChangeCollector,
+  SubscriptionTracker,
+} from "@astroapps/controls";
+import {
+  collectChanges,
   Control,
   ControlChange,
-  deepEquals,
   controlGroup,
   ControlSetup,
   ControlValue,
+  createEffect,
+  deepEquals,
   newControl,
   newElement,
   runPendingChanges,
@@ -28,31 +32,7 @@ import {
   trackControlChange,
   unsafeFreezeCountEdit,
   updateElements,
-  makeChangeTracker,
-  collectChanges,
 } from "@astroapps/controls";
-
-class EffectSubscription<V> extends SubscriptionTracker {
-  currentValue: V;
-  effect?: (v: V) => void;
-  constructor(
-    public compute: () => V,
-    public onChange: (value: V) => void,
-    initial?: ((value: V) => void) | boolean,
-  ) {
-    super();
-    this.currentValue = this.run(compute);
-    this.effect =
-      typeof initial === "function" ? initial : initial ? onChange : undefined;
-    this.listener = () => {
-      const newValue = this.run(() => this.compute());
-      if (!deepEquals(this.currentValue, newValue)) {
-        this.currentValue = newValue;
-        if (!this.effect) this.onChange(newValue);
-      }
-    };
-  }
-}
 
 export function useRefState<A>(init: () => A): [MutableRefObject<A>, boolean] {
   const ref = useRef<A | null>(null);
@@ -75,34 +55,22 @@ export function useControlEffect<V>(
   onChange: (value: V) => void,
   initial?: ((value: V) => void) | boolean,
 ) {
-  const [stateRef, isInitial] = useRefState<EffectSubscription<V>>(
-    () => new EffectSubscription<V>(compute, onChange, initial),
+  const [effectRef, isInitial] = useRefState(() =>
+    createEffect(
+      compute,
+      typeof initial === "function" ? initial : initial ? onChange : () => {},
+    ),
   );
-  let effectState = stateRef.current;
+  let effect = effectRef.current;
+  effect.run = (cur, prev) => {
+    if (!deepEquals(cur, prev)) onChange(cur);
+  };
   if (!isInitial) {
-    effectState.compute = compute;
-    effectState.onChange = onChange;
-    effectState.run(() => {
-      const newValue = compute();
-      if (!deepEquals(effectState.currentValue, newValue)) {
-        effectState.currentValue = newValue;
-        effectState.effect = onChange;
-      }
-    });
+    effect.calculate = compute;
+    effect.runEffect();
   }
 
-  useEffect(() => {
-    if (effectState.effect) {
-      effectState.effect(effectState.currentValue!);
-      effectState.effect = undefined;
-    }
-  }, [effectState.effect]);
-
-  useEffect(() => {
-    return () => {
-      stateRef.current!.destroy();
-    };
-  }, []);
+  useEffect(() => () => effectRef.current.cleanup(), [effectRef]);
 }
 
 export function useValueChangeEffect<V>(
@@ -141,35 +109,22 @@ export function useValidator<V>(
   control: Control<V>,
   validator: (value: V) => string | null | undefined,
   key: string = "default",
-  noInitial?: boolean,
-  deps: any[] = [],
 ) {
-  const [ref, initial] = useRefState(() => {
-    const ref = { update: () => {} };
-    return { ref, tracker: makeChangeTracker(() => ref.update()) };
-  });
-
-  const {
-    tracker: [tracker, update],
-  } = ref.current;
-  function apply() {
-    try {
-      collectChanges(tracker, () => {
-        trackControlChange(control, ControlChange.Validate);
-        control.setError(key, validator(control.value));
-      });
-    } finally {
-      update();
-    }
-  }
-  ref.current.ref.update = apply;
-  useMemo(() => {
-    if (!initial || !noInitial) {
-      apply();
-    }
-  }, [control, ...deps]);
-  useEffect(() => () => ref.current.tracker[1](true), []);
-  useEffect(() => () => control.setError(key, null), [control]);
+  const calculate = () => {
+    trackControlChange(control, ControlChange.Validate);
+    return validator(control.value);
+  };
+  const setError = (msg: string | null | undefined) => {
+    control.setError(key, msg);
+  };
+  const [effectRef] = useRefState(() => createEffect(calculate, setError));
+  const effect = effectRef.current;
+  effect.run = setError;
+  effect.calculate = calculate;
+  useEffect(() => {
+    return () => effect.cleanup();
+  }, [effect]);
+  useEffect(() => () => control.setError(key, null), [control, key]);
 }
 
 export function useAsyncValidator<V>(
@@ -359,138 +314,38 @@ export function useSelectableArray<V>(
   return selectable;
 }
 
-class ControlValueState<V> extends SubscriptionTracker {
-  currentValue?: V;
-  changeCount = 0;
-
-  constructor(public compute: (previous?: V) => V) {
-    super();
-    this.listener = (c, change) => {
-      this.changeCount++;
-    };
-  }
-
-  getSnapshot: () => number = () => {
-    return this.changeCount;
-  };
-
-  getServerSnapshot = this.getSnapshot;
-
-  subscribe: (onChange: () => void) => () => void = (onChange) => {
-    this.listener = (c, change) => {
-      this.changeCount++;
-      onChange();
-    };
-    return () => {
-      this.listener = undefined;
-      this.changeCount++;
-      this.destroy();
-    };
-  };
-}
-
 /**
- * @deprecated Just use .value
- */
-export function useControlValue<V>(control: Control<V>): V;
-
-/**
- * @deprecated Just use control properties directly in your component
- */
-export function useControlValue<V>(stateValue: (previous?: V) => V): V;
-
-export function useControlValue<V>(
-  controlOrValue: Control<V> | ((previous?: V) => V),
-) {
-  const compute =
-    typeof controlOrValue === "function"
-      ? controlOrValue
-      : () => controlOrValue.value;
-  const [stateRef, initial] = useRefState<ControlValueState<V>>(
-    () => new ControlValueState<V>(compute),
-  );
-  let computeState = stateRef.current;
-  if (!initial) {
-    computeState.compute = compute;
-  }
-  const previous = computeState.currentValue;
-  const newValue = computeState.run(() => computeState!.compute(previous));
-  computeState.currentValue = newValue;
-  useSyncExternalStore(
-    computeState.subscribe,
-    computeState.getSnapshot,
-    computeState.getServerSnapshot,
-  );
-  return newValue;
-}
-
-/**
- * Computer a `Control` value based on other `Control` properties and other dependencies.
- * Similar to `useComputed()` except that the `calculate` callback will execute on each render, so can depend on other dependencies besides controls.
- * @param calculate The function to compute the value based on other `Control`s and other dependencies
+ * @deprecated Exactly the same as useComputed
  */
 export function useCalculatedControl<V>(calculate: () => V): Control<V> {
-  const c = useControl(calculate);
-  useControlEffect(calculate, (v) => (c.value = v));
-  return c;
+  return useComputed(calculate);
 }
 
 /**
- * Computer a `Control` value based on other `Control` properties.
+ * Computer a `Control` value based on other values and controls and recompute the value
+ * when called or when dependant controls change.
  *
- * **NOTE**: The value will only be recalculated if a dependent Control changes.
- * If you need to depend on other values, use `useCalculatedControl()`
- * @param compute The function to compute the value based on other `Control`s
+ * @param compute The function to compute the value based on other vales and `Control`s
  */
 export function useComputed<V>(compute: () => V): Control<V> {
-  const [setEffect, tracker, update] = useAfterChangesTracker();
-  const runCompute = () => {
-    try {
-      return collectChanges(tracker, compute);
-    } finally {
-      update();
-    }
+  const controlRef = useRef<Control<V>>();
+  const [effectRef, isInitial] = useRefState(() =>
+    createEffect(compute, (v) => {
+      controlRef.current = newControl(v);
+    }),
+  );
+  const control = controlRef.current!;
+  let effect = effectRef.current;
+  effect.run = (cur) => {
+    control.value = cur;
   };
-  const c = useControl() as Control<V>;
-  c.value = runCompute();
-  setEffect(() => (c.value = runCompute()));
-  useEffect(() => {
-    return () => update(true);
-  }, []);
-  return c;
-}
-
-export function useAfterChangesTracker(): [
-  (effect: () => void) => void,
-  ChangeListenerFunc<any>,
-  (destroy?: boolean) => void,
-] {
-  const ref =
-    useRef<
-      [
-        (() => void) | undefined,
-        ChangeListenerFunc<any>,
-        (destroy?: boolean) => void,
-      ]
-    >();
-  if (!ref.current) {
-    const ct = makeChangeTracker(() => {
-      const l = ref.current![0];
-      if (l) {
-        ref.current![0] = undefined;
-        addAfterChangesCallback(() => {
-          l();
-          ref.current![0] = l;
-        });
-      }
-    });
-    ref.current = [undefined, ct[0], ct[1]];
+  if (!isInitial) {
+    effect.calculate = compute;
+    effect.runEffect();
   }
-  return [
-    (cb: () => void) => (ref.current![0] = cb),
-    ref.current![1],
-    ref.current![2],
-  ];
+
+  useEffect(() => () => effectRef.current.cleanup(), [effectRef]);
+  return control;
 }
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(
@@ -589,9 +444,12 @@ export function useTrackedComponent<A>(f: FC<A>, deps: any[]): FC<A> {
 
 class ComponentTracker<V> extends SubscriptionTracker {
   changeCount = 0;
+  listener?: ChangeListenerFunc<any>;
 
   constructor() {
-    super();
+    super((control, change) => {
+      if (this.listener) this.listener(control, change);
+    });
     this.listener = (c, change) => {
       this.changeCount++;
     };
@@ -599,11 +457,12 @@ class ComponentTracker<V> extends SubscriptionTracker {
 
   start() {
     unsafeFreezeCountEdit(1);
-    super.start();
+    setChangeCollector(this.collectUsage);
   }
 
   stop() {
-    super.stop();
+    setChangeCollector(undefined);
+    this.update();
     unsafeFreezeCountEdit(-1);
   }
 
@@ -621,7 +480,7 @@ class ComponentTracker<V> extends SubscriptionTracker {
     return () => {
       this.listener = undefined;
       this.changeCount++;
-      this.destroy();
+      this.cleanup();
     };
   };
 }

@@ -6,12 +6,8 @@ import React, {
   ReactNode,
   useContext,
 } from "react";
-import {
-  FormControlProps,
-  formControlProps,
-  useControlValue,
-} from "./hooks";
-import {Control, ControlValue} from "@astroapps/controls";
+import { FormControlProps, formControlProps } from "./hooks";
+import { Control, ControlValue } from "@astroapps/controls";
 
 let _NotDefinedContext: Context<ReactNode> | null = null;
 
@@ -32,17 +28,6 @@ export type RenderControlProps =
     };
 export function RenderControl(props: RenderControlProps) {
   return <>{("children" in props ? props.children : props.render)()}</>;
-}
-
-export function RenderValue<V>({
-  toValue,
-  children,
-}: {
-  toValue: (previous?: V) => V;
-  children: (v: V) => ReactNode;
-}) {
-  const v = useControlValue(toValue);
-  return <>{children(v)}</>;
 }
 
 /**
@@ -79,7 +64,7 @@ export function RenderOptional<V>({
     <>
       {control && !control.isNull
         ? children(control as Control<V>)
-        : notDefined ?? ndc}
+        : (notDefined ?? ndc)}
     </>
   );
 }
@@ -96,7 +81,7 @@ type ValuesOfControls<A> = { [K in keyof A]: NonNullable<ControlValue<A[K]>> };
 export function renderOptionally<A extends Record<string, Control<any>>>(
   controls: A,
   render: (v: ValuesOfControls<A>) => ReactNode,
-  elseRender?: ReactNode
+  elseRender?: ReactNode,
 ): () => ReactNode {
   return () => {
     const out: Record<string, any> = {};
@@ -107,7 +92,7 @@ export function renderOptionally<A extends Record<string, Control<any>>>(
         out[x[0]] = v;
       } else ready = false;
     });
-    return ready ? render(out as ValuesOfControls<A>) : elseRender ?? <></>;
+    return ready ? render(out as ValuesOfControls<A>) : (elseRender ?? <></>);
   };
 }
 
