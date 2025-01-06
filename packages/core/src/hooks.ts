@@ -13,8 +13,10 @@ import {
 import { useDebounced } from "./util";
 import {
   ChangeListenerFunc,
+  cleanupControl,
   setChangeCollector,
   SubscriptionTracker,
+  updateComputedValue,
 } from "@astroapps/controls";
 import {
   collectChanges,
@@ -55,22 +57,20 @@ export function useControlEffect<V>(
   onChange: (value: V) => void,
   initial?: ((value: V) => void) | boolean,
 ) {
-  const [effectRef, isInitial] = useRefState(() =>
-    createEffect(
-      compute,
-      typeof initial === "function" ? initial : initial ? onChange : () => {},
-    ),
-  );
-  let effect = effectRef.current;
-  effect.run = (cur, prev) => {
-    if (!deepEquals(cur, prev)) onChange(cur);
-  };
-  if (!isInitial) {
-    effect.calculate = compute;
-    effect.runEffect();
-  }
-
-  useEffect(() => () => effectRef.current.cleanup(), [effectRef]);
+  const c = useComputed(compute, (c) => {
+    const m = c.meta;
+    m.__onInitial =
+      typeof initial === "function" ? initial : initial ? onChange : undefined;
+    c.subscribe((v) => {
+      if (m.__onInitial) {
+        m.__onInitial(v.current.value);
+        m.__onInitial = undefined;
+      } else {
+        m.__onChange(v.current.value);
+      }
+    }, ControlChange.Value);
+  });
+  c.meta.__onChange = onChange;
 }
 
 export function useValueChangeEffect<V>(
@@ -223,13 +223,17 @@ export function useControl(
 ): Control<any> {
   const controlRef = useRefState(() => {
     const rv = typeof v === "function" ? v() : v;
-    const c = newControl(rv, configure);
+    const c = configure?.use ?? newControl(rv, configure);
     afterInit?.(c);
     return c;
   })[0];
   if (configure?.use) {
     controlRef.current = configure.use;
   }
+  useEffect(
+    () => () => cleanupControl(controlRef.current),
+    [controlRef.current],
+  );
   return controlRef.current;
 }
 
@@ -326,26 +330,18 @@ export function useCalculatedControl<V>(calculate: () => V): Control<V> {
  * when called or when dependant controls change.
  *
  * @param compute The function to compute the value based on other vales and `Control`s
+ * @param preCompute Function to run before the compute function is called, useful for setting up dependencies.
  */
-export function useComputed<V>(compute: () => V): Control<V> {
-  const controlRef = useRef<Control<V>>();
-  const [effectRef, isInitial] = useRefState(() =>
-    createEffect(compute, (v) => {
-      controlRef.current = newControl(v);
-    }),
-  );
-  const control = controlRef.current!;
-  let effect = effectRef.current;
-  effect.run = (cur) => {
-    control.value = cur;
-  };
-  if (!isInitial) {
-    effect.calculate = compute;
-    effect.runEffect();
-  }
-
-  useEffect(() => () => effectRef.current.cleanup(), [effectRef]);
-  return control;
+export function useComputed<V>(
+  compute: () => V,
+  preCompute?: (c: Control<V | undefined>) => void,
+): Control<V> {
+  const c = useControl<V | undefined>(undefined, undefined, (c) => {
+    preCompute?.(c);
+    updateComputedValue(c, compute);
+  });
+  updateComputedValue(c, compute);
+  return c as Control<V>;
 }
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(
