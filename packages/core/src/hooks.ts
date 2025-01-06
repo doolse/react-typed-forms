@@ -330,14 +330,11 @@ export function useCalculatedControl<V>(calculate: () => V): Control<V> {
  */
 export function useComputed<V>(
   compute: () => V,
-  preCompute?: (c: Control<V | undefined>) => void,
+  preCompute?: (c: Control<V>) => void,
 ): Control<V> {
-  const c = useControl<V | undefined>(undefined, undefined, (c) => {
-    preCompute?.(c);
-    updateComputedValue(c, compute, true);
-  });
+  const c = useControl<V>(new NoValue() as unknown as V, undefined, preCompute);
   updateComputedValue(c, compute);
-  return c as Control<V>;
+  return c;
 }
 
 export function useControlGroup<C extends { [k: string]: Control<any> }>(
@@ -476,3 +473,5 @@ class ComponentTracker<V> extends SubscriptionTracker {
     };
   };
 }
+
+class NoValue {}
