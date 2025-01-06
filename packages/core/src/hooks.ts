@@ -14,25 +14,21 @@ import { useDebounced } from "./util";
 import {
   ChangeListenerFunc,
   cleanupControl,
-  setChangeCollector,
-  SubscriptionTracker,
-  updateComputedValue,
-} from "@astroapps/controls";
-import {
-  collectChanges,
   Control,
   ControlChange,
   controlGroup,
   ControlSetup,
   ControlValue,
   createEffect,
-  deepEquals,
   newControl,
   newElement,
   runPendingChanges,
+  setChangeCollector,
   setFields,
+  SubscriptionTracker,
   trackControlChange,
   unsafeFreezeCountEdit,
+  updateComputedValue,
   updateElements,
 } from "@astroapps/controls";
 
@@ -60,7 +56,7 @@ export function useControlEffect<V>(
   const c = useComputed(compute, (c) => {
     const m = c.meta;
     m.__onInitial =
-      typeof initial === "function" ? initial : initial ? onChange : undefined;
+      typeof initial === "function" ? initial : initial ? onChange : () => {};
     c.subscribe((v) => {
       if (m.__onInitial) {
         m.__onInitial(v.current.value);
