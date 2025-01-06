@@ -334,7 +334,7 @@ export function useComputed<V>(
 ): Control<V> {
   const c = useControl<V | undefined>(undefined, undefined, (c) => {
     preCompute?.(c);
-    updateComputedValue(c, compute);
+    updateComputedValue(c, compute, true);
   });
   updateComputedValue(c, compute);
   return c as Control<V>;
