@@ -317,12 +317,12 @@
     {
       "packageName": "@react-typed-forms/core",
       "projectFolder": "packages/core",
-      "shouldPublish": true
+      "shouldPublish": false
     },
     {
       "packageName": "@react-typed-forms/mui",
       "projectFolder": "packages/mui",
-      "shouldPublish": true
+      "shouldPublish": false
     },
     {
       "packageName": "@react-typed-forms/example",

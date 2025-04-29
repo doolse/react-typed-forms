@@ -7,6 +7,7 @@ import {
   template,
 } from "@babel/core";
 import { isModule, addNamed } from "@babel/helper-module-imports";
+import { minimatch } from 'minimatch';
 
 // TODO:
 // - how to trigger rerenders on attributes change if transform never sees
@@ -304,12 +305,39 @@ export interface PluginOptions {
      */
     noTryFinally?: boolean;
   };
+  // ... existing options ...
+  include?: string[];
+  exclude?: string[];
 }
 
 export default function signalsTransform(
   { types: t }: PluginArgs,
   options: PluginOptions
 ): PluginObj {
+  // Helper function to check if file should be processed
+  function shouldProcessFile(filename: string): boolean {
+    if (!filename) return true;
+    
+    // If no include/exclude patterns are specified, process all files
+    if (!options.include && !options.exclude) return true;
+
+    // Check exclude patterns first
+    if (options.exclude) {
+      for (const pattern of options.exclude) {
+        if (minimatch(filename, pattern)) {
+          return false;
+        }
+      }
+    }
+
+    // If include patterns exist, file must match at least one
+    if (options.include) {
+      return options.include.some(pattern => minimatch(filename, pattern));
+    }
+
+    return true;
+  }
+
   return {
     name: dataNamespace,
     visitor: {
@@ -319,7 +347,8 @@ export default function signalsTransform(
           // lazily create the import statement for the useSignalTracking hook.
           // We create a function and store it in the PluginPass object, so that
           // on the first usage of the hook, we can create the import statement.
-          set(state, dontTransformId, !isModule(path));
+          console.log(state.filename, shouldProcessFile(state.filename));
+          set(state, dontTransformId, !shouldProcessFile(state.filename) || !isModule(path));
           set(
             state,
             getHookIdentifier,
@@ -333,7 +362,6 @@ export default function signalsTransform(
           );
         },
       },
-
       ArrowFunctionExpression: {
         // TODO: Consider alternate implementation, where on enter of a function
         // expression, we run our own manual scan the AST to determine if the

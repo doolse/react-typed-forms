@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/transform",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "lib/transform.js",
   "module": "lib/transform.module.js",
   "types": "lib/transform.d.ts",
@@ -41,7 +41,8 @@
   "dependencies": {
     "@babel/helper-module-imports": "^7.22.5",
     "@babel/helper-plugin-utils": "^7.22.5",
-    "@babel/core": "^7.22.0"
+    "@babel/core": "^7.22.0",
+    "minimatch": "^10.0.1"
   },
   "devDependencies": {
     "microbundle": "^0.15.1",
