@@ -347,7 +347,6 @@ export default function signalsTransform(
           // lazily create the import statement for the useSignalTracking hook.
           // We create a function and store it in the PluginPass object, so that
           // on the first usage of the hook, we can create the import statement.
-          console.log(state.filename, shouldProcessFile(state.filename));
           set(state, dontTransformId, !shouldProcessFile(state.filename) || !isModule(path));
           set(
             state,

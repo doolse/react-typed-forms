@@ -28,7 +28,7 @@ importers:
   ../../packages/core:
     specifiers:
       '@jest/globals': ^29.7.0
-      '@react-typed-forms/transform': workspace:^0.3.0
+      '@react-typed-forms/transform': workspace:*
       '@types/react': ^18.2.28
       jest: ^29.7.0
       markdown-magic: ^2.6.1
@@ -64,7 +64,7 @@ importers:
       '@react-typed-forms/mui': workspace:^3.0.2
       '@react-typed-forms/schemas': ^11.11.1
       '@react-typed-forms/schemas-mui': ^6.1.1
-      '@react-typed-forms/transform': workspace:^0.3.0
+      '@react-typed-forms/transform': workspace:*
       '@tailwindcss/forms': ^0.5.6
       '@types/mdx': ^2.0.8
       '@types/node': ^20.8.6
@@ -120,7 +120,7 @@ importers:
     specifiers:
       '@mui/material': ^5.14.13
       '@react-typed-forms/core': workspace:*
-      '@react-typed-forms/transform': workspace:^0.3.0
+      '@react-typed-forms/transform': workspace:*
       '@types/react': ^18.2.28
       microbundle: ^0.15.1
       react: ^18.2.0
@@ -235,7 +235,7 @@ importers:
       '@types/babel__helper-plugin-utils': 7.10.3
       assert: 2.1.0
       buffer: 6.0.3
-      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.5
+      microbundle: 0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.5
       path: 0.12.7
 
 packages:
@@ -10372,7 +10372,7 @@ packages:
       - ts-node
     dev: true
 
-  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.5:
+  /microbundle/0.15.1_@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__@types+babel__core@7.20.5:
     resolution: {integrity: sha512-aAF+nwFbkSIJGfrJk+HyzmJOq3KFaimH6OIFBU6J2DPjQeg1jXIYlIyEv81Gyisb9moUkudn+wj7zLNYMOv75Q==}
     hasBin: true
     dependencies:

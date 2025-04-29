@@ -1,6 +1,6 @@
 {
   "name": "@react-typed-forms/transform",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "lib/transform.js",
   "module": "lib/transform.module.js",
   "types": "lib/transform.d.ts",
